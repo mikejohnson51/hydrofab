@@ -114,6 +114,7 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 #' for this function.
 #' @details Note that all inputs must be passed in the same projection.
 #' @export
+#' @importFrom magrittr "%>%"
 #'
 reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr, fac, para = 2) {
 
@@ -153,7 +154,7 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr, fa
     out <- NULL
     try({
       # nolint start
-      library(nhdplusTools)
+      library(hyRefactor)
       # nolint end
       split_set <- to_split_ids[which(grepl(as.character(fid), to_split_ids))]
       to_split_flines <- dplyr::filter(fline_ref, COMID %in% split_set)

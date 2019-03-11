@@ -4,7 +4,7 @@ test_that("split_catchment_divides works", {
   unlink("data/temp/*")
   dir.create("data/temp", showWarnings = FALSE, recursive = TRUE)
 
-  source(system.file("extdata", "walker_data.R", package = "nhdplusTools"))
+  source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
 
   refactor <- refactor_nhdplus(nhdplus_flines = walker_flowline,
                                split_flines_meters = 2000,
@@ -55,7 +55,7 @@ test_that("split and reconcile works", {
   unlink("data/temp/*")
   dir.create("data/temp", showWarnings = FALSE, recursive = TRUE)
 
-  source(system.file("extdata", "walker_data.R", package = "nhdplusTools"))
+  source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
 
   refactor <- refactor_nhdplus(nhdplus_flines = walker_flowline,
                                split_flines_meters = 2000,
@@ -124,7 +124,7 @@ test_that("doing nothing does nothing", {
   unlink("data/temp/*")
   dir.create("data/temp", showWarnings = FALSE, recursive = TRUE)
 
-  source(system.file("extdata", "walker_data.R", package = "nhdplusTools"))
+  source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
 
   refactor <- refactor_nhdplus(nhdplus_flines = walker_flowline,
                                split_flines_meters = 200000,

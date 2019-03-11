@@ -5,7 +5,7 @@
 #' @param max_length maximum segment length to return
 #' @param para numeric how many threads to use in parallel computation
 #' @return All the flowlines with some split apart.
-#' @importFrom dplyr group_by ungroup filter select mutate lead n
+#' @importFrom dplyr group_by ungroup filter select mutate lead n right_join
 #' @seealso The \code{\link{refactor_nhdplus}} function implements a complete
 #' workflow using `split_flowlines()`.
 #' @export
