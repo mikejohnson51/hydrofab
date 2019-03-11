@@ -8,7 +8,7 @@ test_that("split lines works", {
 
   source(system.file("extdata", "walker_data.R", package = "nhdplusTools"))
 
-  flines <- suppressWarnings(prepare_nhdplus(walker_flowline, 0, 0))
+  flines <- suppressWarnings(nhdplusTools::prepare_nhdplus(walker_flowline, 0, 0))
   flines <- collapse_flowlines(flines, 1, F, 1)
   flines <- reconcile_collapsed_flowlines(flines)
 
@@ -23,7 +23,7 @@ test_that("split lines works", {
     dplyr::ungroup() %>%
     sf::st_line_merge()
 
-  split <- nhdplusTools:::split_lines(sf::st_transform(dplyr::select(flines, ID),
+  split <- hyRefactor:::split_lines(sf::st_transform(dplyr::select(flines, ID),
                                                        5070), 250, id = "ID")
 
   expect(nrow(split) == 573)
@@ -42,7 +42,7 @@ test_that("split lines works", {
 
   flines <- suppressWarnings(
     sf::st_set_geometry(flines_in, NULL) %>%
-    prepare_nhdplus(0, 0) %>%
+    nhdplusTools::prepare_nhdplus(0, 0) %>%
     dplyr::inner_join(dplyr::select(flines_in, COMID), by = "COMID") %>%
     sf::st_as_sf() %>%
     sf::st_cast("LINESTRING") %>%
@@ -65,16 +65,16 @@ test_that("split_lines_2 works the same as split_lines", {
 
   flines_in <- suppressWarnings(
     sf::st_set_geometry(flines_in, NULL) %>%
-      prepare_nhdplus(0, 0) %>%
+      nhdplusTools::prepare_nhdplus(0, 0) %>%
       dplyr::inner_join(dplyr::select(flines_in, COMID), by = "COMID") %>%
       sf::st_as_sf() %>%
       sf::st_cast("LINESTRING") %>%
       sf::st_transform(5070))
 
-  flines <- nhdplusTools:::split_lines(flines_in, 2000,
+  flines <- hyRefactor:::split_lines(flines_in, 2000,
                                        id = "COMID", para = 3)
 
-  expect_warning(flines_2 <- nhdplusTools:::split_lines_2(flines_in, 2000,
+  expect_warning(flines_2 <- hyRefactor:::split_lines_2(flines_in, 2000,
                                                           id = "COMID"),
    "Found 139 geometries without very many vertices. Densifying")
 

@@ -4,7 +4,7 @@ test_that("reconcile collapse flowlines works as expected", {
 
   source(system.file("extdata", "walker_data.R", package = "nhdplusTools"))
 
-  flines <- suppressWarnings(prepare_nhdplus(walker_flowline, 0, 0))
+  flines <- suppressWarnings(nhdplusTools::prepare_nhdplus(walker_flowline, 0, 0))
   flines <- collapse_flowlines(flines, 1, F, 1)
   flines <- reconcile_collapsed_flowlines(flines)
 
@@ -61,7 +61,7 @@ test_that("collapse works on a double pass", {
 
     flines <- suppressWarnings(
       sf::st_set_geometry(nhdplus_flines, NULL) %>%
-        prepare_nhdplus(0, 0) %>%
+        nhdplusTools::prepare_nhdplus(0, 0) %>%
         dplyr::inner_join(select(nhdplus_flines, COMID), by = "COMID") %>%
         sf::st_as_sf() %>%
         sf::st_cast("LINESTRING") %>%

@@ -196,7 +196,7 @@ discover_nhdplus_id <- function(point = NULL, nldi_feature = NULL) {
 
   } else if (!is.null(nldi_feature)) {
 
-    check_nldi_feature(nldi_feature)
+    nhdplusTools::check_nldi_feature(nldi_feature)
 
     if (is.null(nldi_feature[["tier"]])) nldi_feature[["tier"]] <- "prod"
 
@@ -258,7 +258,7 @@ get_ds_joined_fromCOMID <- function(flines) {
 #' @examples
 #' library(dplyr)
 #' source(system.file("extdata", "walker_data.R", package = "nhdplusTools"))
-#' catchment_area <- prepare_nhdplus(walker_flowline, 0, 0,
+#' catchment_area <- nhdplusTools::prepare_nhdplus(walker_flowline, 0, 0,
 #'                              purge_non_dendritic = FALSE, warn = FALSE) %>%
 #'   left_join(select(walker_flowline, COMID, AreaSqKM), by = "COMID") %>%
 #'   select(ID = COMID, toID = toCOMID, area = AreaSqKM)
@@ -288,7 +288,7 @@ calculate_total_drainage_area <- function(catchment_area) {
 #' @examples
 #' library(dplyr)
 #' source(system.file("extdata", "walker_data.R", package = "nhdplusTools"))
-#' catchment_length <- prepare_nhdplus(walker_flowline, 0, 0,
+#' catchment_length <- nhdplusTools::prepare_nhdplus(walker_flowline, 0, 0,
 #'                              purge_non_dendritic = FALSE, warn = FALSE) %>%
 #'   left_join(select(walker_flowline, COMID), by = "COMID") %>%
 #'   select(ID = COMID, toID = toCOMID, length = LENGTHKM)
@@ -367,7 +367,7 @@ accumulate_downstream <- function(dat_fram, var) {
 #' @examples
 #' source(system.file("extdata", "walker_data.R", package = "nhdplusTools"))
 #'
-#' test_flowline <- prepare_nhdplus(walker_flowline, 0, 0, FALSE)
+#' test_flowline <- nhdplusTools::prepare_nhdplus(walker_flowline, 0, 0, FALSE)
 #'
 #' test_flowline <- data.frame(
 #'   ID = test_flowline$COMID,
@@ -435,98 +435,4 @@ calculate_levelpaths <- function(flowline) {
   flowline <- left_join(flowline, outlets, by = "levelpath")
 
   return(select(flowline, ID, outletID, topo_sort, levelpath))
-}
-
-
-#' @title Prep NHDPlus Data
-#' @description Function to prep NHDPlus data for use by nhdplusTools functions
-#' @param flines data.frame NHDPlus flowlines including:
-#' COMID, LENGTHKM, FTYPE, TerminalFl, FromNode, ToNode, TotDASqKM,
-#' StartFlag, StreamOrde, StreamCalc, TerminalPa, Pathlength,
-#' and Divergence variables.
-#' @param min_network_size numeric Minimum size (sqkm) of drainage network
-#' to include in output.
-#' @param  min_path_length numeric Minimum length (km) of terminal level
-#' path of a network.
-#' @param purge_non_dendritic boolean Should non dendritic paths be removed
-#' or not.
-#' @param warn boolean controls whether warning an status messages are printed
-#' @return data.frame ready to be used with the refactor_flowlines function.
-#' @importFrom dplyr select filter left_join
-#' @family refactor functions
-#' @export
-#'
-prepare_nhdplus <- function(flines,
-                            min_network_size,
-                            min_path_length,
-                            purge_non_dendritic = TRUE,
-                            warn = TRUE) {
-
-  check_names(names(flines), "prepare_nhdplus")
-
-  if ("sf" %in% class(flines)) {
-    if (warn) warning("removing geometry")
-    flines <- sf::st_set_geometry(flines, NULL)
-  }
-
-  orig_rows <- nrow(flines)
-
-  flines <- select(flines, COMID, LENGTHKM, FTYPE, TerminalFl,
-                   FromNode, ToNode, TotDASqKM, StartFlag,
-                   StreamOrde, StreamCalc, TerminalPa, Pathlength,
-                   Divergence, Hydroseq, LevelPathI)
-
-  if (!any(flines$TerminalFl == 1)) {
-    warning("Got NHDPlus data without a Terminal catchment. Attempting to find it.")
-    if (all(flines$TerminalPa == flines$TerminalPa[1])) {
-      out_ind <- which(flines$Hydroseq == min(flines$Hydroseq))
-      flines$TerminalFl[out_ind] <- 1
-    } else {
-      stop("Multiple networks without terminal flags found. Can't proceed.")
-    }
-  }
-
-  if (purge_non_dendritic) {
-    flines <- filter(flines, FTYPE != "Coastline" &
-                       StreamOrde == StreamCalc)
-  } else {
-    flines <- filter(flines, FTYPE != "Coastline")
-    flines[["FromNode"]][which(flines$Divergence == 2)] <- NA
-  }
-  terminal_filter <- flines$TerminalFl == 1 &
-    flines$TotDASqKM < min_network_size
-  start_filter <- flines$StartFlag == 1 &
-    flines$Pathlength < min_path_length
-
-  if (any(terminal_filter) | any(start_filter)) {
-
-    tiny_networks <- rbind(filter(flines, terminal_filter),
-                           filter(flines, start_filter))
-
-    flines <- filter(flines, !flines$TerminalPa %in%
-                       unique(tiny_networks$TerminalPa))
-  }
-  if (warn) {
-    warning(paste("Removed", orig_rows - nrow(flines),
-                  "flowlines that don't apply.\n",
-                  "Includes: Coastlines, non-dendritic paths, \nand networks",
-                  "with drainage area less than",
-                  min_network_size, "sqkm"))
-  }
-
-  # Join ToNode and FromNode along with COMID and Length to
-  # get downstream attributes.
-  flines <- left_join(flines, select(flines,
-                                     toCOMID = COMID,
-                                     FromNode),
-                      by = c("ToNode" = "FromNode"))
-
-  if (!all(flines[["TerminalFl"]][which(is.na(flines$toCOMID))] == 1)) {
-    stop(paste("FromNode - ToNode imply terminal flowlines that are not\n",
-               "flagged terminal. Can't assume NA toCOMIDs go to the ocean."))
-  }
-
-  select(flines, -ToNode, -FromNode, -TerminalFl, -StartFlag,
-         -StreamOrde, -StreamCalc, -TerminalPa,
-         -FTYPE, -Pathlength, -Divergence)
 }

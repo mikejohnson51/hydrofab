@@ -1,15 +1,15 @@
-Package: nhdplusTools
+Package: hyRefactor
 Type: Package
-Title: Tools for Using NHDPlus Data
+Title: Hydrologic Network Refactoring Tools Based on HY_Features
 Version: 0.3.3
 Authors@R: person("David", "Blodgett", role = c("aut", "cre"), email = "dblodgett@usgs.gov")
-Description: Tools for traversing and working with NHDPlus data.
-URL: https://github.com/dblodgett-usgs/nhdplusTools
-BugReports: https://github.com/dblodgett-usgs/nhdplusTools/issues
+Description: A collection of tools for normalizing and changing the size of catchments.
+URL: https://github.com/dblodgett-usgs/hyrefactor
+BugReports: https://github.com/dblodgett-usgs/hyrefactor/issues
 Depends:
     R (>= 3.0)
-Imports: dplyr, sf, lwgeom, snow, RANN, units, magrittr, jsonlite, httr, raster, rgeos, igraph, tidyr
-Suggests: testthat, knitr, rmarkdown, rosm, prettymapr, ggmap, ggplot2, sp, devtools, codetools
+Imports: dplyr, sf, lwgeom, snow, units, magrittr, raster, rgeos, igraph, tidyr
+Suggests: testthat, knitr, rmarkdown
 Remotes: r-spatial/lwgeom
 License: CC0
 Encoding: UTF-8

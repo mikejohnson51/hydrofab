@@ -3,7 +3,7 @@ context("collapse_flowlines")
 test_that("collapse flowlines works as expected", {
   flines <- readRDS("data/petapsco_network.rds")
   flines <- sf::st_set_geometry(flines, NULL)
-  flines <- suppressWarnings(prepare_nhdplus(flines, 20, 1))
+  flines <- suppressWarnings(nhdplusTools::prepare_nhdplus(flines, 20, 1))
   flines_out <- collapse_flowlines(flines, 1)
   flines_out_exclude <- collapse_flowlines(flines, 1,
                                            exclude_cats = c(11687206,
@@ -95,7 +95,7 @@ test_that("collapse flowlines works as expected", {
 test_that("headwater / top of mainstem collapes works as expected", {
   flines <- readRDS("data/guadalupe_network_geom.rds")
   flines <- sf::st_set_geometry(flines, NULL)
-  flines <- suppressWarnings(prepare_nhdplus(flines, 0, 0))
+  flines <- suppressWarnings(nhdplusTools::prepare_nhdplus(flines, 0, 0))
 
   flines_out <- collapse_flowlines(flines, 0.5, mainstem_thresh = 0.5)
 
@@ -156,7 +156,7 @@ test_that("headwater / top of mainstem collapes works as expected", {
 
   # flines <- readRDS("data/petapsco_network.rds")
   # flines <- sf::st_set_geometry(flines, NULL)
-  # flines <- suppressWarnings(prepare_nhdplus(flines, 0, 0))
+  # flines <- suppressWarnings(nhdplusTools::prepare_nhdplus(flines, 0, 0))
   #
   # flines_out <- collapse_flowlines(flines, 0.5, mainstem_thresh = 1)
 
@@ -164,11 +164,11 @@ test_that("headwater / top of mainstem collapes works as expected", {
 
 test_that("collapse flowlines works with small networks", {
   flines <- readRDS("data/small_networks.rds")
-  flines <- suppressWarnings(prepare_nhdplus(flines, 0, 0))
+  flines <- suppressWarnings(nhdplusTools::prepare_nhdplus(flines, 0, 0))
 
   flines_collapse <- collapse_flowlines(flines, 2)
 
-  flines <- suppressWarnings(prepare_nhdplus(
+  flines <- suppressWarnings(nhdplusTools::prepare_nhdplus(
     readRDS("data/frost_network.rds"), 0, 0))
 
   c1 <- collapse_flowlines(flines, 1000, F, 1000)
@@ -184,13 +184,13 @@ test_that("collapse flowlines works with small networks", {
   expect_equal(length(which(r1$ID == 1)), 6)
   expect(all(is.na(r1$toID)))
 
-  flines <- suppressWarnings(prepare_nhdplus(
+  flines <- suppressWarnings(nhdplusTools::prepare_nhdplus(
     readRDS("data/tiny_network.rds"), 0, 0))
   c1 <- collapse_flowlines(flines, 1000, F, 1000)
 
   expect_equal(c1$LENGTHKM[which(c1$COMID == 7733111)], 0.221)
 
-  flines <- suppressWarnings(prepare_nhdplus(
+  flines <- suppressWarnings(nhdplusTools::prepare_nhdplus(
     readRDS("data/flag_network.rds"), 0, 0))
 
   c1 <- collapse_flowlines(flines, 1000, F, 1000)
@@ -203,7 +203,7 @@ test_that("collapse flowlines works with small networks", {
 test_that("collapse flowlines works as expected with add category", {
   flines <- readRDS("data/petapsco_network.rds")
   flines <- sf::st_set_geometry(flines, NULL)
-  flines <- suppressWarnings(prepare_nhdplus(flines, 20, 1))
+  flines <- suppressWarnings(nhdplusTools::prepare_nhdplus(flines, 20, 1))
   flines <- collapse_flowlines(flines, 1, add_category = TRUE)
   expect_equal(names(flines)[9], "join_category")
 })
@@ -212,7 +212,7 @@ test_that("collapse flowlines works as expected with add category", {
 test_that("collapse flowlines works as expected with mainstem thresh", {
   flines <- readRDS("data/petapsco_network.rds")
   flines <- sf::st_set_geometry(flines, NULL)
-  flines <- suppressWarnings(prepare_nhdplus(flines, 20, 1))
+  flines <- suppressWarnings(nhdplusTools::prepare_nhdplus(flines, 20, 1))
   flines <- collapse_flowlines(flines, .5, add_category = TRUE,
                                mainstem_thresh = 1)
 
@@ -228,7 +228,7 @@ test_that("repeat collapse doesn't leave orphans", {
 
   nhdplus_flines <- readRDS("data/oswego_network.rds")
   flines <- suppressWarnings(sf::st_set_geometry(nhdplus_flines, NULL) %>%
-    prepare_nhdplus(0, 0) %>%
+    nhdplusTools::prepare_nhdplus(0, 0) %>%
     dplyr::inner_join(select(nhdplus_flines, COMID), by = "COMID") %>%
     sf::st_as_sf() %>%
     sf::st_cast("LINESTRING") %>%

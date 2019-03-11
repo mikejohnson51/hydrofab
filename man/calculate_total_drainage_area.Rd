@@ -19,7 +19,7 @@ network and incremental areas.
 \examples{
 library(dplyr)
 source(system.file("extdata", "walker_data.R", package = "nhdplusTools"))
-catchment_area <- prepare_nhdplus(walker_flowline, 0, 0,
+catchment_area <- nhdplusTools::prepare_nhdplus(walker_flowline, 0, 0,
                              purge_non_dendritic = FALSE, warn = FALSE) \%>\%
   left_join(select(walker_flowline, COMID, AreaSqKM), by = "COMID") \%>\%
   select(ID = COMID, toID = toCOMID, area = AreaSqKM)

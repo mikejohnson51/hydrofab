@@ -1,22 +1,19 @@
-# nhdplusTools
+# hyRefactor
 
-[![Build Status](https://travis-ci.org/dblodgett-usgs/nhdplusTools.svg?branch=master)](https://travis-ci.org/dblodgett-usgs/nhdplusTools) [![Coverage Status](https://coveralls.io/repos/github/dblodgett-usgs/nhdplusTools/badge.svg?branch=master)](https://coveralls.io/github/dblodgett-usgs/nhdplusTools?branch=master)
+[![Build Status](https://travis-ci.org/dblodgett-usgs/nhdplusTools.svg?branch=master)](https://travis-ci.org/dblodgett-usgs/hyRefactor) [![Coverage Status](https://coveralls.io/repos/github/dblodgett-usgs/hyRefactor/badge.svg?branch=master)](https://coveralls.io/github/dblodgett-usgs/hyRefactor?branch=master)
 
 ## Tools for Manipulating the NHDPlus Network
 
 This package is a growing collection of tools for manipulation of hydrographic
-data built around the NHDPlus data model. It is being developed as part of
-an ongoing collaboration between the National Weather Service and the U.S.
-Geological Survey with ongoing support from the USGS. There is no specific
-funding or plan to continue development of this package long term
-but the hope is that this can become a community toolbox for NHDPlus in R.
+data built around the NHDPlus and HY_Features data model. There is no specific
+funding or plan to continue development of this package long term.
 
 ### Installation:
 
 ```
 install.packages("devtools")
 install.packages("rgeos", repos="http://R-Forge.R-project.org", type="source")
-devtools::install_github("dblodgett-usgs/nhdplusTools")
+devtools::install_github("dblodgett-usgs/hyRefactor")
 ```
 
 ### Terminology: 
@@ -55,21 +52,6 @@ reflection of the current thinking and is open to discussion and modification.**
 ### Functional Vision
 The following describe a vision for the functionality that should be included
 in the package in the long run.
-
-##### Subsetting
-The NHDPlus is a very large dataset both spatially and in terms of the number
-of attributes it contains. Subsetting utilities will provide network location
-discovery, network navigation, and data export utilities to generate spatial
-and attribute subsets of the NHDPlus dataset.
-
-##### Indexing
-One of the most important roles of the NHDPlus is as a connecting network for
-ancillary data and models. The first step in any workflow that uses the
-network like this is indexing relevant data to the network. A number of methods
-for indexing exist, they can be broken into two main categories: linear
-referencing and catchment indexing. Both operate on features represented by
-points, lines, and polygons. `nhdplusTools` should eventually support both
-linear and catchment indexing.
 
 ##### Refactoring
 The `nhdplusTools` package was started based on a set of tools to refactor the
@@ -126,35 +108,11 @@ The NHDPlus includes numerous attributes that are built using the network and
 allow a wide array of capabilities that would require excessive iteration or
 sophisticated and complex graph-oriented data structures and algorithms.
 
-### Architecture
-The NHDPlus is a very large dataset. The architecture of this package as it
-relates to handling data and what dependencies are used will be very important.
-
-##### Web vs Local Data
-Web services will generally be avoided. However, applications that would require
-loading significant amounts of data to perform something that can be
-accomplished with a web service very quickly will be considered. Systems like
-the [Network Linked Data Index](https://owi.usgs.gov/blog/nldi-intro/) are
-used for data discovery.
-
-##### NHDPlus Version
-Initial package development will focus on the [National Seamless NHDPlus](https://www.epa.gov/waterdata/nhdplus-national-data)
-database. [NHDPlus High Resolution](https://nhd.usgs.gov/NHDPlus_HR.html) will
-be a target for support in the medium to long run.
-
 ##### Package Dependencies
 If at all possible, dependencies should be available via CRAN, have solid
 expected maintenance, allow national-scale analyses, and not require difficult
 to install system libraries. `dplyr`, and `sf` are the primary dependencies that
 should be used if at all possible.
-
-### Related similar packages:
-https://github.com/mbtyers/riverdist  
-https://github.com/jsta/nhdR  
-https://github.com/lawinslow/hydrolinks  
-https://github.com/mikejohnson51/HydroData
-https://github.com/ropensci/FedData
-... others -- please suggest additions?
 
 ### Contributing:
 
