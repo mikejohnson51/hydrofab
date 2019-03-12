@@ -24,17 +24,18 @@
 #' @details This is a convenient wrapper function that implements three phases
 #' of the network refactor workflow: split, collapse, reconcile. See the
 #' NHDPlus Refactor vignette for details of these three steps by running:
-#' \code{vignette("refactor_nhdplus", package = "nhdplusTools")}
+#' \code{vignette("refactor_nhdplus", package = "hyRefactor")}
 #' @seealso
-#' The following four functions are used in the `refactor_nhdplus` workflow.
+#' In addition to `prepare_nhdplus` from the nhdplusTools package, 
+#' The following three functions are used in the `refactor_nhdplus` workflow.
 #' \enumerate{
-#'   \item \code{\link{prepare_nhdplus}}
 #'   \item \code{\link{split_flowlines}}
 #'   \item \code{\link{collapse_flowlines}}
 #'   \item \code{\link{reconcile_collapsed_flowlines}}
 #' }
 #'
 #' @export
+#' @importFrom nhdplusTools prepare_nhdplus
 #' @examples
 #' sample_flines <- sf::read_sf(system.file("extdata",
 #'                                           "petapsco_flowlines.gpkg",
@@ -68,7 +69,7 @@ refactor_nhdplus <- function(nhdplus_flines,
 
   if ("FTYPE" %in% names(nhdplus_flines)) {
     nhdplus_flines <- sf::st_set_geometry(nhdplus_flines, NULL) %>%
-      nhdplusTools::prepare_nhdplus(0, 0, purge_non_dendritic, warn = warn) %>%
+      prepare_nhdplus(0, 0, purge_non_dendritic, warn = warn) %>%
       dplyr::inner_join(select(nhdplus_flines, COMID), by = "COMID") %>%
       sf::st_as_sf()
   }

@@ -32,6 +32,7 @@ Before we can do anything with the catchments, we need to run the NHDPlus Refact
 ```{r refactor}
 library(sf)
 library(nhdplusTools)
+library(hyRefactor)
 library(raster)
 
 source(system.file("extdata", "walker_data.R", package = "nhdplusTools"))

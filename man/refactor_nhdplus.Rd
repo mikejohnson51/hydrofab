@@ -49,7 +49,7 @@ input flowline features. See details and vignettes for more information.
 This is a convenient wrapper function that implements three phases
 of the network refactor workflow: split, collapse, reconcile. See the
 NHDPlus Refactor vignette for details of these three steps by running:
-\code{vignette("refactor_nhdplus", package = "nhdplusTools")}
+\code{vignette("refactor_nhdplus", package = "hyRefactor")}
 }
 \examples{
 sample_flines <- sf::read_sf(system.file("extdata",
@@ -71,9 +71,9 @@ unlink("temp_rec.gpkg")
 
 }
 \seealso{
-The following four functions are used in the `refactor_nhdplus` workflow.
+In addition to `prepare_nhdplus` from the nhdplusTools package, 
+The following three functions are used in the `refactor_nhdplus` workflow.
 \enumerate{
-  \item \code{\link{prepare_nhdplus}}
   \item \code{\link{split_flowlines}}
   \item \code{\link{collapse_flowlines}}
   \item \code{\link{reconcile_collapsed_flowlines}}

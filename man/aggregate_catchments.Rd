@@ -51,7 +51,7 @@ These checks ensure that all output catchments have one and only one input and o
 nexus and that all catchments are well-connected.
 }
 \examples{
-source(system.file("extdata", "walker_data.R", package = "nhdplusTools"))
+source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
 outlets <- data.frame(ID = c(31, 3, 5, 1, 45, 92),
                       type = c("outlet", "outlet", "outlet", "terminal", "outlet", "outlet"),
                       stringsAsFactors = FALSE)

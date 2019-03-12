@@ -1,5 +1,7 @@
 # nolint start
-extdata <- system.file("extdata", package = "nhdplusTools")
+library(rgdal)
+library(raster)
+extdata <- system.file("extdata", package = "hyRefactor")
 walker_fac <- raster::raster(file.path(extdata, "walker_fac.tif"))
 walker_fdr <- raster::raster(file.path(extdata, "walker_fdr.tif"))
 proj <- as.character(raster::crs(walker_fdr))

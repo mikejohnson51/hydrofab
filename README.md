@@ -1,6 +1,6 @@
 # hyRefactor
 
-[![Build Status](https://travis-ci.org/dblodgett-usgs/nhdplusTools.svg?branch=master)](https://travis-ci.org/dblodgett-usgs/hyRefactor) [![Coverage Status](https://coveralls.io/repos/github/dblodgett-usgs/hyRefactor/badge.svg?branch=master)](https://coveralls.io/github/dblodgett-usgs/hyRefactor?branch=master)
+[![Build Status](https://travis-ci.org/dblodgett-usgs/hyRefactor.svg?branch=master)](https://travis-ci.org/dblodgett-usgs/hyRefactor) [![Coverage Status](https://coveralls.io/repos/github/dblodgett-usgs/hyRefactor/badge.svg?branch=master)](https://coveralls.io/github/dblodgett-usgs/hyRefactor?branch=master)
 
 ## Tools for Manipulating the NHDPlus Network
 
@@ -32,30 +32,12 @@ Terms used to describe network transormations:
 **Reconcile:** Applying changes to the catchment network that result in a new well connected and valid version of the network.
 **Aggregate:** Combining hydrologic units to create new, larger catchments that resolve to the outlets of a specified set of pre-existing catchments. In this case, "aggregate" is rooted in the HY_Features HY_CatchmentAggregate feature type.
 
-### Data:
-
-The most convenient way to get the NHDPlus is via the [geopackage hosted here.](https://www.epa.gov/waterdata/nhdplus-national-data) [(direct link to download)](https://s3.amazonaws.com/nhdplus/NHDPlusV21/Data/NationalData/NHDPlusV21_NationalData_CONUS_Seamless_Geopackage_05.7z) You will need [7z](https://www.7-zip.org/) or the [`archive` package](https://github.com/jimhester/archive) to extract it.
-
-## Package Vision
-
-The `nhdplusTools` package is intended to provide a reusable set of tools to
-subset, relate data to, and refactor (collapse, split, and aggregate) NHDPlus data. 
-It implements a data model consistent with both the [NHDPlus](https://www.epa.gov/waterdata/nhdplus-national-hydrography-dataset-plus)
-and [HY\_Features](http://opengeospatial.github.io/HY_Features/). The package
-aims to provide a set of tools with minimal dependencies that can be used
-to build workflows using NHDPlus data.
-
-**This vision is intended as a guide to contributors -- conveying what kinds of
-contributions are of interest to the package's long term vision. It is a
-reflection of the current thinking and is open to discussion and modification.**
-
 ### Functional Vision
 The following describe a vision for the functionality that should be included
 in the package in the long run.
 
 ##### Refactoring
-The `nhdplusTools` package was started based on a set of tools to refactor the
-NHDPlusV2 network. The concept of refactoring as intended here includes:
+The concept of refactoring as intended here includes:
 
 1) aggregating catchments into groups based on existing network topology,  
 2) collapsing catchment topology to eliminate small catchments,  
@@ -68,8 +50,8 @@ much as possible for interoperability with other applications that use the
 NHDPlus network.
 
 ### Data Model
-Given that `nhdplusTools` is focused on working with NHDPlus data, the NHDPlus
-data model will largely govern the data model the package is designed to work
+Given that development of this package was is focused on working with NHDPlus data, 
+the NHDPlus data model will largely govern the data model the package is designed to work
 with. That said, much of the package functionality also uses concepts from
 the HY\_Features standard.  
 
@@ -88,8 +70,8 @@ identifier is actually an identifier for a collection of data that
 together fully describe an NHDPlus catchment. [See the NHDPlus mapping to
 HY_Features in the HY_Features specification.](http://docs.opengeospatial.org/is/14-111r6/14-111r6.html#annexD_1)
 
-Below is a description of the expected scope of data to be used by the
-`nhdplusTools` package. While other data and attributes may come into scope,
+Below is a description of the expected scope of data to be used by the package. 
+While other data and attributes may come into scope,
 it should only be done as a naive pass-through, as in data subsetting, or
 with considerable deliberation.
 

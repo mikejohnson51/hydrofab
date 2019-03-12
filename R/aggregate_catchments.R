@@ -39,7 +39,7 @@
 #' @importFrom dplyr filter mutate left_join select distinct case_when
 #' @importFrom tidyr unnest
 #' @examples
-#' source(system.file("extdata", "walker_data.R", package = "nhdplusTools"))
+#' source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
 #' outlets <- data.frame(ID = c(31, 3, 5, 1, 45, 92),
 #'                       type = c("outlet", "outlet", "outlet", "terminal", "outlet", "outlet"),
 #'                       stringsAsFactors = FALSE)

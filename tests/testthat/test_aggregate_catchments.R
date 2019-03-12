@@ -1,6 +1,6 @@
 context("aggregate catchment")
 test_that("walker aggregate runs", {
-source(system.file("extdata", "walker_data.R", package = "nhdplusTools"))
+source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
 
 get_id <- function(mc) {
   ind <- match(mc, walker_catchment_rec$member_COMID)
@@ -66,7 +66,7 @@ expect(length(aggregated_cat$set[[1]]) == 101, "got the wrong number in catchmen
 })
 
 test_that("new_hope aggregate", {
-  source(system.file("extdata", "new_hope_data.R", package = "nhdplusTools"))
+  source(system.file("extdata", "new_hope_data.R", package = "hyRefactor"))
 
   get_id <- function(mc) {
     ind <- match(mc, new_hope_catchment_rec$member_COMID)
@@ -111,7 +111,7 @@ test_that("new_hope aggregate", {
                                    select(st_set_geometry(new_hope_catchment_rec, NULL),
                                           ID, area_sqkm), by = "ID")
   new_hope_fline_rec$TotDASqKM <-
-    calculate_total_drainage_area(rename(st_set_geometry(new_hope_fline_rec, NULL),
+    nhdplusTools::calculate_total_drainage_area(rename(st_set_geometry(new_hope_fline_rec, NULL),
                                          area = area_sqkm))
 
   aggregated <- aggregate_catchments(new_hope_fline_rec, new_hope_catchment_rec, outlets,
@@ -132,7 +132,7 @@ test_that("new_hope aggregate", {
 })
 
 test_that("new_hope aggregate", {
-  source(system.file("extdata", "new_hope_data.R", package = "nhdplusTools"))
+  source(system.file("extdata", "new_hope_data.R", package = "hyRefactor"))
 
   get_id <- function(mc) {
     ind <- match(mc, new_hope_catchment_rec$member_COMID)
@@ -144,7 +144,7 @@ test_that("new_hope aggregate", {
                                           select(st_set_geometry(new_hope_catchment_rec, NULL),
                                                  ID, area_sqkm), by = "ID")
   new_hope_fline_rec$TotDASqKM <-
-    calculate_total_drainage_area(rename(st_set_geometry(new_hope_fline_rec, NULL),
+    nhdplusTools::calculate_total_drainage_area(rename(st_set_geometry(new_hope_fline_rec, NULL),
                                          area = area_sqkm))
 
   # HU12 FPP st_joined to get these
