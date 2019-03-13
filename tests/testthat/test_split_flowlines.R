@@ -6,7 +6,7 @@ test_that("split lines works", {
                                                  where = "package:lwgeom",
                                                  mode = "function")) {
 
-  source(system.file("extdata", "walker_data.R", package = "nhdplusTools"))
+  source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
 
   flines <- suppressWarnings(nhdplusTools::prepare_nhdplus(walker_flowline, 0, 0))
   flines <- collapse_flowlines(flines, 1, F, 1)
@@ -15,7 +15,7 @@ test_that("split lines works", {
   flines <- sf::st_as_sf(dplyr::inner_join(flines, dplyr::select(walker_flowline, COMID),
                                 by = c("member_COMID" = "COMID"))) %>%
     dplyr::select(-member_COMID) %>%
-    dplyr::distinct() %>%
+    dplyr::distinct(.keep_all = TRUE) %>%
     dplyr::group_by(ID) %>%
     dplyr::summarise(toID = toID[1], LENGTHKM = LENGTHKM[1],
               TotDASqKM = TotDASqKM[1]) %>%
