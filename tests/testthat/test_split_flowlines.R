@@ -26,7 +26,7 @@ test_that("split lines works", {
   split <- hyRefactor:::split_lines(sf::st_transform(dplyr::select(flines, ID),
                                                        5070), 250, id = "ID")
 
-  expect(nrow(split) == 573)
+  expect_true(nrow(split) == 573)
 
   }
 
@@ -49,7 +49,7 @@ test_that("split lines works", {
     sf::st_transform(5070) %>%
     split_flowlines(2000, 3))
 
-  expect(length(which(grepl("1623361", as.character(flines$COMID)))) == 10)
+  expect_true(length(which(grepl("1623361", as.character(flines$COMID)))) == 10)
 
   }
 

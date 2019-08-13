@@ -11,7 +11,7 @@
 #' @export
 #'
 split_flowlines <- function(flines, max_length, para = 0) {
-  check_names(names(flines), "split_flowlines")
+  check_names(flines, "split_flowlines")
 
   geom_col <- attr(flines, "sf_column")
 

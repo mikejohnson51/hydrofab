@@ -25,7 +25,7 @@ test_that("match levelpaths and get_linked_points", {
     ungroup())
 
   net_prep["denTotalAreaSqKM"] <-
-    calculate_total_drainage_area(select(st_set_geometry(net_prep, NULL),
+    nhdplusTools::calculate_total_drainage_area(select(st_set_geometry(net_prep, NULL),
                                          ID = COMID, toID = toCOMID,
                                          area = AreaSqKM))
 

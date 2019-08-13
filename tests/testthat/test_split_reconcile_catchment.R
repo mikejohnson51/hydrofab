@@ -25,14 +25,14 @@ test_that("split_catchment_divides works", {
 
   test_cat <- dplyr::filter(walker_catchment, FEATUREID == 5329435)
 
-  expect(nrow(test_flines) == 5, "got wrong number of test_flines")
+  expect_true(nrow(test_flines) == 5, "got wrong number of test_flines")
 
   split_cat <- split_catchment_divide(test_cat, test_flines, walker_fdr, walker_fac)
 
-  expect(length(split_cat) == 5, "Got the wrong number of cathment split polygons")
-  expect(all(c("XY", "MULTIPOLYGON", "sfg") %in% class(split_cat[[5]])),
+  expect_true(length(split_cat) == 5, "Got the wrong number of cathment split polygons")
+  expect_true(all(c("XY", "MULTIPOLYGON", "sfg") %in% class(split_cat[[5]])),
          "Got wrong class for polygon with pixel dribble out the bottom")
-  expect(all(c("XY", "POLYGON", "sfg") %in% class(split_cat[[2]])),
+  expect_true(all(c("XY", "POLYGON", "sfg") %in% class(split_cat[[2]])),
          "Got wrong class for polygon with one ring")
 
   test_fline_ref <- fline_ref[1:9, ] # this sucks, but works.
@@ -45,8 +45,8 @@ test_that("split_catchment_divides works", {
   reconciled_cats <- reconcile_catchment_divides(test_cat, test_fline_ref, test_fline_rec,
                                           walker_fdr, walker_fac)
 
-  expect(nrow(reconciled_cats) == nrow(test_fline_ref), "got the wrong number of split catchments")
-  expect(all(reconciled_cats$member_COMID %in% test_fline_ref$COMID))
+  expect_true(nrow(reconciled_cats) == nrow(test_fline_ref), "got the wrong number of split catchments")
+  expect_true(all(reconciled_cats$member_COMID %in% test_fline_ref$COMID))
 
   unlink("data/temp/*")
 })
@@ -89,8 +89,8 @@ test_that("split and reconcile works", {
   reconciled_cats <- reconcile_catchment_divides(test_cat, test_fline_ref,
                                           test_fline_rec, walker_fdr, walker_fac)
 
-  expect(nrow(reconciled_cats) == nrow(test_fline_rec))
-  expect(all(reconciled_cats$member_COMID %in% test_fline_rec$member_COMID))
+  expect_true(nrow(reconciled_cats) == nrow(test_fline_rec))
+  expect_true(all(reconciled_cats$member_COMID %in% test_fline_rec$member_COMID))
 
   unlink("data/temp/*")
 })
@@ -110,13 +110,13 @@ test_that("reconcile catchments works with reconciled flowline from split", {
   reconciled_cats <- reconcile_catchment_divides(test_cat, test_fline_ref,
                                           test_fline_rec, fdr, fac)
 
-  expect(nrow(reconciled_cats) == nrow(test_fline_rec) - 1,
+  expect_true(nrow(reconciled_cats) == nrow(test_fline_rec) - 1,
          "Got the wrong number of reconciled catchments")
 
-  expect(all(reconciled_cats$member_COMID %in% test_fline_rec$member_COMID))
+  expect_true(all(reconciled_cats$member_COMID %in% test_fline_rec$member_COMID))
 
-  expect("8833300.1" %in% reconciled_cats$member_COMID)
-  expect("166755072,8866562.2" %in% reconciled_cats$member_COMID)
+  expect_true("8833300.1" %in% reconciled_cats$member_COMID)
+  expect_true("166755072,8866562.2" %in% reconciled_cats$member_COMID)
 })
 
 
@@ -141,8 +141,8 @@ test_that("doing nothing does nothing", {
     dplyr::arrange(COMID)
   fline_rec <- sf::read_sf("data/temp/subset_reconcile.gpkg")
 
-  expect(nrow(fline_ref) == nrow(fline_rec))
-  expect(nrow(fline_ref) == nrow(walker_catchment))
+  expect_true(nrow(fline_ref) == nrow(fline_rec))
+  expect_true(nrow(fline_ref) == nrow(walker_catchment))
 
   unlink("data/temp/*")
 })

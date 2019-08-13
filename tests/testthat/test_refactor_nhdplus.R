@@ -50,11 +50,11 @@ test_that("refactor_nhdplus works as expected with three pass mode", {
     unlist(lapply(collapsed$member_COMID,
                   function(x) paste(x, collapse = ",")))
 
-  expect(collapsed$toID[which(collapsed$member_COMID == "5876083,5876435")] ==
+  expect_true(collapsed$toID[which(collapsed$member_COMID == "5876083,5876435")] ==
            collapsed$ID[which(collapsed$member_COMID == "5875557")])
 
   # Taken care of in clean up! All kinds of wierd around this one in this test.
-  expect(collapsed_flines$joined_fromCOMID[
+  expect_true(collapsed_flines$joined_fromCOMID[
     collapsed_flines$COMID == 5876435] == 5876083)
 
   }
@@ -79,8 +79,8 @@ test_that("The refactor_nhdplus function runs as expected", {
                    three_pass = TRUE, warn = TRUE)))
     sink()
 
-  expect(file.exists("temp.gpkg"))
-  expect(file.exists("temp_rec.gpkg"))
+  expect_true(file.exists("temp.gpkg"))
+  expect_true(file.exists("temp_rec.gpkg"))
   unlink("temp.gpkg")
   unlink("temp_rec.gpkg")
   unlink("temp.txt") # could test the contents of this file.
@@ -99,8 +99,8 @@ test_that("The refactor_nhdplus function runs as expected", {
                    three_pass = FALSE,
                    warn = FALSE)
 
-  expect(file.exists("temp.gpkg"))
-  expect(file.exists("temp_rec.gpkg"))
+  expect_true(file.exists("temp.gpkg"))
+  expect_true(file.exists("temp_rec.gpkg"))
 
   unlink("temp.gpkg")
   unlink("temp_rec.gpkg")

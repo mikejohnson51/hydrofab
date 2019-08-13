@@ -1,4 +1,4 @@
-context("match levelpaths")
+context("match flowpaths")
 
 test_that("match flowpaths runs", {
   source(system.file("extdata/nhdplushr_data.R", package = "nhdplusTools"))
@@ -13,8 +13,8 @@ test_that("match flowpaths runs", {
                                               target_catchment = hr_catchment,
                                               target_flowline = hr_flowline))
 
-  matched <- left_join(select(hr_flowline, NHDPlusID),
-                           select(lp_df_df, NHDPlusID,
+  matched <- left_join(dplyr::select(hr_flowline, NHDPlusID),
+                           dplyr::select(lp_df_df, NHDPlusID,
                                   MR_LevelPathI = LevelPathI), by = "NHDPlusID")
 
   expect_equal(sum(!is.na(matched$MR_LevelPathI)), 1205)

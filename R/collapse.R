@@ -24,7 +24,7 @@ collapse_flowlines <- function(flines, thresh, add_category = FALSE,
                                mainstem_thresh = NULL, exclude_cats = NULL,
                                warn = TRUE) {
 
-  check_names(names(flines), "collapse_flowlines")
+  check_names(flines, "collapse_flowlines")
 
   # very large thresh
   if (is.null(mainstem_thresh)) {
