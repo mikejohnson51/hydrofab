@@ -5,7 +5,7 @@
 \title{Match Flowpaths}
 \usage{
 match_flowpaths(source_flowline, target_catchment, target_flowline,
-  hr_pair = NULL, cores = NULL)
+  hr_pair = NULL)
 }
 \arguments{
 \item{source_flowline}{sf data.frame with source flowlines and flowline attributes:
@@ -18,8 +18,6 @@ NHDPlusHR equivalent.}
 equivalent.}
 
 \item{hr_pair}{(advanced use) data.frame as output by get_hr_pair internal function.}
-
-\item{cores}{Will run search in parallel}
 }
 \description{
 Implements a flowpath-matching algorithm that traces downstream along
