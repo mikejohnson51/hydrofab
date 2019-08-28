@@ -187,7 +187,7 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr, fa
   split_cats <- filter(catchment, !catchment$FEATUREID %in% to_split_featureids) %>%
     dplyr::select(FEATUREID, geom) %>%
     mutate(FEATUREID = as.character(FEATUREID)) %>%
-    left_join(dplyr::select(sf::st_set_geometry(fline_ref, NULL), FEATUREID = COMID),
+    dplyr::left_join(dplyr::select(sf::st_set_geometry(fline_ref, NULL), FEATUREID = COMID),
               by = "FEATUREID") %>%
     dplyr::select(FEATUREID, geom) %>%
     rbind(split_cats)

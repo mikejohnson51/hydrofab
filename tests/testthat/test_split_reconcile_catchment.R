@@ -144,5 +144,5 @@ test_that("doing nothing does nothing", {
   expect_true(nrow(fline_ref) == nrow(fline_rec))
   expect_true(nrow(fline_ref) == nrow(walker_catchment))
 
-  unlink("data/temp/*")
+  unlink("data/temp", recursive = TRUE)
 })

@@ -1,5 +1,6 @@
 #' @importFrom sf st_sf st_coordinates st_as_sf st_crs
 #' @importFrom dplyr left_join select filter group_by ungroup bind_cols
+#' @importFrom nhdplusTools prepare_nhdplus
 mr_hw_cat_out <- function(mr_fline) {
   mr_fline <- prepare_nhdplus(mr_fline, 0, 0, 0, warn = FALSE) %>%
     left_join(select(mr_fline, COMID), by = "COMID") %>%
@@ -51,24 +52,23 @@ clean_geom <- function(x) {
 #' @importFrom dplyr select distinct  left_join bind_rows
 #' @importFrom nhdplusTools get_DM
 #' @examples
-#' library(dplyr)
-#' library(sf)
-#' source(system.file("extdata/nhdplushr_data.R", package = "nhdplusTools"))
+#' source(system.file("extdata/nhdplushr_data.R", package = "hyRefactor"))
 #' source(system.file("extdata/new_hope_data.R", package = "nhdplusTools"))
 #'
 #' lp_df_df <- match_flowpaths(source_flowline = new_hope_flowline,
 #'                            target_catchment = hr_catchment,
 #'                            target_flowline = hr_flowline)
-#' matched <- left_join(select(hr_flowline, NHDPlusID),
-#'                      select(lp_df_df, NHDPlusID,
-#'                             MR_LevelPathI = LevelPathI), by = "NHDPlusID")
+#' matched <- dplyr::left_join(dplyr::select(hr_flowline, NHDPlusID),
+#'                             dplyr::select(lp_df_df, member_NHDPlusID,
+#'                                           MR_LevelPathI = mr_LevelPathI), 
+#'                                           by = c("NHDPlusID" = "member_NHDPlusID"))
 #'
 #' lp <- min(matched$MR_LevelPathI, na.rm = TRUE)
-#' mr_lp <- filter(new_hope_flowline, LevelPathI <= lp)
-#' hr_lp <- filter(matched, MR_LevelPathI <= lp)
-#' plot(st_geometry(matched), col = "blue", lwd = 0.5)
-#' plot(mr_lp$geom, col = "red", lwd = 3, add = TRUE)
-#' plot(hr_lp$geom, col = "black", add = TRUE)
+#' mr_lp <- dplyr::filter(new_hope_flowline, LevelPathI <= lp)
+#' hr_lp <- dplyr::filter(matched, MR_LevelPathI <= lp)
+#' plot(sf::st_geometry(matched), col = "blue", lwd = 0.5)
+#' plot(sf::st_geometry(mr_lp), col = "red", lwd = 3, add = TRUE)
+#' plot(sf::st_geometry(hr_lp), col = "black", add = TRUE)
 #'
 match_flowpaths <- function(source_flowline, target_catchment, target_flowline,
                             hr_pair = NULL) {

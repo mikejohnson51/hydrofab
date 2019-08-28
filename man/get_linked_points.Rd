@@ -26,6 +26,7 @@ Given matched levelpaths, finds outlets of catchments along level paths.
 \examples{
 library(dplyr)
 library(sf)
+library(nhdplusTools)
 
 source(system.file("extdata/new_hope_data.R", package = "nhdplusTools"))
 suppressWarnings(net_prep <- prepare_nhdplus(new_hope_flowline, 20, 0, 10) \%>\%

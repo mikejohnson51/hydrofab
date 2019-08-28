@@ -1,7 +1,7 @@
 context("match flowpaths")
 
 test_that("match flowpaths runs", {
-  source(system.file("extdata/nhdplushr_data.R", package = "nhdplusTools"))
+  source(system.file("extdata/nhdplushr_data.R", package = "hyRefactor"))
 
   source(system.file("extdata/new_hope_data.R", package = "nhdplusTools"))
 

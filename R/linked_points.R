@@ -17,6 +17,7 @@
 #' @examples
 #' library(dplyr)
 #' library(sf)
+#' library(nhdplusTools)
 #'
 #' source(system.file("extdata/new_hope_data.R", package = "nhdplusTools"))
 #' suppressWarnings(net_prep <- prepare_nhdplus(new_hope_flowline, 20, 0, 10) %>%
@@ -201,24 +202,21 @@ run_lp <- function(lp_id, net, hu_lp, wbd) {
 #' @noRd
 #' @importFrom dplyr group_size row_number
 par_linker <- function(lp_list) {
-  library(nhdplusTools)
-  library(dplyr)
-  library(sf)
   linked <- NULL
   tryCatch({
-    linked <- get_flowline_index(lp_list$lp_geom, lp_list$hu_points, search_radius = 1000) %>%
-      bind_cols(lp_list$hu_points) %>%
-      left_join(select(st_set_geometry(lp_list$lp_geom, NULL), COMID, Hydroseq), by = "COMID") %>%
-      group_by(hu12) %>%
-      filter(Hydroseq == min(Hydroseq))
+    linked <- nhdplusTools::get_flowline_index(lp_list$lp_geom, lp_list$hu_points, search_radius = 1000) %>%
+      dplyr::bind_cols(lp_list$hu_points) %>%
+      dplyr::left_join(select(sf::st_set_geometry(lp_list$lp_geom, NULL), COMID, Hydroseq), by = "COMID") %>%
+      dplyr::group_by(hu12) %>%
+      dplyr::filter(Hydroseq == min(Hydroseq))
 
     if(any(group_size(linked) > 1)) {
       linked <- linked %>%
-        group_by(hu12, REACHCODE) %>%
-        filter(REACH_meas == min(REACH_meas))
+        dplyr::group_by(hu12, REACHCODE) %>%
+        dplyr::filter(REACH_meas == min(REACH_meas))
     }
 
-    linked <- ungroup(linked)
+    linked <- dplyr::ungroup(linked)
   },
   error = function(e) warning(paste(lp_list$lp_search, e)),
   warning = function(w) warning(paste(lp_list$lp_search, w)))

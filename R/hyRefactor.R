@@ -31,7 +31,8 @@ COMID.y <- ID <- becomes <- ds_num_upstream <- fID <-
   intersected_LevelPathI <- levelpath <- main_LevelPathI <- nameID <-
   nhd_LevelPath <- outletID <- outlet_HUC12 <- update_head_HUC12 <-
   updated_head_HUC12 <- updated_outlet_HUC12 <- weight <- hu12 <-
-  lp <- L2 <- members <- NULL
+  lp <- L2 <- members <- DnHydroSeq <- HydroSeq <- NHDPlusID <- 
+  member_NHDPlusID <- mr_LevelPathI <- NULL
 
  
 hyRefactor_env <- new.env()

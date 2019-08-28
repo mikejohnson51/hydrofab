@@ -1,5 +1,6 @@
 library("testthat")
 library("sf")
 library("dplyr")
+library("nhdplusTools")
 
 test_check("hyRefactor")

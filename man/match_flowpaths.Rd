@@ -31,23 +31,22 @@ As a result, the response includes all flowlines along headwater levelpaths,
 including those upstream of the outlet of the headwater catchment.
 }
 \examples{
-library(dplyr)
-library(sf)
-source(system.file("extdata/nhdplushr_data.R", package = "nhdplusTools"))
+source(system.file("extdata/nhdplushr_data.R", package = "hyRefactor"))
 source(system.file("extdata/new_hope_data.R", package = "nhdplusTools"))
 
 lp_df_df <- match_flowpaths(source_flowline = new_hope_flowline,
                            target_catchment = hr_catchment,
                            target_flowline = hr_flowline)
-matched <- left_join(select(hr_flowline, NHDPlusID),
-                     select(lp_df_df, NHDPlusID,
-                            MR_LevelPathI = LevelPathI), by = "NHDPlusID")
+matched <- dplyr::left_join(dplyr::select(hr_flowline, NHDPlusID),
+                            dplyr::select(lp_df_df, member_NHDPlusID,
+                                          MR_LevelPathI = mr_LevelPathI), 
+                                          by = c("NHDPlusID" = "member_NHDPlusID"))
 
 lp <- min(matched$MR_LevelPathI, na.rm = TRUE)
-mr_lp <- filter(new_hope_flowline, LevelPathI <= lp)
-hr_lp <- filter(matched, MR_LevelPathI <= lp)
-plot(st_geometry(matched), col = "blue", lwd = 0.5)
-plot(mr_lp$geom, col = "red", lwd = 3, add = TRUE)
-plot(hr_lp$geom, col = "black", add = TRUE)
+mr_lp <- dplyr::filter(new_hope_flowline, LevelPathI <= lp)
+hr_lp <- dplyr::filter(matched, MR_LevelPathI <= lp)
+plot(sf::st_geometry(matched), col = "blue", lwd = 0.5)
+plot(sf::st_geometry(mr_lp), col = "red", lwd = 3, add = TRUE)
+plot(sf::st_geometry(hr_lp), col = "black", add = TRUE)
 
 }
