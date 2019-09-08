@@ -2,6 +2,7 @@
 
 export(aggregate_catchments)
 export(collapse_flowlines)
+export(get_hw_points)
 export(get_linked_points)
 export(match_flowpaths)
 export(match_levelpaths)

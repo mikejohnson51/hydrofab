@@ -4,20 +4,20 @@
 \alias{match_flowpaths}
 \title{Match Flowpaths}
 \usage{
-match_flowpaths(source_flowline, target_catchment, target_flowline,
-  hr_pair = NULL)
+match_flowpaths(source_flowline, target_flowline, hw_pair)
 }
 \arguments{
-\item{source_flowline}{sf data.frame with source flowlines and flowline attributes:
-COMID, LENGTHKM, DnHydroseq, and Hydroseq, and LevelPathI or NHDPlusHR equivalents.}
+\item{source_flowline}{sf data.frame with COMID and LevelPathI attributes.}
 
-\item{target_catchment}{sf data.frame with catchment polygons and FEATUREID or
-NHDPlusHR equivalent.}
+\item{target_flowline}{sf data.frame either NHDPlusHR with NHDPlusID, LENGTHKM, DnHydroseq, 
+Hydroseq, and LevelPathI or an ad-hoc network with ID and toID attributes.}
 
-\item{target_flowline}{sf data.frame with target flowlines and COMID or NHDPlusHR
-equivalent.}
-
-\item{hr_pair}{(advanced use) data.frame as output by get_hr_pair internal function.}
+\item{hw_pair}{data.frame with headwater pairs}
+}
+\value{
+data.frame with the headwater id from the source_flowline input and 
+levelpath from the source_flowline input for each identifier matched from the 
+target dataset.
 }
 \description{
 Implements a flowpath-matching algorithm that traces downstream along
@@ -25,18 +25,17 @@ the target flowline network and determines which levelpath from the source flowl
 best matches the resulting downstream traces. The algorithm starts from the outlet
 location of the upstream most catchment in the source flowlines to stay away from
 complexity that occurs near drainage divides.
-
-For preformance reasons, network navigation only considers the network of levelpaths.
-As a result, the response includes all flowlines along headwater levelpaths,
-including those upstream of the outlet of the headwater catchment.
 }
 \examples{
 source(system.file("extdata/nhdplushr_data.R", package = "hyRefactor"))
 source(system.file("extdata/new_hope_data.R", package = "nhdplusTools"))
 
-lp_df_df <- match_flowpaths(source_flowline = new_hope_flowline,
-                           target_catchment = hr_catchment,
-                           target_flowline = hr_flowline)
+hr_catchment <- nhdplusTools:::rename_nhdplus(hr_catchment)
+hw_pair <- sf::st_set_geometry(sf::st_join(get_hw_points(new_hope_flowline),
+                              dplyr::select(hr_catchment, FEATUREID),
+                              join = sf::st_within), NULL)
+
+lp_df_df <- match_flowpaths(new_hope_flowline, hr_flowline, hw_pair)
 matched <- dplyr::left_join(dplyr::select(hr_flowline, NHDPlusID),
                             dplyr::select(lp_df_df, member_NHDPlusID,
                                           MR_LevelPathI = mr_LevelPathI), 
