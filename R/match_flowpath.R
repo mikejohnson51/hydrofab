@@ -59,6 +59,7 @@ clean_geom <- function(x) {
 #' @param target_flowline sf data.frame either NHDPlusHR with NHDPlusID, LENGTHKM, DnHydroseq, 
 #' Hydroseq, and LevelPathI or an ad-hoc network with ID and toID attributes.
 #' @param hw_pair data.frame with headwater pairs
+#' @param cores integer number of cores to use in NHDPlus downstream network navigation.
 #' @return data.frame with the headwater id from the source_flowline input and 
 #' levelpath from the source_flowline input for each identifier matched from the 
 #' target dataset.
@@ -67,6 +68,7 @@ clean_geom <- function(x) {
 #' @importFrom tidyr unnest
 #' @importFrom dplyr select distinct  left_join bind_rows
 #' @importFrom nhdplusTools get_DM
+#' @importFrom pbapply pblapply pboptions
 #' @examples
 #' source(system.file("extdata/nhdplushr_data.R", package = "hyRefactor"))
 #' source(system.file("extdata/new_hope_data.R", package = "nhdplusTools"))
@@ -89,27 +91,45 @@ clean_geom <- function(x) {
 #' plot(sf::st_geometry(mr_lp), col = "red", lwd = 3, add = TRUE)
 #' plot(sf::st_geometry(hr_lp), col = "black", add = TRUE)
 #'
-match_flowpaths <- function(source_flowline, target_flowline, hw_pair) {
+match_flowpaths <- function(source_flowline, target_flowline, hw_pair, cores = NA) {
 
   source_flowline <- nhdplusTools:::rename_nhdplus(source_flowline)
   source_flowline <- clean_geom(source_flowline)
   target_flowline <- clean_geom(target_flowline)
   
   if("ID" %in% names(target_flowline)) {
+  
+    hw_pair <- filter(hw_pair, !is.na(FEATUREID) & !is.na(ID) & FEATUREID %in% source_flowline$COMID)
+  
+    source_flowline <- source_flowline[source_flowline$TerminalPa %in% 
+                                         source_flowline[source_flowline$COMID %in% 
+                                                           hw_pair$FEATUREID, ]$TerminalPa, ]
     
+    source_flowline <- select(source_flowline, c("COMID", "LevelPathI", "DnLevelPat", "DnHydroseq", "Hydroseq"))
+      
     lpt <- data.frame(headwater_COMID = hw_pair$FEATUREID)
     
-    lpt["member_ID"] <- list(lapply(hw_pair$ID,
+    cl <- NULL
+    if(!is.na(cores)) {
+      cl <- parallel::makeCluster(rep("localhost", cores), type = "SOCK")
+    }
+    
+    lpt["member_ID"] <- list(pblapply(hw_pair$ID,
                                       function(x, fa) get_dwn(x, fa),
-                                      fa = target_flowline))
+                                      fa = target_flowline, cl = cl))
     
     lpt <- unnest(lpt)
     
     lps <- data.frame(headwater_COMID = hw_pair$FEATUREID)
     
-    lps["member_COMID"] <- list(lapply(hw_pair$FEATUREID,
-                                             function(x, fa) get_DM(fa, x),
-                                             fa = source_flowline))
+    if(!is.na(cores)) {
+      parallel::stopCluster(cl)
+      cl <- parallel::makeCluster(rep("localhost", cores), type = "SOCK")
+    }
+    
+    lps["member_COMID"] <- list(pblapply(hw_pair$FEATUREID,
+                                         function(x, fa) get_DM(fa, x),
+                                         fa = source_flowline, cl = cl))
     
     lps <- unnest(lps)
     
@@ -137,6 +157,7 @@ match_flowpaths <- function(source_flowline, target_flowline, hw_pair) {
                      by = c("headwater_COMID" = "COMID"))
     
     group_by(lpt, member_ID) %>%
+      filter(!is.na(mr_LevelPathI)) %>%
       filter(mr_LevelPathI == min(mr_LevelPathI)) %>%
       ungroup()
       

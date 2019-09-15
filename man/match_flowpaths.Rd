@@ -4,7 +4,7 @@
 \alias{match_flowpaths}
 \title{Match Flowpaths}
 \usage{
-match_flowpaths(source_flowline, target_flowline, hw_pair)
+match_flowpaths(source_flowline, target_flowline, hw_pair, cores = NA)
 }
 \arguments{
 \item{source_flowline}{sf data.frame with COMID and LevelPathI attributes.}
@@ -13,6 +13,8 @@ match_flowpaths(source_flowline, target_flowline, hw_pair)
 Hydroseq, and LevelPathI or an ad-hoc network with ID and toID attributes.}
 
 \item{hw_pair}{data.frame with headwater pairs}
+
+\item{cores}{integer number of cores to use in NHDPlus downstream network navigation.}
 }
 \value{
 data.frame with the headwater id from the source_flowline input and 
