@@ -26,14 +26,13 @@
 #' NHDPlus Refactor vignette for details of these three steps by running:
 #' \code{vignette("refactor_nhdplus", package = "hyRefactor")}
 #' @seealso
-#' In addition to `prepare_nhdplus` from the nhdplusTools package, 
+#' In addition to `prepare_nhdplus` from the nhdplusTools package,
 #' The following three functions are used in the `refactor_nhdplus` workflow.
 #' \enumerate{
 #'   \item \code{\link{split_flowlines}}
 #'   \item \code{\link{collapse_flowlines}}
 #'   \item \code{\link{reconcile_collapsed_flowlines}}
 #' }
-#'
 #' @export
 #' @importFrom nhdplusTools prepare_nhdplus
 #' @examples
@@ -134,7 +133,7 @@ refactor_nhdplus <- function(nhdplus_flines,
                                              select(flines, COMID),
                                              id = "COMID")
 
-  collapsed$member_COMID <-
+  collapsed[["member_COMID"]] <-
     unlist(lapply(collapsed$member_COMID,
                   function(x) paste(x, collapse = ",")))
 

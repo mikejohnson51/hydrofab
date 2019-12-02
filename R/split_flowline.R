@@ -41,11 +41,11 @@ split_flowlines <- function(flines, max_length, para = 0) {
   split <- sf::st_as_sf(select(split, -part, -split_fID))
 
   attr(split$LENGTHKM, "units") <- NULL
-  split$LENGTHKM <- as.numeric(split$LENGTHKM)
+  split[["LENGTHKM"]] <- as.numeric(split[["LENGTHKM"]])
 
-  remove_COMID <- unique(as.integer(split$COMID))
+  remove_comid <- unique(as.integer(split[["COMID"]]))
 
-  not_split <- filter(flines, !(COMID %in% remove_COMID))
+  not_split <- filter(flines, !(COMID %in% remove_comid))
 
   flines <- rbind(not_split, split)
 
@@ -240,7 +240,7 @@ split_lines_2 <- function(input_lines, max_length, id = "ID") {
 
   split_nodes <- group_by(coords, fID) %>%
     # First calculate cumulative length by feature.
-    mutate(len  = sqrt( ( (X - (lag(X))) ^ 2) + ( ( (Y - (lag(Y))) ^ 2)))) %>%
+    mutate(len  = sqrt(((X - (lag(X))) ^ 2) + (((Y - (lag(Y))) ^ 2)))) %>%
     mutate(len = ifelse(is.na(len), 0, len)) %>%
     mutate(len = cumsum(len)) %>%
     # Now join nodes to split points -- this generates all combinations.
@@ -252,7 +252,9 @@ split_lines_2 <- function(input_lines, max_length, id = "ID") {
     filter(len >= start & len <= ideal_len) %>%
     arrange(split_fID, len) %>%
     mutate(new_index = 1, new_index = c(new_index[-n()], 3)) %>%
-    ungroup() %>% group_by(fID) %>% arrange(fID, split_fID, len) %>%
+    ungroup() %>%
+    group_by(fID) %>%
+    arrange(fID, split_fID, len) %>%
     mutate(new_index = c(new_index[-n()], 1)) %>%
     ungroup() %>%
     mutate(new_index = cumsum(lag(new_index, default = 0)) + 1) %>%
@@ -265,14 +267,15 @@ split_lines_2 <- function(input_lines, max_length, id = "ID") {
            fID = ifelse(is.na(fID), lead(fID), fID)) %>%
     mutate(len = ifelse(is.na(len), lag(ideal_len), len)) %>%
     mutate(len = ifelse(is.na(len), lead(start), len)) %>%
-    select(-start, -ideal_len, -nID) %>% rename(nID = new_index) %>%
+    select(-start, -ideal_len, -nID) %>%
+    rename(nID = new_index) %>%
     mutate(dist_ratio = ifelse(is.na(X) & is.na(lead(X)),
-                               ( (len - lag(len)) /
+                               ((len - lag(len)) /
                                    (lead(len, 2) - lag(len, 1))), NA)) %>%
-    mutate(X = ifelse( (is.na(X) & is.na(lead(X))),
+    mutate(X = ifelse((is.na(X) & is.na(lead(X))),
                        (1 - dist_ratio) * lag(X) + dist_ratio * lead(X, 2),
                        X),
-           Y = ifelse( (is.na(Y) & is.na(lead(Y))),
+           Y = ifelse((is.na(Y) & is.na(lead(Y))),
                        (1 - dist_ratio) * lag(Y) + dist_ratio * lead(Y, 2),
                        Y)) %>%
     mutate(X = ifelse(is.na(X), lag(X), X),

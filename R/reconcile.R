@@ -21,8 +21,8 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
   new_flines <-
     mutate(flines,
            becomes =
-             ifelse( (is.na(joined_fromCOMID) | joined_fromCOMID == -9999),
-                     ifelse( (is.na(joined_toCOMID) | joined_toCOMID == -9999),
+             ifelse((is.na(joined_fromCOMID) | joined_fromCOMID == -9999),
+                     ifelse((is.na(joined_toCOMID) | joined_toCOMID == -9999),
                              COMID, joined_toCOMID),
                      joined_fromCOMID)) %>%
     group_by(becomes) %>%
@@ -65,8 +65,10 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 
   new_lp <- group_by(new_flines, LevelPathI) %>%
     filter(Hydroseq == min(Hydroseq)) %>% # Get the outlet by hydrosequence.
-    ungroup() %>% group_by(Hydroseq) %>%
-    filter(as.integer(part) == max(as.integer(part))) %>% # Get the outlet if the original was split.
+    ungroup() %>%
+    group_by(Hydroseq) %>%
+    # Get the outlet if the original was split.
+    filter(as.integer(part) == max(as.integer(part))) %>%
     ungroup() %>%
     select(ID_LevelPathID = ID_Hydroseq, LevelPathI)
 

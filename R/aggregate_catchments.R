@@ -66,9 +66,9 @@ aggregate_catchments <- function(flowpath, divide, outlets,
 
   lps <- get_lps(flowpath)
 
-  if(any(!outlets$ID %in% flowpath$ID)) stop("Outlet IDs must all be in flowpaths.")
+  if (any(!outlets$ID %in% flowpath$ID)) stop("Outlet IDs must all be in flowpaths.")
 
-  if(any(!is.na(flowpath$toID[which(flowpath$ID %in%
+  if (any(!is.na(flowpath$toID[which(flowpath$ID %in%
                                      outlets[outlets$type == "terminal", ]$ID)])))
     stop("Terminal paths must hace an NA toID")
 
@@ -200,22 +200,25 @@ aggregate_catchments <- function(flowpath, divide, outlets,
 
   cat_sets$geom <- st_cast(st_sfc(cat_sets$geom, crs = st_crs(divide)), "MULTIPOLYGON")
   cat_sets <- st_sf(cat_sets)
-  cat_sets$ID <- as.numeric(gsub("^cat-", "", outlets$ID))
+  cat_sets[["ID"]] <- as.numeric(gsub("^cat-", "", outlets$ID))
 
   fline_sets$geom <- st_sfc(fline_sets$geom, crs = st_crs(flowpath))
   fline_sets <- st_sf(fline_sets)
-  fline_sets$ID <- as.numeric(gsub("^cat-", "", outlets$ID))
+  fline_sets[["ID"]] <- as.numeric(gsub("^cat-", "", outlets$ID))
 
   # create long form ID to set member list
-  sets <- tidyr::unnest(st_set_geometry(fline_sets, NULL))
+  sets <- tidyr::unnest(st_set_geometry(fline_sets, NULL), cols = c(set))
 
   # Figure out what the ID of the downstream catchment is.
   next_id <- sets %>%
     left_join(select(st_set_geometry(flowpath, NULL), ID, toID),
               by = c("set" = "ID")) %>%
     # first find the ID downstream of the outlet of each catchment.
-    group_by(ID) %>% filter(!toID %in% set) %>% select(ID, toID) %>%
-    ungroup() %>% distinct() %>%
+    group_by(ID) %>%
+    filter(!toID %in% set) %>%
+    select(ID, toID) %>%
+    ungroup() %>%
+    distinct() %>%
     # find the actual id of the catchment the one found above is a member of.
     left_join(select(sets, set_toID = ID, set), by = c("toID" = "set")) %>%
     select(ID, toID = set_toID)
@@ -251,16 +254,16 @@ get_outlets <- function(outlets, lps) {
 }
 
 # Adds everything that contributes the same recieving catchment as a given tail id.
-fix_nexus <- function(flowpath, tail_ID, da_thresh = NA, only_larger = FALSE) {
-  tail <- filter(flowpath, ID == tail_ID)
+fix_nexus <- function(flowpath, tail_id, da_thresh = NA, only_larger = FALSE) {
+  tail <- filter(flowpath, ID == tail_id)
 
   add <- filter(flowpath, toID == tail$toID)
 
-  if(only_larger) {
+  if (only_larger) {
     add <- filter(add, LevelPathID <= tail$LevelPathID)
   }
 
-  if(!is.na(da_thresh)) {
+  if (!is.na(da_thresh)) {
     add <- filter(add, TotDASqKM > da_thresh)
   }
   # Can add functionality here to filter which Add IDs to include.
@@ -272,8 +275,8 @@ fix_nexus <- function(flowpath, tail_ID, da_thresh = NA, only_larger = FALSE) {
              stringsAsFactors = FALSE)
 }
 
-fix_tail <- function(flowpath, outlets, toID_tail_ID, da_thresh = NA, only_larger = FALSE) {
-  potential_add <- fix_nexus(flowpath, toID_tail_ID, da_thresh, only_larger)
+fix_tail <- function(flowpath, outlets, toid_tail_id, da_thresh = NA, only_larger = FALSE) {
+  potential_add <- fix_nexus(flowpath, toid_tail_id, da_thresh, only_larger)
   new <- !potential_add$ID %in% outlets$ID
   potential_add[new, ]
 }
@@ -286,11 +289,13 @@ fix_tail <- function(flowpath, outlets, toID_tail_ID, da_thresh = NA, only_large
 #' @param lps level paths
 #' @importFrom dplyr filter distinct select left_join group_by mutate
 #' @noRd
-make_outlets_valid <- function(outlets, flowpath, lps, da_thresh = NA, only_larger = FALSE) {
+make_outlets_valid <- function(outlets, flowpath, lps,
+                               da_thresh = NA, only_larger = FALSE) {
 
   otl <- get_outlets(outlets, lps)
 
   count_while <- 0
+
   while (!all(otl$tail_ID %in% otl$ID)) {
 
     bad <- which(!otl$tail_ID %in% otl$ID)
@@ -299,50 +304,60 @@ make_outlets_valid <- function(outlets, flowpath, lps, da_thresh = NA, only_larg
       bad_outlet <- otl[bad[add], ]
 
       outlets <- rbind(outlets,
-                       fix_nexus(flowpath, bad_outlet$tail_ID, da_thresh, only_larger))
+                       fix_nexus(flowpath, bad_outlet[["tail_ID"]],
+                                 da_thresh, only_larger))
     }
+
     otl <- get_outlets(outlets, lps)
 
     count_while <- count_while + 1
-    if (count_while > 1000)
+
+    if (count_while > 1000) {
       stop("Stuck in a while loop trying to fix disconnected outlets. Reduce drainage area threshold?")
+    }
   }
 
   # Need to check that a "next down tributary" in the outlet set has a break along the
   # main stem that each outlet contributes to.
-  otl <- otl %>%
-    left_join(select(st_set_geometry(flowpath, NULL), ID, toID), by = "ID") %>%
+  otl <- left_join(otl, select(st_set_geometry(flowpath, NULL), ID, toID), by = "ID") %>%
     left_join(select(lps, ID, toID_hydroseq = Hydroseq,
                      toID_tail_ID = tail_ID, toID_LevelpathID = LevelPathID),
-              by = c("toID" = "ID")) %>%
-    # this grabs the most downstream if duplicates were generated.
-    group_by(ID) %>% filter(toID_hydroseq == min(toID_hydroseq)) %>% ungroup() %>%
+              by = c("toID" = "ID"))
+
+  # this grabs the most downstream if duplicates were generated.
+  otl <- group_by(otl, ID) %>%
+    filter(toID_hydroseq == min(toID_hydroseq)) %>%
+    ungroup() %>%
     # This eliminates groups where only one thing goes to a given tail_ID.
-    group_by(toID_tail_ID) %>% filter(n() > 1) %>% ungroup() %>%
-    # This grabs all the inflows to the nexus that each of these outlets is at.
-    left_join(select(st_set_geometry(flowpath, NULL), toID_fromID = ID, toID), by = "toID") %>%
+    group_by(toID_tail_ID) %>%
+    filter(n() > 1) %>%
+    ungroup()
+
+  # This grabs all the inflows to the nexus that each of these outlets is at.
+  otl <- left_join(otl, select(st_set_geometry(flowpath, NULL),
+                               toID_fromID = ID, toID), by = "toID") %>%
     mutate(type = "add_outlet")
 
-    if(!is.na(da_thresh)) {
-      otl <- left_join(otl, select(st_set_geometry(flowpath, NULL),
-                                    ID, toID_fromID_TotDASqKM = TotDASqKM),
-                        by = c("toID_fromID" = "ID")) %>%
-        filter(toID_fromID_TotDASqKM > da_thresh)
-    }
+  if (!is.na(da_thresh)) {
+    otl <- left_join(otl, select(st_set_geometry(flowpath, NULL),
+                                 ID, toID_fromID_TotDASqKM = TotDASqKM),
+                     by = c("toID_fromID" = "ID")) %>%
+      filter(toID_fromID_TotDASqKM > da_thresh)
+  }
 
-    if(only_larger) {
-      otl <- left_join(otl, select(st_set_geometry(flowpath, NULL),
-                                   ID, toID_fromID_lp = LevelPathID),
-                       by = c("toID_fromID" = "ID")) %>%
-        filter(toID_fromID_lp <= toID_LevelpathID)
-    }
+  if (only_larger) {
+    otl <- left_join(otl, select(st_set_geometry(flowpath, NULL),
+                                 ID, toID_fromID_lp = LevelPathID),
+                     by = c("toID_fromID" = "ID")) %>%
+      filter(toID_fromID_lp <= toID_LevelpathID)
+  }
 
-    otl <- otl %>%
+  otl <- otl %>%
     select(ID = toID_fromID, type, LevelPathID = toID_LevelpathID, tail_ID) %>%
     distinct()
 
-    # Need to verify that all ID == tail_ID instances are connected.
-    # They might have been missed above.
+  # Need to verify that all ID == tail_ID instances are connected.
+  # They might have been missed above.
   if (any(grepl("add_outlet", otl$type))) {
     otl$type <- "outlet"
     outlets <- distinct(rbind(outlets, otl[, c("ID", "type")]))
@@ -358,12 +373,12 @@ make_outlets_valid <- function(outlets, flowpath, lps, da_thresh = NA, only_larg
 
     connected <- FALSE
     while (!connected) {
-      toID <- filter(flowpath, ID == otl$ID[check])$toID
-      toID_tail_ID <- filter(lps, ID == toID)$tail_ID
+      toid <- filter(flowpath, ID == otl[["ID"]][check])$toID
+      toid_tail_id <- filter(lps, ID == toid)[["tail_ID"]]
 
-      if (!all(toID_tail_ID %in% otl$tail_ID)) {
+      if (!all(toid_tail_id %in% otl$tail_ID)) {
         outlets <- rbind(outlets,
-                         fix_tail(flowpath, outlets, unique(toID_tail_ID),
+                         fix_tail(flowpath, outlets, unique(toid_tail_id),
                                   da_thresh = da_thresh, only_larger = only_larger))
       } else {
         connected <- TRUE

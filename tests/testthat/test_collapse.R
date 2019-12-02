@@ -153,13 +153,13 @@ test_that("headwater / top of mainstem collapes works as expected", {
            (flines$LENGTHKM[which(flines$COMID == 10840550)] +
               flines$LENGTHKM[which(flines$COMID == 10840906)] +
               flines$LENGTHKM[which(flines$COMID == 10840554)]))
-
+  # nolint start
   # flines <- readRDS("data/petapsco_network.rds")
   # flines <- sf::st_set_geometry(flines, NULL)
   # flines <- suppressWarnings(nhdplusTools::prepare_nhdplus(flines, 0, 0))
   #
   # flines_out <- collapse_flowlines(flines, 0.5, mainstem_thresh = 1)
-
+  # nolint end
 })
 
 test_that("collapse flowlines works with small networks", {

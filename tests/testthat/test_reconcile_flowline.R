@@ -103,11 +103,9 @@ test_that("collapse works on a double pass", {
                                                select(flines, COMID),
                                                id = "COMID")
 
-    collapsed$member_COMID <-
+    collapsed[["member_COMID"]] <-
       unlist(lapply(collapsed$member_COMID,
                     function(x) paste(x, collapse = ",")))
-
-    # write_sf(collapsed, "flines.gpkg")
 
     get_id <- function(mc) {
       ind <- match(mc, collapsed$member_COMID)

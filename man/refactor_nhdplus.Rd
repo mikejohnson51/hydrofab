@@ -71,7 +71,7 @@ unlink("temp_rec.gpkg")
 
 }
 \seealso{
-In addition to `prepare_nhdplus` from the nhdplusTools package, 
+In addition to `prepare_nhdplus` from the nhdplusTools package,
 The following three functions are used in the `refactor_nhdplus` workflow.
 \enumerate{
   \item \code{\link{split_flowlines}}

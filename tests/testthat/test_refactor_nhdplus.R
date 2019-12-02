@@ -46,7 +46,7 @@ test_that("refactor_nhdplus works as expected with three pass mode", {
                                              dplyr::select(flines, COMID),
                                              id = "COMID")
 
-  collapsed$member_COMID <-
+  collapsed[["member_COMID"]] <-
     unlist(lapply(collapsed$member_COMID,
                   function(x) paste(x, collapse = ",")))
 
@@ -68,7 +68,7 @@ test_that("The refactor_nhdplus function runs as expected", {
   nhdplus_flowlines <- sf::st_zm(readRDS("data/north_network.rds"))
 
   sink(file = "temp.txt") # Captures sf output
-    m <- suppressWarnings( # Known warnings -- don't want.
+    m <- suppressWarnings(# Known warnings -- don't want.
       capture_messages(refactor_nhdplus(nhdplus_flines = nhdplus_flowlines,
                    split_flines_meters = 2000,
                    split_flines_cores = 3,
