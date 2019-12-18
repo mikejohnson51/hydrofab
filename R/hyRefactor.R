@@ -69,7 +69,7 @@ assign("match_flowpaths_attributes",
        envir = hyrefactor_env)
 
 check_names <- function(x, function_name) {
-  x <- nhdplusTools:::rename_nhdplus(x)
+  x <- nhdplusTools::align_nhdplus_names(x)
   names_x <- names(x)
 
   expect_names <- get(paste0(function_name, "_attributes"),
