@@ -87,6 +87,7 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
       group_by(ID) %>%
       summarise(toID = toID[1],
                 LENGTHKM = LENGTHKM[1],
+                TotDASqKM = max(TotDASqKM),
                 LevelPathID = LevelPathID[1],
                 Hydroseq = Hydroseq[1],
                 member_COMID = list(unique(member_COMID))) %>%
@@ -120,6 +121,11 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 #'
 reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr, fac, para = 2) {
 
+  # This is a hack until I find time to get the geometry name dynamically.
+  catchment <- rename_sf(catchment, "geom")
+  fline_ref <- rename_sf(fline_ref, "geom")
+  fline_rec <- rename_sf(fline_rec, "geom")
+  
   check_proj(catchment, fline_ref, fdr)
 
   reconciled <- sf::st_set_geometry(fline_rec, NULL) %>%
@@ -241,4 +247,13 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr, fa
   } else {
     return(out)
   }
+}
+
+rename_sf <- function(sf_df, geom_name) {
+  old_geom_name <- attr(sf_df, "sf_column")
+  names(sf_df)[names(sf_df) == old_geom_name] <- geom_name
+  
+  attr(sf_df, "sf_column") <- geom_name
+  
+  sf_df
 }
