@@ -68,7 +68,7 @@ refactor_nhdplus <- function(nhdplus_flines,
 
   if ("FTYPE" %in% names(nhdplus_flines)) {
     nhdplus_flines <- sf::st_set_geometry(nhdplus_flines, NULL) %>%
-      prepare_nhdplus(0, 0, purge_non_dendritic, warn = warn) %>%
+      prepare_nhdplus(0, 0, 0, purge_non_dendritic = purge_non_dendritic, warn = warn) %>%
       dplyr::inner_join(select(nhdplus_flines, COMID), by = "COMID") %>%
       sf::st_as_sf()
   }

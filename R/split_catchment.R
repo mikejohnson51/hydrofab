@@ -44,20 +44,48 @@ find_upstream <- function(row_col, fdr_matrix) {
   neighbor_ind <- cbind(neighbors$row, neighbors$col)
   flow_to_val <- neighbors$flow_to_test
 
-  return(neighbor_ind[which(fdr_matrix[neighbor_ind] == flow_to_val), ])
+  return(neighbor_ind[which(fdr_matrix[neighbor_ind] == flow_to_val), , drop = FALSE])
 }
 
-recurse_upstream <- function(row_col, fdr_matrix) {
-
-  us <- do.call(rbind,
-                lapply(seq_len(nrow(row_col)),
-                       function(x) find_upstream(row_col[x, ], fdr_matrix)))
-
-  if (length(us) > 0) {
-    return(rbind(us, recurse_upstream(us, fdr_matrix)))
-  } else {
-    return()
+collect_upstream <- function(row_col, fdr_matrix) {
+  
+  m_size <- nrow(fdr_matrix) * ncol(fdr_matrix)
+  
+  out_cells <- matrix(NA_integer_, nrow = m_size, ncol = 2)
+  
+  check_cell_counter <- 1
+  out_cell_counter <- 2
+  
+  out_cells[check_cell_counter, ] <- row_col
+  
+  row_col <- out_cells[check_cell_counter, ]
+  
+  while(!is.na(row_col[1])) {
+    
+    us <- find_upstream(row_col, fdr_matrix)
+    
+    new_rows <- nrow(us)
+    
+    if(!is.null(new_rows) && nrow(us) > 0) {
+      
+      out_cells[out_cell_counter:(out_cell_counter + new_rows - 1), ] <- us
+      
+      out_cell_counter <- out_cell_counter + new_rows
+      
+    }
+    
+    check_cell_counter <- check_cell_counter + 1
+    
+    row_col <- out_cells[check_cell_counter, ]
+    
+    if(check_cell_counter > m_size) {
+      warning("checked all but didn't return?")
+      browser()
+    }
+    
   }
+  
+  return(out_cells[1:check_cell_counter, ])
 }
 
 #' @title Split Catchment Divides
@@ -127,7 +155,7 @@ split_catchment_divide <- function(catchment, fline, fdr, fac) {
         row_col[2] <- new_rc$col
       }
 
-      us_cells <- recurse_upstream(row_col, fdr_matrix)
+      us_cells <- collect_upstream(row_col, fdr_matrix)
 
       out <- matrix(0, nrow = nrow(fdr_matrix), ncol = ncol(fdr_matrix))
 
