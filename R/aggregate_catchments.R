@@ -120,7 +120,8 @@ aggregate_catchments <- function(flowpath, divide, outlets,
   outlet_verts <- cat_graph_sort_verts[names(cat_graph_sort_verts) %in% outlets$nexID]
   outlets <- outlets[match(names(outlet_verts), outlets$nexID), ]
 
-  cat_sets <- data.frame(ID = outlets$nexID,
+  cat_sets <- data.frame(ID = outlets$ID,
+                         nexID = outlets$nexID,
                          set = I(rep(list(list()), nrow(outlets))),
                          geom = I(rep(list(list()), nrow(outlets))),
                          stringsAsFactors = FALSE)
@@ -135,10 +136,11 @@ aggregate_catchments <- function(flowpath, divide, outlets,
   us_verts <- c()
 
   for (cat in seq_len(nrow(cat_sets))) {
-    outlet <- filter(outlets, nexID == cat_sets$ID[cat])
+    
+    outlet <- filter(outlets, ID == cat_sets$ID[cat])
 
     ut <- bfs(graph = cat_graph,
-              root = cat_sets$ID[cat],
+              root = cat_sets$nexID[cat],
               neimode = "in",
               order = TRUE,
               unreachable = FALSE,
@@ -150,9 +152,9 @@ aggregate_catchments <- function(flowpath, divide, outlets,
 
     if (length(head_id) == 0) head_id <- outlet_id # Then the outlet is a headwater.
     um <- find_um(us_verts, cat_graph,
-                  cat_id = cat_sets$ID[cat],
+                  cat_id = cat_sets$nexID[cat],
                   head_id = head_id,
-                  outlet_type = filter(outlets, nexID == cat_sets$ID[cat])$type)
+                  outlet_type = filter(outlets, nexID == cat_sets$nexID[cat])$type)
 
     if (length(us_verts) > 0) {
       vert <- us_verts[which(um %in% us_verts)]
@@ -165,13 +167,15 @@ aggregate_catchments <- function(flowpath, divide, outlets,
     }
 
     um <- as.numeric(gsub("^nex-", "", um))
+    
+    if(0 %in% um) um[um == 0] <- as.numeric(gsub("^cat-", "", outlets[outlets$nexID == "nex-0", ]$ID))
 
     fline_sets$geom[[cat]] <- filter(flowpath, ID %in% um) %>%
       st_geometry() %>%
       st_cast("LINESTRING") %>%
       st_union()
-
-    if (st_geometry_type(fline_sets$geom[[cat]]) == "MULTILINESTRING") {
+    
+    if (length(cat) > 0 && st_geometry_type(fline_sets$geom[[cat]]) == "MULTILINESTRING") {
       fline_sets$geom[[cat]] <- st_line_merge(fline_sets$geom[[cat]])
     }
 
@@ -180,7 +184,7 @@ aggregate_catchments <- function(flowpath, divide, outlets,
     fline_sets$set[[cat]] <- um
 
     # Excludes the search node to avoid grabbing the downstream catchment.
-    ut_verts <- ut$order[!is.na(ut$order) & names(ut$order) != cat_sets$ID[cat]]
+    ut_verts <- ut$order[!is.na(ut$order) & names(ut$order) != cat_sets$nexID[cat]]
     cat_sets$set[[cat]] <- filter(catchment, fromID %in% names(ut_verts))$cat_ID
     remove <- head_of(cat_graph, unlist(incident_edges(cat_graph, ut_verts, "in")))
     verts <- verts[!verts %in% remove]
@@ -195,10 +199,11 @@ aggregate_catchments <- function(flowpath, divide, outlets,
     cat_sets$set[[cat]] <- as.numeric(gsub("^cat-", "", cat_sets$set[[cat]]))
 
     # us_verts are where we need to stop while stepping upstream.
-    us_verts <- c(us_verts, cat_sets$ID[cat])
+    us_verts <- c(us_verts, cat_sets$nexID[cat])
   }
 
   cat_sets$geom <- st_cast(st_sfc(cat_sets$geom, crs = st_crs(divide)), "MULTIPOLYGON")
+  cat_sets <- select(cat_sets, -nexID)
   cat_sets <- st_sf(cat_sets)
   cat_sets[["ID"]] <- as.numeric(gsub("^cat-", "", outlets$ID))
 

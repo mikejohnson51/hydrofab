@@ -118,6 +118,9 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 #' @details Note that all inputs must be passed in the same projection.
 #' @export
 #' @importFrom magrittr "%>%"
+#' @importFrom sf st_drop_geometry st_dimension st_as_sf st_cast
+#' @importFrom dplyr select filter mutate left_join
+#' @importFrom data.table rbindlist
 #'
 reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr, fac, para = 2) {
 
@@ -128,9 +131,11 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr, fa
   
   check_proj(catchment, fline_ref, fdr)
 
-  reconciled <- sf::st_set_geometry(fline_rec, NULL) %>%
-    dplyr::select(ID, member_COMID)
+  reconciled <- st_drop_geometry(fline_rec) %>%
+    select(ID, member_COMID)
 
+  rm(fline_rec)
+  
   comid <- fline_ref$COMID
   featureid <- catchment$FEATUREID
   comid_with_catchment <- comid[as.integer(comid) %in% featureid]
@@ -158,81 +163,58 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr, fa
 
   to_split_featureids <- unique(as.integer(to_split_ids))
 
-  par_split_cat <- function(fid, to_split_ids, fline_ref, catchment, fdr, fac) {
-    out <- NULL
-    try({
-      # nolint start
-      library(hyRefactor)
-      # nolint end
-      split_set <- to_split_ids[which(grepl(as.character(fid), to_split_ids))]
-      to_split_flines <- dplyr::filter(fline_ref, COMID %in% split_set)
-      to_split_cat <- dplyr::filter(catchment, FEATUREID == fid)
+  cl <- NULL
+  if(para > 1)
+    cl <- parallel::makeCluster(rep("localhost", para),
+                                type = "SOCK", outfile = "par_split.log")
 
-      split_cats <- split_catchment_divide(catchment = to_split_cat,
-                                                  fline = to_split_flines,
-                                                  fdr = fdr,
-                                                  fac = fac)
-
-      out <- sf::st_sf(FEATUREID = to_split_flines$COMID,
-                       geom = split_cats, stringsAsFactors = FALSE)
-    }
-    , silent = FALSE, outFile = "split.log")
-    return(out)
-  }
-
-  cl <- parallel::makeCluster(rep("localhost", para), type = "SOCK")
-
-  split_cats <- parallel::parLapply(cl, to_split_featureids, par_split_cat,
+  split_cats <- pbapply::pblapply(to_split_featureids, par_split_cat,
                                     to_split_ids = to_split_ids,
                                     fline_ref = fline_ref,
                                     catchment = catchment,
-                                    fdr = fdr, fac = fac)
+                                    fdr = fdr, fac = fac, 
+                                  cl = cl)
 
-  parallel::stopCluster(cl)
+  split_cats <- st_as_sf(rbindlist(split_cats[!sapply(split_cats, is.null)])) %>%
+    st_cast("MULTIPOLYGON")
+  
+  split_cats <- st_as_sf(rbindlist(list(
+    filter(catchment, !catchment$FEATUREID %in% to_split_featureids) %>%
+      select(FEATUREID, geom) %>%
+      mutate(FEATUREID = as.character(FEATUREID)) %>%
+      left_join(select(st_drop_geometry(fline_ref), 
+                       FEATUREID = COMID),
+                by = "FEATUREID") %>%
+      select(FEATUREID, geom) %>%
+      st_cast("MULTIPOLYGON"),
+    split_cats)))
 
-  split_cats <- do.call(rbind, split_cats[!sapply(split_cats, is.null)])
-
-  split_cats <- filter(catchment, !catchment$FEATUREID %in% to_split_featureids) %>%
-    dplyr::select(FEATUREID, geom) %>%
-    mutate(FEATUREID = as.character(FEATUREID)) %>%
-    dplyr::left_join(dplyr::select(sf::st_set_geometry(fline_ref, NULL), FEATUREID = COMID),
-              by = "FEATUREID") %>%
-    dplyr::select(FEATUREID, geom) %>%
-    rbind(split_cats)
-
-  combinations <- reconciled$member_COMID[which(grepl(",", reconciled$member_COMID))]
-
-  for (cats in combinations) {
-    cats_vec <- unlist(strsplit(cats, ","))
-
-    union_cats <- filter(split_cats, FEATUREID %in% cats_vec)
-
-    if (nrow(union_cats) != length(cats_vec)) {
-      stop("missing a split catchment for an expected flowline.")
-    }
-
-    unioned <- sf::st_sf(FEATUREID = cats, geom = sf::st_cast(sf::st_union(union_cats), "MULTIPOLYGON"),
-                          stringsAsFactors = FALSE)
-
-    if (!any(grepl("MULTIPOLYGON", class(st_geometry(unioned))))) {
-      warning("Somthing is wrong with the union of catchments.")
-    }
-
-    split_cats <- filter(split_cats, !FEATUREID %in% cats_vec) %>%
-      rbind(unioned)
+  combinations <- reconciled$member_COMID[grepl(",", reconciled$member_COMID)]
+  
+  unioned_cats <- pbapply::pblapply(combinations, 
+                                    get_split_cats,
+                                    split_cats = split_cats, 
+                                    cl = cl)
+  
+  if(!is.null(cl))
+    parallel::stopCluster(cl)
+  
+  if(length(unioned_cats) > 1) {
+    unioned_cats <- st_as_sf(rbindlist(unioned_cats))
+    split_cats <- st_as_sf(rbindlist(list(split_cats, unioned_cats)))
   }
 
   out <- st_sf(left_join(reconciled, split_cats,
                          by = c("member_COMID" = "FEATUREID")))
 
-  missing <- is.na(sf::st_dimension(out$geom))
+  missing <- is.na(st_dimension(out$geom))
 
   if (any(missing)) {
-    replace_cat <- dplyr::select(catchment, member_COMID = FEATUREID) %>%
-      dplyr::filter(member_COMID %in% unique(as.integer(out$member_COMID[missing]))) %>%
+    replace_cat <- select(catchment, member_COMID = FEATUREID) %>%
+      filter(member_COMID %in% unique(as.integer(out$member_COMID[missing]))) %>%
       mutate(member_COMID = paste0(member_COMID, ".1")) %>%
       mutate(ID = out$ID[match(member_COMID, out$member_COMID)]) %>%
-      dplyr::select(ID, member_COMID)
+      select(ID, member_COMID)
 
     out <- filter(out, !missing) %>%
       st_cast("MULTIPOLYGON")
@@ -243,10 +225,53 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr, fa
                                                            "sf_column")
     attr(replace_cat, "sf_column") <- attr(out, "sf_column")
 
-    return(rbind(out, replace_cat))
+    return(st_as_sf(rbindlist(list(out, replace_cat))))
   } else {
     return(out)
   }
+}
+
+par_split_cat <- function(fid, to_split_ids, fline_ref, catchment, fdr, fac) {
+  out <- NULL
+  try({
+    # nolint start
+    library(hyRefactor)
+    # nolint end
+    split_set <- to_split_ids[which(grepl(as.character(fid), to_split_ids))]
+    to_split_flines <- dplyr::filter(fline_ref, COMID %in% split_set)
+    to_split_cat <- dplyr::filter(catchment, FEATUREID == fid)
+    
+    split_cats <- split_catchment_divide(catchment = to_split_cat,
+                                         fline = to_split_flines,
+                                         fdr = fdr,
+                                         fac = fac)
+    
+    out <- sf::st_sf(FEATUREID = to_split_flines$COMID,
+                     geom = split_cats, stringsAsFactors = FALSE)
+  }
+  , silent = FALSE)
+  return(out)
+}
+
+get_split_cats <- function(cats, split_cats) {
+  cats_vec <- unlist(strsplit(cats, ","))
+  
+  union_cats <- dplyr::filter(split_cats, FEATUREID %in% cats_vec)
+  
+  if (nrow(union_cats) != length(cats_vec)) {
+    stop("missing a split catchment for an expected flowline.")
+  }
+  
+  unioned <- sf::st_sf(FEATUREID = cats, 
+                       geom = sf::st_cast(sf::st_union(union_cats), 
+                                          "MULTIPOLYGON"),
+                       stringsAsFactors = FALSE)
+  
+  if (!any(grepl("MULTIPOLYGON", class(sf::st_geometry(unioned))))) {
+    warning("Somthing is wrong with the union of catchments.")
+  }
+  
+  dplyr::filter(split_cats, !FEATUREID %in% cats_vec)
 }
 
 rename_sf <- function(sf_df, geom_name) {

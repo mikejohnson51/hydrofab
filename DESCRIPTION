@@ -8,7 +8,7 @@ URL: https://github.com/dblodgett-usgs/hyrefactor
 BugReports: https://github.com/dblodgett-usgs/hyrefactor/issues
 Depends:
     R (>= 3.5.0)
-Imports: dplyr, sf, lwgeom, snow, units, magrittr, raster, rgdal, rgeos, igraph, tidyr, nhdplusTools, pbapply, xml2, rvest, httr
+Imports: dplyr, sf, lwgeom, snow, units, magrittr, data.table, raster, rgdal, rgeos, igraph, tidyr, nhdplusTools, pbapply, xml2, rvest, httr
 Suggests: testthat, knitr, rmarkdown
 Remotes: r-spatial/lwgeom, USGS-R/nhdplusTools, cran/rgdal@1.3-9
 License: CC0
