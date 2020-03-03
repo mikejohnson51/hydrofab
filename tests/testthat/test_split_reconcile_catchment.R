@@ -87,7 +87,7 @@ test_that("split and reconcile works", {
                                      c(test_cat_1, test_cat_2))
 
   reconciled_cats <- reconcile_catchment_divides(test_cat, test_fline_ref,
-                                          test_fline_rec, walker_fdr, walker_fac)
+                                          test_fline_rec, walker_fdr, walker_fac, para = 1)
 
   expect_true(nrow(reconciled_cats) == nrow(test_fline_rec))
   expect_true(all(reconciled_cats$member_COMID %in% test_fline_rec$member_COMID))

@@ -5,7 +5,7 @@
 \title{Reconcile Catchment Divides}
 \usage{
 reconcile_catchment_divides(catchment, fline_ref, fline_rec, fdr, fac,
-  para = 2)
+  para = 2, cache = NULL)
 }
 \arguments{
 \item{catchment}{sf data.frame NHDPlus Catchment or CatchmentSP layers for
@@ -22,6 +22,8 @@ included COMIDs}
 \item{fac}{raster flow accumulation}
 
 \item{para}{integer numer of cores to use for parallel execution}
+
+\item{cache}{path .rda to cache incremental outputs}
 }
 \value{
 Catchment divides that have been split and collapsed according to
