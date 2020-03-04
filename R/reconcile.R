@@ -207,7 +207,7 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr, fa
   if(!is.null(cl))
     parallel::stopCluster(cl)
   
-  if(length(unioned_cats) > 1) {
+  if(length(unioned_cats) > 0) {
     unioned_cats <- st_as_sf(rbindlist(unioned_cats))
     split_cats <- st_as_sf(rbindlist(list(
       filter(split_cats, !FEATUREID %in% unioned_cats$FEATUREID),
