@@ -36,7 +36,7 @@
 #' @export
 #' @importFrom igraph graph_from_data_frame topo_sort incident_edges V bfs head_of shortest_paths
 #' @importFrom sf st_cast st_union st_geometry st_sfc st_sf st_crs st_set_geometry st_line_merge st_geometry_type
-#' @importFrom dplyr filter mutate left_join select distinct case_when
+#' @importFrom dplyr filter mutate left_join select distinct case_when bind_rows
 #' @importFrom tidyr unnest
 #' @examples
 #' source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
@@ -136,6 +136,8 @@ aggregate_catchments <- function(flowpath, divide, outlets,
   us_verts <- c()
 
   for (cat in seq_len(nrow(cat_sets))) {
+    
+    if(cat %% 10 == 0) message(paste(cat, "of", nrow(cat_sets)))
     
     outlet <- filter(outlets, ID == cat_sets$ID[cat])
 
@@ -303,21 +305,23 @@ make_outlets_valid <- function(outlets, flowpath, lps,
 
   while (!all(otl$tail_ID %in% otl$ID)) {
 
-    bad <- which(!otl$tail_ID %in% otl$ID)
+    bad_tail <- otl$tail_ID[which(!otl$tail_ID %in% otl$ID)]
 
-    for (add in seq_along(bad)) {
-      bad_outlet <- otl[bad[add], ]
-
-      outlets <- rbind(outlets,
-                       fix_nexus(flowpath, bad_outlet[["tail_ID"]],
-                                 da_thresh, only_larger))
-    }
+    message(paste("Fixing", length(bad_tail), "missing outlets."))
+    
+    outlets <- dplyr::bind_rows(
+      outlets,
+      dplyr::bind_rows(lapply(
+        bad_tail, function(bad_tail_id, flowpath, da_thresh, only_larger) {
+        fix_nexus(flowpath, bad_tail_id, da_thresh, only_larger)
+      }, flowpath = flowpath, da_thresh = da_thresh, only_larger = only_larger))
+    )
 
     otl <- get_outlets(outlets, lps)
 
     count_while <- count_while + 1
 
-    if (count_while > 1000) {
+    if (count_while > 20) {
       stop("Stuck in a while loop trying to fix disconnected outlets. Reduce drainage area threshold?")
     }
   }

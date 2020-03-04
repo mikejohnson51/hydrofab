@@ -235,7 +235,7 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr, fa
                                                            "sf_column")
     attr(replace_cat, "sf_column") <- attr(out, "sf_column")
 
-    return(st_as_sf(rbindlist(list(out, replace_cat))))
+    return(rbind(out, replace_cat))
   } else {
     return(out)
   }
