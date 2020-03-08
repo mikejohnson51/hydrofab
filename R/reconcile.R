@@ -136,24 +136,19 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr, fa
     select(ID, member_COMID)
 
   rm(fline_rec)
-  
-  comid <- fline_ref$COMID
-  featureid <- catchment$FEATUREID
+
+  # Not all catchments have flowlines. Remove the flowlines without.  
+  comid <- fline_ref$COMID # Just being explicit here.
+  featureid <- catchment$FEATUREID # type conversion below is annoying.
+  # as.integer removes the .1, .2, semantic part but the response retains 
+  # the semantic component. If you don't know what this means, stop hacking.
   comid_with_catchment <- comid[as.integer(comid) %in% featureid]
 
-  # Not all catchments have flowlines. Remove the flowlines without.
-  remove <- c()
-  for (rec_cat in seq_along(reconciled$member_COMID)) {
-    cats_vec <- unlist(strsplit(reconciled$member_COMID[rec_cat], ","))
-    cats_vec <- cats_vec[cats_vec %in% comid_with_catchment]
-    if (length(cats_vec) == 0) {
-      remove <- c(remove, rec_cat)
-    } else {
-      reconciled$member_COMID[rec_cat] <- paste(cats_vec, collapse = ",")
-    }
-  }
-
-  if (length(remove) > 0) reconciled <- reconciled[-c(remove), ]
+  reconciled <- distinct(reconciled) %>% # had dups from prior steps.
+    tidyr::separate_rows(member_COMID, sep = ",") %>% # Make long form
+    dplyr::filter(member_COMID %in% comid_with_catchment) %>% # 
+    dplyr::group_by(ID) %>%
+    dplyr::summarise(member_COMID = stringr::str_c(member_COMID, collapse = ","))
 
   fline_ref <- fline_ref[as.integer(fline_ref$COMID) %in% catchment$FEATUREID, ]
 
@@ -187,14 +182,7 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr, fa
     st_cast("MULTIPOLYGON")
   
   split_cats <- st_as_sf(rbindlist(list(
-    filter(catchment, !catchment$FEATUREID %in% to_split_featureids) %>%
-      select(FEATUREID, geom) %>%
-      mutate(FEATUREID = as.character(FEATUREID)) %>%
-      left_join(select(st_drop_geometry(fline_ref), 
-                       FEATUREID = COMID),
-                by = "FEATUREID") %>%
-      select(FEATUREID, geom) %>%
-      st_cast("MULTIPOLYGON"),
+    get_cat_unsplit(catchment, fline_ref, to_split_featureids),
     split_cats)))
 
   combinations <- reconciled$member_COMID[grepl(",", reconciled$member_COMID)]
@@ -294,4 +282,15 @@ rename_sf <- function(sf_df, geom_name) {
   attr(sf_df, "sf_column") <- geom_name
   
   sf_df
+}
+
+get_cat_unsplit <- function(catchment, fline_ref, to_split_featureids) {
+  cat <- select(catchment, FEATUREID)
+  cat <- cat[!cat$FEATUREID %in% to_split_featureids, ]
+  cat$FEATUREID <- as.character(cat$FEATUREID)
+  cat <- left_join(cat,
+                        select(st_drop_geometry(fline_ref), 
+                               FEATUREID = COMID),
+                        by = "FEATUREID")
+  st_cast(select(cat, FEATUREID), "MULTIPOLYGON")
 }
