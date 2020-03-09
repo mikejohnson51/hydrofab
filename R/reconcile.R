@@ -181,6 +181,10 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr, fa
   split_cats <- st_as_sf(rbindlist(split_cats[!sapply(split_cats, is.null)])) %>%
     st_cast("MULTIPOLYGON")
   
+  split_cats <- dplyr::group_by(split_cats, FEATUREID) %>% 
+    dplyr::filter(dplyr::row_number() == 1) %>%
+    dplyr::ungroup()
+  
   split_cats <- st_as_sf(rbindlist(list(
     get_cat_unsplit(catchment, fline_ref, to_split_featureids),
     split_cats)))
