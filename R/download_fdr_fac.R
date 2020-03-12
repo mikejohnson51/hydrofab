@@ -12,20 +12,20 @@ download_fdr_fac <- function(out_dir, regions = NULL) {
   root <- "http://www.horizon-systems.com"
   base <- "/NHDPlusData/NHDPlusV21/Data/"
   
-  check <- base
+  check <- paste0(root, base)
   found <- c()
   i <- 1
   
   while(i <= length(check)) {
-    url <- paste0(root, check[i])
+    url <- check[i]
     
     pg <- read_html(url)
     
-    pg_links <- html_attr(html_nodes(pg, "a"), "href")
+    pg_links <- paste0(url, html_attr(html_nodes(pg, "a"), "href"))
     
     pg_links <- pg_links[!pg_links %in% check]
     
-    check <- c(check, pg_links[grepl(".*/$", pg_links)])
+    check <- c(check, pg_links[!grepl("[.][.]/", pg_links) & grepl(".*/$", pg_links)])
     
     found <- c(found, pg_links[grepl(".*FdrFac.*", pg_links)])
     
@@ -35,13 +35,13 @@ download_fdr_fac <- function(out_dir, regions = NULL) {
   }
   
   if(!is.null(regions)) {
-    found <- found[grepl(paste(paste0(".*_", regions, "?[A-Z]_.*"), 
+    found <- found[grepl(paste(paste0(".*_", regions, "?[a-z]_.*"), 
                                collapse = "|"), found)]
   }
   
   for(f in found) {
     fi <- basename(f)
-    url <- paste0(root, f)
+    url <- f
     out_fi <- file.path(out_dir, fi)
     
     message(out_fi)
