@@ -262,9 +262,9 @@ get_split_cats <- function(cats, split_cats) {
   union_cats <- dplyr::filter(split_cats, FEATUREID %in% cats_vec)
   
   if (nrow(union_cats) != length(cats_vec)) {
-    browser()
+    if(!is.null(cache)) save(list = ls(), file = cache)
     stop(paste("missing a split catchment for an expected flowline.", 
-               cats_vec))
+               cats_vec, "environment saved to:", cache))
   }
   
   unioned <- sf::st_sf(FEATUREID = cats, 

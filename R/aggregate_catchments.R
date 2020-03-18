@@ -55,7 +55,8 @@
 #'
 
 aggregate_catchments <- function(flowpath, divide, outlets,
-                                 da_thresh = NA, only_larger = FALSE) {
+                                 da_thresh = NA, only_larger = FALSE, 
+                                 post_mortem_file = NA) {
 
   remove_flines <- filter(flowpath, !ID %in% divide$ID)
   if (any(remove_flines$ID %in% remove_flines$toID))
@@ -69,9 +70,10 @@ aggregate_catchments <- function(flowpath, divide, outlets,
   if (any(!outlets$ID %in% flowpath$ID)) stop("Outlet IDs must all be in flowpaths.")
 
   if (any(!is.na(flowpath$toID[which(flowpath$ID %in%
-                                     outlets[outlets$type == "terminal", ]$ID)])))
-    stop("Terminal paths must hace an NA toID")
-
+                                     outlets[outlets$type == "terminal", ]$ID)]))) {
+    if(!is.na(post_mortem_file)) save(list = ls(), file = post_mortem_file)
+    stop("Terminal paths must have an NA toID")
+  }
   outlets <- make_outlets_valid(outlets, flowpath, lps,
                                 da_thresh = da_thresh, only_larger = only_larger) %>%
     distinct()
@@ -177,13 +179,29 @@ aggregate_catchments <- function(flowpath, divide, outlets,
       st_cast("LINESTRING") %>%
       st_union()
     
-    if (length(cat) > 0 && st_geometry_type(fline_sets$geom[[cat]]) == "MULTILINESTRING") {
-      fline_sets$geom[[cat]] <- st_line_merge(fline_sets$geom[[cat]])
+    abort_code <- tryCatch(
+      {
+        if (length(cat) > 0 && 
+            st_geometry_type(fline_sets$geom[[cat]]) == "MULTILINESTRING") {
+          fline_sets$geom[[cat]] <- st_line_merge(fline_sets$geom[[cat]])
+        }
+        
+        fline_sets$geom[[cat]] <- fline_sets$geom[[cat]][[1]]
+        
+        fline_sets$set[[cat]] <- um
+        
+        abort_code <- ""
+      }, error = function(e) e
+    )
+
+    if(abort_code != "")  {
+      if(!is.na(post_mortem_file)) {
+        save(list = ls(), file = post_mortem_file)
+        stop(paste("error getting geometry type, post mortem file:", post_mortem_file))
+      } else {
+        stop(paste("error getting geometry type for line merge:", abort_code))
+      }
     }
-
-    fline_sets$geom[[cat]] <- fline_sets$geom[[cat]][[1]]
-
-    fline_sets$set[[cat]] <- um
 
     # Excludes the search node to avoid grabbing the downstream catchment.
     ut_verts <- ut$order[!is.na(ut$order) & names(ut$order) != cat_sets$nexID[cat]]

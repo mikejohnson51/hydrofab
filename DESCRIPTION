@@ -1,7 +1,7 @@
 Package: hyRefactor
 Type: Package
 Title: Hydrologic Network Refactoring Tools Based on HY_Features
-Version: 0.4.2
+Version: 0.4.3
 Authors@R: person("David", "Blodgett", role = c("aut", "cre"), email = "dblodgett@usgs.gov")
 Description: A collection of tools for normalizing and changing the size of catchments.
 URL: https://github.com/dblodgett-usgs/hyrefactor
