@@ -18,6 +18,7 @@
 #' add main stems that the tributary contributes to. Note that the NHDPlus treats
 #' divergences as part of the main stem, so the da_thresh may still be needed to
 #' eliminate small tributary catchments introduced by divergences near confluences.
+#' @param post_mortem_file rda file to dump environment to in case of error
 #' @details This function operates on the catchment network as a node-edge graph.
 #' The outlet types are required to ensure that graph searches start from the
 #' appropriate nodes and includes the appropriate catchments. Outlets such as gages
@@ -274,7 +275,7 @@ get_lps <- function(flowpath) {
 # Get the levelpath outlet IDs for each of the input outlets.
 get_outlets <- function(outlets, lps) {
   distinct(left_join(outlets,
-                     select(lps, ID, LevelPathID, tail_ID),
+                     select(lps, .data$ID, .data$LevelPathID, .data$tail_ID),
                      by = "ID"))
 }
 

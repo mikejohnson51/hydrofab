@@ -36,6 +36,8 @@ outlet will be added. e.g. if a tributary is required in the model this will
 add main stems that the tributary contributes to. Note that the NHDPlus treats
 divergences as part of the main stem, so the da_thresh may still be needed to
 eliminate small tributary catchments introduced by divergences near confluences.}
+
+\item{post_mortem_file}{rda file to dump environment to in case of error}
 }
 \description{
 Aggregates catchments according to a set of outlet catchments.

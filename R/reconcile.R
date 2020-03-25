@@ -193,7 +193,8 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr, fa
   
   unioned_cats <- pbapply::pblapply(combinations, 
                                     get_split_cats,
-                                    split_cats = split_cats, 
+                                    split_cats = split_cats,
+                                    cache = cache,
                                     cl = cl)
   
   if(!is.null(cl))
@@ -238,8 +239,6 @@ par_split_cat <- function(fid, to_split_ids, fline_ref, catchment, fdr, fac) {
   try({
     # nolint start
     library(hyRefactor)
-    library(rgdal)
-    library(raster)
     # nolint end
     split_set <- to_split_ids[which(grepl(paste0("^", as.character(fid)), to_split_ids))]
     to_split_flines <- dplyr::filter(fline_ref, COMID %in% split_set)
@@ -258,7 +257,7 @@ par_split_cat <- function(fid, to_split_ids, fline_ref, catchment, fdr, fac) {
   return(out)
 }
 
-get_split_cats <- function(cats, split_cats) {
+get_split_cats <- function(cats, split_cats, cache = NULL) {
   cats_vec <- unlist(strsplit(cats, ","))
   
   union_cats <- dplyr::filter(split_cats, FEATUREID %in% cats_vec)

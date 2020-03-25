@@ -24,7 +24,7 @@ COMID.y <- ID <- becomes <- ds_num_upstream <- fID <-
   index <- measure <- nn.idx <- precision_index <- max_Hydroseq <-
   nn.dists <- offset <- area <- member_FEATUREID <- geom <-
   fromID <- nexID <- cat_ID <- type <- LevelPathID <- orig_COMID <-
-  tail_id <- toID_hydroseq <- toID_tail_ID <- toID_fromID <-
+  tail_id <- tail_ID <- toID_hydroseq <- toID_tail_ID <- toID_fromID <-
   toID_LevelpathID <- set <- set_toID <- usLevelPathI <- fromLevelPathI <-
   ID_Hydroseq <- ID_LevelPath <- ID_LevelPathID <- toID_fromID_TotDASqKM <-
   toID_fromID_lp <- denTotalAreaSqKM <- check_LevelPathI <-
@@ -33,7 +33,7 @@ COMID.y <- ID <- becomes <- ds_num_upstream <- fID <-
   nhd_LevelPath <- outletID <- outlet_HUC12 <- update_head_HUC12 <-
   updated_head_HUC12 <- updated_outlet_HUC12 <- weight <- hu12 <-
   lp <- L2 <- members <- DnHydroSeq <- HydroSeq <- NHDPlusID <-
-  member_NHDPlusID <- mr_LevelPathI <- NULL
+  member_NHDPlusID <- mr_LevelPathI <- .data <- NULL
 
 # nolint end
 hyrefactor_env <- new.env()

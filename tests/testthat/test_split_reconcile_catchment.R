@@ -88,7 +88,8 @@ test_that("split and reconcile works", {
                                      c(test_cat_1, test_cat_2))
 
   reconciled_cats <- reconcile_catchment_divides(test_cat, test_fline_ref,
-                                          test_fline_rec, walker_fdr, walker_fac, para = 1)
+                                          test_fline_rec, walker_fdr, walker_fac, 
+                                          para = 2)
 
   expect_true(nrow(reconciled_cats) == nrow(test_fline_rec))
   expect_true(all(reconciled_cats$member_COMID %in% test_fline_rec$member_COMID))
@@ -109,7 +110,7 @@ test_that("reconcile catchments works with reconciled flowline from split", {
   test_cat <- sf::read_sf("data/reconcile_test.gpkg", "catchment")
 
   reconciled_cats <- reconcile_catchment_divides(test_cat, test_fline_ref,
-                                          test_fline_rec, fdr, fac, para = 1)
+                                          test_fline_rec, fdr, fac, para = 2)
 
   expect_true(nrow(reconciled_cats) == nrow(test_fline_rec) - 1,
          "Got the wrong number of reconciled catchments")
