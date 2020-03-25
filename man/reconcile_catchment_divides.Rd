@@ -4,8 +4,15 @@
 \alias{reconcile_catchment_divides}
 \title{Reconcile Catchment Divides}
 \usage{
-reconcile_catchment_divides(catchment, fline_ref, fline_rec, fdr, fac,
-  para = 2, cache = NULL)
+reconcile_catchment_divides(
+  catchment,
+  fline_ref,
+  fline_rec,
+  fdr,
+  fac,
+  para = 2,
+  cache = NULL
+)
 }
 \arguments{
 \item{catchment}{sf data.frame NHDPlus Catchment or CatchmentSP layers for

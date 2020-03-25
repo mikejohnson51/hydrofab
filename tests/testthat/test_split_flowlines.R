@@ -12,9 +12,10 @@ test_that("split lines works", {
   flines <- collapse_flowlines(flines, 1, F, 1)
   flines <- reconcile_collapsed_flowlines(flines)
 
-  flines <- sf::st_as_sf(dplyr::inner_join(flines, dplyr::select(walker_flowline, COMID),
-                                by = c("member_COMID" = "COMID"))) %>%
-    dplyr::select(-member_COMID) %>%
+  flines <- sf::st_as_sf(dplyr::inner_join(dplyr::select(walker_flowline, COMID),
+                                           flines,
+                                by = c("COMID" = "member_COMID"))) %>%
+    dplyr::select(-COMID) %>%
     dplyr::distinct(.keep_all = TRUE) %>%
     dplyr::group_by(ID) %>%
     dplyr::summarise(toID = toID[1], LENGTHKM = LENGTHKM[1],
@@ -41,9 +42,10 @@ test_that("split lines works", {
   flines_in <- readRDS("data/guadalupe_network_geom.rds")
 
   flines <- suppressWarnings(
-    sf::st_set_geometry(flines_in, NULL) %>%
-    nhdplusTools::prepare_nhdplus(0, 0) %>%
-    dplyr::inner_join(dplyr::select(flines_in, COMID), by = "COMID") %>%
+    dplyr::inner_join(dplyr::select(flines_in, COMID),
+                      sf::st_set_geometry(flines_in, NULL) %>%
+                        nhdplusTools::prepare_nhdplus(0, 0),
+                      by = "COMID") %>%
     sf::st_as_sf() %>%
     sf::st_cast("LINESTRING") %>%
     sf::st_transform(5070) %>%

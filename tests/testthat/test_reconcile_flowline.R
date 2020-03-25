@@ -60,9 +60,10 @@ test_that("collapse works on a double pass", {
              mode = "function")) {
 
     flines <- suppressWarnings(
-      sf::st_set_geometry(nhdplus_flines, NULL) %>%
-        nhdplusTools::prepare_nhdplus(0, 0) %>%
-        dplyr::inner_join(select(nhdplus_flines, COMID), by = "COMID") %>%
+        dplyr::inner_join(dplyr::select(nhdplus_flines, COMID),
+                          sf::st_set_geometry(nhdplus_flines, NULL) %>%
+                            nhdplusTools::prepare_nhdplus(0, 0),
+                          by = "COMID") %>%
         sf::st_as_sf() %>%
         sf::st_cast("LINESTRING") %>%
         sf::st_transform(5070) %>%
@@ -113,10 +114,10 @@ test_that("collapse works on a double pass", {
     }
 
     expect_true(collapsed$toID[which(collapsed$ID ==
-                                  get_id("21975819.1,21976315,21975773,21976313"))] ==
+                                  get_id("21976315,21975773,21976313,21975819.1"))] ==
              get_id("21975819.2"))
     expect_true(collapsed$toID[which(collapsed$ID == get_id("21975771.2"))] ==
-             get_id("21975819.1,21976315,21975773,21976313"))
+             get_id("21976315,21975773,21976313,21975819.1"))
     expect_true(collapsed$toID[which(collapsed$ID == get_id("21975817"))] == get_id("21976253.1"))
     expect_true(collapsed$toID[which(collapsed$ID == get_id("21975819.2"))] == get_id("21975817"))
 

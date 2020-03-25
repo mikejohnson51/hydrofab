@@ -183,17 +183,18 @@ collapse_flowlines <- function(flines, thresh, add_category = FALSE,
                        by = c("joined_fromCOMID" = "COMID")),
              removed_COMID)
 
-  removed_confluence <-
-    select(ungroup(filter(removed_confluence,
-                                 # Deduplicate by largest trib path
-                                 usLevelPathI == min(usLevelPathI))),
-           -usLevelPathI) # clean
-
-  flines <- reconcile_removed_flowlines(flines,
-                                        reroute_confluence_set,
-                                        removed_confluence,
-                                        original_fline_atts)
-
+  if(nrow(removed_confluence) > 0) {
+    removed_confluence <-
+      select(ungroup(filter(removed_confluence,
+                            # Deduplicate by largest trib path
+                            usLevelPathI == min(usLevelPathI))),
+             -usLevelPathI) # clean
+    
+    flines <- reconcile_removed_flowlines(flines,
+                                          reroute_confluence_set,
+                                          removed_confluence,
+                                          original_fline_atts)
+  }
   ####################################
   # Cleanup and prepare output
   ####################################
@@ -398,17 +399,18 @@ collapse_outlets <- function(flines, thresh,
       short_flines_index <- short_flines_index[!headwaters]
     }
 
-    # Get from length and from area with a join on toCOMID.
-    short_flines <- left_join(short_flines,
-                              select(original_fline_atts, toCOMID,
-                                     fromCOMID = COMID,
-                                     fromLevelPathI = LevelPathI),
-                              by = c("COMID" = "toCOMID")) %>%
-      group_by(COMID) %>%  # deduplicate with level path then length.
-      filter(is.na(joined_fromCOMID) | joined_fromCOMID != -9999) %>%
-      filter(fromLevelPathI == min(fromLevelPathI)) %>%
-      ungroup()
-
+    if(nrow(short_flines) > 0) {
+      # Get from length and from area with a join on toCOMID.
+      short_flines <- left_join(short_flines,
+                                select(original_fline_atts, toCOMID,
+                                       fromCOMID = COMID,
+                                       fromLevelPathI = LevelPathI),
+                                by = c("COMID" = "toCOMID")) %>%
+        group_by(COMID) %>%  # deduplicate with level path then length.
+        filter(is.na(joined_fromCOMID) | joined_fromCOMID != -9999) %>%
+        filter(fromLevelPathI == min(fromLevelPathI)) %>%
+        ungroup()
+      
     # This is a pointer to the flines rows that need to
     # absorb a downstream short flowline.
     flines_to_update_index <- match(short_flines$fromCOMID, flines$COMID)
@@ -436,7 +438,7 @@ collapse_outlets <- function(flines, thresh,
 
     short_outlets_tracker <- c(short_outlets_tracker,
                                flines[["COMID"]][short_flines_index])
-
+  }
     count <- count + 1
     if (count > 100) stop("stuck in short outlet loop")
   }

@@ -14,9 +14,11 @@ test_that("refactor_nhdplus works as expected with three pass mode", {
   out_collapsed <- "nhdplus_collapsed.gpkg"
   out_reconciled <- "nhdplus_reconciled.gpkg"
 
-  flines <- suppressWarnings(sf::st_set_geometry(nhdplus_flines, NULL) %>%
-    nhdplusTools::prepare_nhdplus(0, 0) %>%
-    dplyr::inner_join(dplyr::select(nhdplus_flines, COMID), by = "COMID") %>%
+  flines <- suppressWarnings(
+    dplyr::inner_join(dplyr::select(nhdplus_flines, COMID), 
+                      sf::st_set_geometry(nhdplus_flines, NULL) %>%
+                        nhdplusTools::prepare_nhdplus(0, 0),
+                      by = "COMID") %>%
     sf::st_as_sf() %>%
       sf::st_cast("LINESTRING") %>%
       sf::st_transform(5070) %>%

@@ -81,8 +81,8 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 
     if (is.null(geom_column)) stop("geom must contain an sf geometry column")
 
-    new_flines <- left_join(new_flines, select(geom, id, geom_column),
-                            by = c("member_COMID" = "COMID")) %>%
+    new_flines <- right_join(select(geom, member_COMID = id, geom_column), new_flines,
+                            by = "member_COMID") %>%
       sf::st_as_sf() %>%
       group_by(ID) %>%
       summarise(toID = toID[1],
@@ -206,8 +206,8 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr, fa
       unioned_cats)))
   }
 
-  out <- st_sf(left_join(reconciled, split_cats,
-                         by = c("member_COMID" = "FEATUREID")))
+  out <- st_sf(right_join(select(split_cats, member_COMID = FEATUREID), reconciled,
+                         by = "member_COMID"))
 
   missing <- is.na(st_dimension(out$geom))
 
@@ -238,6 +238,8 @@ par_split_cat <- function(fid, to_split_ids, fline_ref, catchment, fdr, fac) {
   try({
     # nolint start
     library(hyRefactor)
+    library(rgdal)
+    library(raster)
     # nolint end
     split_set <- to_split_ids[which(grepl(paste0("^", as.character(fid)), to_split_ids))]
     to_split_flines <- dplyr::filter(fline_ref, COMID %in% split_set)

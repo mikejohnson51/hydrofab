@@ -4,10 +4,19 @@
 \alias{refactor_nhdplus}
 \title{Refactor NHDPlus}
 \usage{
-refactor_nhdplus(nhdplus_flines, split_flines_meters, split_flines_cores,
-  collapse_flines_meters, collapse_flines_main_meters, out_collapsed,
-  out_reconciled, three_pass = FALSE, purge_non_dendritic = TRUE,
-  exclude_cats = NULL, warn = TRUE)
+refactor_nhdplus(
+  nhdplus_flines,
+  split_flines_meters,
+  split_flines_cores,
+  collapse_flines_meters,
+  collapse_flines_main_meters,
+  out_collapsed,
+  out_reconciled,
+  three_pass = FALSE,
+  purge_non_dendritic = TRUE,
+  exclude_cats = NULL,
+  warn = TRUE
+)
 }
 \arguments{
 \item{nhdplus_flines}{data.frame raw nhdplus flowline features as

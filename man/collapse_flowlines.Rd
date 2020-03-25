@@ -4,8 +4,14 @@
 \alias{collapse_flowlines}
 \title{Collapse NHDPlus Network}
 \usage{
-collapse_flowlines(flines, thresh, add_category = FALSE,
-  mainstem_thresh = NULL, exclude_cats = NULL, warn = TRUE)
+collapse_flowlines(
+  flines,
+  thresh,
+  add_category = FALSE,
+  mainstem_thresh = NULL,
+  exclude_cats = NULL,
+  warn = TRUE
+)
 }
 \arguments{
 \item{flines}{data.frame with COMID, toCOMID, LENGTHKM, Hydroseq, and LevelPathI columns}

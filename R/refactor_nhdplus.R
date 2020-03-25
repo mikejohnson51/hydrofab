@@ -67,9 +67,11 @@ refactor_nhdplus <- function(nhdplus_flines,
                              warn = TRUE) {
 
   if ("FTYPE" %in% names(nhdplus_flines)) {
-    nhdplus_flines <- sf::st_set_geometry(nhdplus_flines, NULL) %>%
-      prepare_nhdplus(0, 0, 0, purge_non_dendritic = purge_non_dendritic, warn = warn) %>%
-      dplyr::inner_join(select(nhdplus_flines, COMID), by = "COMID") %>%
+    nhdplus_flines <- dplyr::inner_join(
+      select(nhdplus_flines, COMID),
+      sf::st_set_geometry(nhdplus_flines, NULL) %>%
+        prepare_nhdplus(0, 0, 0, purge_non_dendritic = purge_non_dendritic,
+                        warn = warn), by = "COMID") %>%
       sf::st_as_sf()
   }
 
@@ -118,8 +120,8 @@ refactor_nhdplus <- function(nhdplus_flines,
                          exclude_cats)
   }
 
-  collapsed_flines %>%
-    dplyr::inner_join(select(flines, COMID), by = "COMID") %>%
+  select(flines, COMID) %>%
+    dplyr::inner_join(collapsed_flines, by = "COMID") %>%
     sf::st_as_sf() %>%
     sf::st_transform(in_proj) %>%
     sf::st_write(out_collapsed, layer_options = "OVERWRITE=YES",

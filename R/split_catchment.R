@@ -100,7 +100,7 @@ collect_upstream <- function(row_col, fdr_matrix) {
 #' @return Split catchment divides as an sfc geometry.
 #' @importFrom raster raster crs crop mask rowColFromCell cellFromXY rasterToPolygons as.matrix
 #' @importFrom dplyr group_by ungroup filter select mutate lead n
-#' @importFrom sf st_crs st_coordinates as_Spatial st_buffer st_combine
+#' @importFrom sf st_crs st_crs<- st_coordinates as_Spatial st_buffer st_combine
 #' st_as_sf st_as_sfc st_geometry st_simplify st_snap
 #' st_difference st_cast st_sf st_area
 #' @export
@@ -188,6 +188,8 @@ split_catchment_divide <- function(catchment, fline, fdr, fac) {
           st_combine()
       }
 
+      suppressWarnings(st_crs(catchment) <- st_crs(ds_catchment))
+      
       ds_catchment <- tryCatch(retry_cat_fun(catchment,
                                              ds_catchment,
                                              smaller_than_one_pixel),

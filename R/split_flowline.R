@@ -21,11 +21,11 @@ split_flowlines <- function(flines, max_length, para = 0) {
 
   split <- left_join(split, sf::st_set_geometry(flines, NULL), by = "COMID")
 
-  split <- group_by(split, COMID)
-
   split$part <- unlist(lapply(strsplit(split$split_fID, "\\."),
                               function(x) x[2]))
 
+  split <- group_by(split, COMID)
+  
   split <- mutate(split, part = (ifelse(is.na(part), 0, as.integer(part)) + 1))
 
   # Assume flowdir is with digitized for now -- need to check in prep code.

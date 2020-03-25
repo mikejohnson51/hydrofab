@@ -27,7 +27,8 @@ test_that("split_catchment_divides works", {
 
   expect_true(nrow(test_flines) == 5, "got wrong number of test_flines")
 
-  split_cat <- split_catchment_divide(test_cat, test_flines, walker_fdr, walker_fac)
+  split_cat <- split_catchment_divide(test_cat, test_flines, 
+                                      walker_fdr, walker_fac)
 
   expect_true(length(split_cat) == 5, "Got the wrong number of cathment split polygons")
   expect_true(all(c("XY", "MULTIPOLYGON", "sfg") %in% class(split_cat[[5]])),
@@ -43,7 +44,7 @@ test_that("split_catchment_divides works", {
                   FEATUREID %in% unique(as.integer(test_fline_ref$COMID)))
 
   reconciled_cats <- reconcile_catchment_divides(test_cat, test_fline_ref, test_fline_rec,
-                                          walker_fdr, walker_fac)
+                                          walker_fdr, walker_fac, para = 2)
 
   expect_true(nrow(reconciled_cats) == nrow(test_fline_ref), "got the wrong number of split catchments")
   expect_true(all(reconciled_cats$member_COMID %in% test_fline_ref$COMID))
@@ -108,7 +109,7 @@ test_that("reconcile catchments works with reconciled flowline from split", {
   test_cat <- sf::read_sf("data/reconcile_test.gpkg", "catchment")
 
   reconciled_cats <- reconcile_catchment_divides(test_cat, test_fline_ref,
-                                          test_fline_rec, fdr, fac)
+                                          test_fline_rec, fdr, fac, para = 1)
 
   expect_true(nrow(reconciled_cats) == nrow(test_fline_rec) - 1,
          "Got the wrong number of reconciled catchments")
