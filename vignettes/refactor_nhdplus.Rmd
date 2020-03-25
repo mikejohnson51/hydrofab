@@ -107,7 +107,7 @@ These inputs are described in detail below.
 ## Split flowlines
 The split_flowlines feature requires flowlines with geometry but for performance reasons, the prep_nhdplus function works with attributes only. The code below, joins the geometry back, coerces it to the required geometry type, and projects it to a projection suited to distance measurement at the contental scale of NHDPlus. It then executes the split_flowlines function.
 ```{r split}
-flines <- inner_join(flines, select(nhdplus_flines, COMID), by = "COMID") %>%
+flines <- inner_join(select(nhdplus_flines, COMID), flines, by = "COMID") %>%
     st_as_sf() %>%
     st_cast("LINESTRING") %>%
     st_transform(5070)
@@ -164,8 +164,8 @@ collapsed_flines <- collapse_flowlines(collapsed_flines,
                                        warn = FALSE)
 
 # Now we can save the output
-collapsed_flines %>%
-    inner_join(select(flines, COMID), by = "COMID") %>%
+ select(flines, COMID) %>%
+    inner_join(collapsed_flines, by = "COMID") %>%
     st_as_sf() %>%
     st_transform(4326) %>%
     st_write("nhdplus_collapsed.gpkg", layer_options = "OVERWRITE=YES", quiet = TRUE)
