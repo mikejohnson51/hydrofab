@@ -33,7 +33,8 @@ env:
 
 r_github_packages:
   - jimhester/covr
-  - r-spatial/lwgeom
+  - r-spatial/sf
+  - tidyverse/dplyr
 
 after_success:
   - if [[ "${R_CODECOV}" ]]; then R -e 'covr::coveralls()'; fi

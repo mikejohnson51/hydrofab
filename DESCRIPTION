@@ -10,7 +10,6 @@ Depends:
     R (>= 3.5.0)
 Imports: dplyr, sf, lwgeom, snow, units, magrittr, data.table, raster, rgdal, rgeos, igraph, tidyr, nhdplusTools, pbapply, xml2, rvest, httr, stringr
 Suggests: testthat, knitr, rmarkdown
-Remotes: USGS-R/nhdplusTools
 License: CC0
 Encoding: UTF-8
 LazyData: true

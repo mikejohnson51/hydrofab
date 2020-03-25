@@ -105,9 +105,17 @@ test_that("reconcile catchments works with reconciled flowline from split", {
 
   fdr <- raster::raster("data/reconcile_test_fdr.tif")
   fac <- raster::raster("data/reconcile_test_fac.tif")
-  test_fline_ref <- sf::read_sf("data/reconcile_test.gpkg", "fline_ref")
-  test_fline_rec <- sf::read_sf("data/reconcile_test.gpkg", "fline_rec")
-  test_cat <- sf::read_sf("data/reconcile_test.gpkg", "catchment")
+  
+  raster_proj <- st_crs(as.character(raster::crs(fdr)))
+  
+  test_fline_ref <- st_transform(
+    sf::read_sf("data/reconcile_test.gpkg", "fline_ref"), raster_proj)
+  
+  test_fline_rec <- st_transform(
+    sf::read_sf("data/reconcile_test.gpkg", "fline_rec"), raster_proj)
+  
+  test_cat <- st_transform(
+    sf::read_sf("data/reconcile_test.gpkg", "catchment"), raster_proj)
 
   reconciled_cats <- reconcile_catchment_divides(test_cat, test_fline_ref,
                                           test_fline_rec, fdr, fac, para = 2)
