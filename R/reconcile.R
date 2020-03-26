@@ -160,10 +160,12 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr, fa
   to_split_featureids <- unique(as.integer(to_split_ids))
 
   cl <- NULL
-  if(para > 1)
+  if(para > 1) {
+    log_file <- ""
+    if(!is.null(cache)) log_file <- paste0(cache, "_par.log")  
     cl <- parallel::makeCluster(rep("localhost", para),
-                                type = "SOCK", outfile = "par_split.log")
-
+                                type = "SOCK", outfile = log_file)
+  }
   if(!is.null(cache)) {
     try(load(cache), silent = TRUE)
   }
