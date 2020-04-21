@@ -180,8 +180,13 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr, fa
   if(!is.null(cache)) save(split_cats, file = cache)
   }
 
-  split_cats <- st_as_sf(rbindlist(split_cats[!sapply(split_cats, is.null)])) %>%
-    st_cast("MULTIPOLYGON")
+  
+  if(length(split_cats) == 0) {
+    split_cats <- st_sf(FEATUREID = NA, geom = list(st_multipolygon()))
+  } else {
+    split_cats <- st_as_sf(rbindlist(split_cats[!sapply(split_cats, is.null)])) %>%
+      st_cast("MULTIPOLYGON")
+  }
   
   split_cats <- dplyr::group_by(split_cats, FEATUREID) %>% 
     dplyr::filter(dplyr::row_number() == 1) %>%

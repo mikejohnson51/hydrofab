@@ -59,13 +59,6 @@ aggregate_catchments <- function(flowpath, divide, outlets,
                                  da_thresh = NA, only_larger = FALSE, 
                                  post_mortem_file = NA) {
 
-  remove_flines <- filter(flowpath, !ID %in% divide$ID)
-  if (any(remove_flines$ID %in% remove_flines$toID))
-    stop("Found some flowlines without catchments that are
-         not headwaters. This breaks critical assumptions.")
-  # Actually remove superfluous flowlines.
-  flowpath <- filter(flowpath, ID %in% divide$ID)
-
   lps <- get_lps(flowpath)
 
   if (any(!outlets$ID %in% flowpath$ID)) stop("Outlet IDs must all be in flowpaths.")
@@ -79,6 +72,13 @@ aggregate_catchments <- function(flowpath, divide, outlets,
                                 da_thresh = da_thresh, only_larger = only_larger) %>%
     distinct()
 
+  if(any(remove_head_div <- !flowpath$ID %in% flowpath$toID & 
+         !flowpath$ID %in% divide$ID)) {
+    remove_fpaths <- filter(flowpath, remove_head_div)
+    message(paste("removing", nrow(remove_fpaths), 
+                  "headwater/diversion flowlines without catchments."))
+    flowpath <- filter(flowpath, !ID %in% remove_fpaths$ID)
+  }
   outlets <- mutate(outlets, ID = paste0("cat-", ID))
   divide <- mutate(divide, ID = paste0("cat-", ID))
 
@@ -182,7 +182,7 @@ aggregate_catchments <- function(flowpath, divide, outlets,
     
     abort_code <- tryCatch(
       {
-        if (length(cat) > 0 && 
+        if (length(cat) > 0 && length(st_geometry_type(fline_sets$geom[[cat]])) > 0 &&
             st_geometry_type(fline_sets$geom[[cat]]) == "MULTILINESTRING") {
           fline_sets$geom[[cat]] <- st_line_merge(fline_sets$geom[[cat]])
         }
@@ -318,6 +318,11 @@ fix_tail <- function(flowpath, outlets, toid_tail_id, da_thresh = NA, only_large
 make_outlets_valid <- function(outlets, flowpath, lps,
                                da_thresh = NA, only_larger = FALSE) {
 
+  outlets <- distinct(outlets) %>%
+    group_by(ID) %>%
+    filter(!(n() > 1 & type == "outlet")) %>%
+    ungroup()
+  
   otl <- get_outlets(outlets, lps)
 
   count_while <- 0
