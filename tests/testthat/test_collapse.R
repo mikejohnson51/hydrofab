@@ -92,6 +92,8 @@ test_that("collapse flowlines works as expected", {
 
 })
 
+context("collapse_flowlines - 2")
+
 test_that("headwater / top of mainstem collapes works as expected", {
   flines <- readRDS("data/guadalupe_network_geom.rds")
   flines <- sf::st_set_geometry(flines, NULL)
@@ -162,6 +164,8 @@ test_that("headwater / top of mainstem collapes works as expected", {
   # nolint end
 })
 
+context("collapse_flowlines - 3")
+
 test_that("collapse flowlines works with small networks", {
   flines <- readRDS("data/small_networks.rds")
   flines <- suppressWarnings(nhdplusTools::prepare_nhdplus(flines, 0, 0))
@@ -200,6 +204,8 @@ test_that("collapse flowlines works with small networks", {
 
 })
 
+context("collapse_flowlines - 4")
+
 test_that("collapse flowlines works as expected with add category", {
   flines <- readRDS("data/petapsco_network.rds")
   flines <- sf::st_set_geometry(flines, NULL)
@@ -207,6 +213,8 @@ test_that("collapse flowlines works as expected with add category", {
   flines <- collapse_flowlines(flines, 1, add_category = TRUE)
   expect_equal(names(flines)[9], "join_category")
 })
+
+context("collapse_flowlines - 5")
 
 # then go look at problem headwater combinations.
 test_that("collapse flowlines works as expected with mainstem thresh", {
@@ -223,6 +231,8 @@ test_that("collapse flowlines works as expected with mainstem thresh", {
   expect_true(flines$joined_fromCOMID[which(flines$COMID == 11690124)] ==
            11688868)
 })
+
+context("collapse_flowlines - 6")
 
 test_that("repeat collapse doesn't leave orphans", {
 

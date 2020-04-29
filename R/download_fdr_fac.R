@@ -7,6 +7,9 @@
 #' @importFrom httr RETRY write_disk progress
 #' @export
 download_fdr_fac <- function(out_dir, regions = NULL) {
+  
+  dev_null <- nhdplusTools:::check7z()
+  
   dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
   
   root <- "http://www.horizon-systems.com"
@@ -49,7 +52,7 @@ download_fdr_fac <- function(out_dir, regions = NULL) {
     if(!file.exists(out_fi)) {
       RETRY("GET", url, write_disk(out_fi), progress())
     
-      system(paste0("7z -o", path.expand(out_dir), " x ", 
+      system(paste0("7z -y -o", path.expand(out_dir), " x ", 
                     path.expand(out_fi)), intern = TRUE)
     }
   }

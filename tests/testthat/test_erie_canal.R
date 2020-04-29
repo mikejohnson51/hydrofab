@@ -1,6 +1,3 @@
-library(sf)
-library(nhdplusTools)
-library(dplyr)
 
 # nhdplus_path("~/Documents/Data/nhdp/NHDPlusNationalData/NHDPlusV21_National_Seamless.gdb/")
 # nhd <- stage_national_data()
@@ -31,21 +28,22 @@ library(dplyr)
 # raster::writeRaster(sub_fac, "data/erie_fac.tif", overwrite = TRUE)
 # raster::writeRaster(sub_fdr, "data/erie_fdr.tif", overwrite = TRUE)
 #####
-
+context("erie")
+test_that("Erie Canal area works", {
 fac <- raster::raster("data/erie_fac.tif")
 fdr <- raster::raster("data/erie_fdr.tif")
 proj <- as.character(raster::crs(fdr))
 
-flowline <- read_sf("data/erie.gpkg", "NHDFlowline_Network") %>%
-  st_transform(proj)
-catchment <- read_sf("data/erie.gpkg", "CatchmentSP") %>%
-  st_transform(proj)
+flowline <- sf::read_sf("data/erie.gpkg", "NHDFlowline_Network") %>%
+  sf::st_transform(proj)
+catchment <- sf::read_sf("data/erie.gpkg", "CatchmentSP") %>%
+  sf::st_transform(proj)
 
 out_collapse <- tempfile(fileext = ".gpkg")
 out_rec <- tempfile(fileext = ".gpkg")
 
-flowline <- right_join(select(flowline, COMID), 
-                       prepare_nhdplus(flowline, 0, 0, 0, FALSE),
+flowline <- right_join(dplyr::select(flowline, COMID), 
+                       prepare_nhdplus(flowline, 0, 0, 0, FALSE, warn = FALSE),
                        by = "COMID")
 
 # library(RSQLite)
@@ -72,9 +70,9 @@ refactor_nhdplus(nhdplus_flines = flowline,
 
 
 fline_ref <- sf::read_sf(out_collapse) %>%
-  st_transform(proj)
+  sf::st_transform(proj)
 fline_rec <- sf::read_sf(out_rec) %>%
-  st_transform(proj)
+  sf::st_transform(proj)
 
 cat_rec <- reconcile_catchment_divides(catchment, fline_ref, 
                                        fline_rec, fdr, fac, 
@@ -109,3 +107,4 @@ cat_agg <- aggregate_catchments(fline_rec, cat_rec,
 expect_equal(nrow(cat_agg$cat_sets), 515)
 
 expect_equal(nrow(cat_agg$fline_sets), 515)
+})

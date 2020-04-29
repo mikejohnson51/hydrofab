@@ -42,7 +42,20 @@ find_upstream <- function(row_col, fdr_matrix) {
   neighbors <- get_neighbor_df(row, col, nrow(fdr_matrix), ncol(fdr_matrix))
 
   neighbor_ind <- cbind(neighbors$row, neighbors$col)
-  flow_to_val <- neighbors$flow_to_test
+  
+  if(any(neighbor_ind == 0)) {
+    keep <- neighbor_ind[, 1] != 0 &  neighbor_ind[, 2] != 0
+  
+    neighbor_ind <- neighbor_ind[keep, ]
+  
+    flow_to_val <- neighbors$flow_to_test[keep]
+    
+  } else {
+    
+    flow_to_val <- neighbors$flow_to_test
+    
+  }
+  
 
   return(neighbor_ind[which(fdr_matrix[neighbor_ind] == flow_to_val), , drop = FALSE])
 }
