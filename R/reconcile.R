@@ -182,7 +182,7 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr, fa
 
   
   if(length(split_cats) == 0) {
-    split_cats <- st_sf(FEATUREID = NA, geom = list(st_multipolygon()))
+    split_cats <- st_sf(FEATUREID = NA, geom = list(sf::st_multipolygon()))
   } else {
     split_cats <- st_as_sf(rbindlist(split_cats[!sapply(split_cats, is.null)])) %>%
       st_cast("MULTIPOLYGON")

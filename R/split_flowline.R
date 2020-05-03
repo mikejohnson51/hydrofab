@@ -4,18 +4,20 @@
 #' and LINESTRING sf column in "meters" projection
 #' @param max_length maximum segment length to return
 #' @param para numeric how many threads to use in parallel computation
+#' @param avoid vector of ids to avoid
 #' @return All the flowlines with some split apart.
 #' @importFrom dplyr group_by ungroup filter select mutate lead n right_join
 #' @seealso The \code{\link{refactor_nhdplus}} function implements a complete
 #' workflow using `split_flowlines()`.
 #' @export
 #'
-split_flowlines <- function(flines, max_length, para = 0) {
+split_flowlines <- function(flines, max_length, para = 0, avoid = NA) {
   check_names(flines, "split_flowlines")
 
   geom_col <- attr(flines, "sf_column")
 
-  split <- split_lines(flines, max_length, id = "COMID", para = para)
+  split <- split_lines(flines, max_length, id = "COMID", para = para, 
+                       avoid = avoid)
 
   if (!is.null(split)) {
 
@@ -76,14 +78,18 @@ split_flowlines <- function(flines, max_length, para = 0) {
 #' @param max_length maximum segment length to return
 #' @param id name of ID column in data.frame
 #' @param para how many cores to use
+#' @param avoid vector of ids to avoid
 #' @return only the split lines.
 #' @importFrom dplyr group_by ungroup filter select mutate
 #' @noRd
 #'
-split_lines <- function(input_lines, max_length, id = "ID", para = 0) {
+split_lines <- function(input_lines, max_length, id = "ID", para = 0, 
+                        avoid = NA) {
   if (max_length < 50) warning(paste("short max length detected,",
                                      "do you have your units right?"))
 
+  names(input_lines)[names(input_lines) == id] <- "id_col"
+  
   geom_column <- attr(input_lines, "sf_column")
 
   input_crs <- sf::st_crs(input_lines)
@@ -93,8 +99,8 @@ split_lines <- function(input_lines, max_length, id = "ID", para = 0) {
   attr(input_lines[["geom_len"]], "units") <- NULL
   input_lines[["geom_len"]] <- as.numeric(input_lines[["geom_len"]])
 
-  too_long <- filter(select(input_lines, id, geom_column, geom_len),
-                     geom_len >= max_length)
+  too_long <- filter(select(input_lines, id_col, geom_column, geom_len),
+                     geom_len >= max_length & !id_col %in% avoid)
 
   if (nrow(too_long) != 0) {
 
@@ -146,13 +152,15 @@ split_lines <- function(input_lines, max_length, id = "ID", para = 0) {
 
   rm(too_long)
 
-  split_lines <- sf::st_sf(split_points[c(id, "split_fID")],
+  split_lines <- sf::st_sf(split_points[c("id_col", "split_fID")],
                            split_geometry = sf::st_sfc(split_lines,
                                                  crs = input_crs))
 
   names(split_lines)[which(names(split_lines) ==
                              "split_geometry")] <- geom_column
   attr(split_lines, "sf_column") <- geom_column
+  
+  names(split_lines)[names(split_lines) == "id_col"] <- id
   } else {
    split_lines <- NULL
  }

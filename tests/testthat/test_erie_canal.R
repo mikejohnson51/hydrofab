@@ -104,7 +104,7 @@ cat_agg <- aggregate_catchments(fline_rec, cat_rec,
 
 # mapview::mapview(cat_agg)
 
-expect_equal(nrow(cat_agg$cat_sets), 515)
+expect_equal(nrow(cat_agg$cat_sets), 514)
 
-expect_equal(nrow(cat_agg$fline_sets), 515)
+expect_equal(nrow(cat_agg$fline_sets), 514)
 })

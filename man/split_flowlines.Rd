@@ -4,7 +4,7 @@
 \alias{split_flowlines}
 \title{Split Flowlines}
 \usage{
-split_flowlines(flines, max_length, para = 0)
+split_flowlines(flines, max_length, para = 0, avoid = NA)
 }
 \arguments{
 \item{flines}{data.frame with COMID, toCOMID, LENGTHKM
@@ -13,6 +13,8 @@ and LINESTRING sf column in "meters" projection}
 \item{max_length}{maximum segment length to return}
 
 \item{para}{numeric how many threads to use in parallel computation}
+
+\item{avoid}{vector of ids to avoid}
 }
 \value{
 All the flowlines with some split apart.

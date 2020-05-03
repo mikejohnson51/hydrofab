@@ -53,26 +53,33 @@ test_that("split_catchment_divides works", {
 })
 
 test_that("split and reconcile works", {
-  unlink("data/temp/*")
-  dir.create("data/temp", showWarnings = FALSE, recursive = TRUE)
 
   source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
 
+  out_col <- tempfile(fileext = ".gpkg")
+  out_rec <- tempfile(fileext = ".gpkg")
+  
   refactor <- refactor_nhdplus(nhdplus_flines = walker_flowline,
                                split_flines_meters = 2000,
                                collapse_flines_meters = 1000,
                                collapse_flines_main_meters = 1000,
                                split_flines_cores = 2,
-                               out_collapsed = "data/temp/subset_refactor.gpkg",
-                               out_reconciled = "data/temp/subset_reconcile.gpkg",
+                               out_collapsed = out_col,
+                               out_reconciled = out_rec,
                                three_pass = TRUE,
                                purge_non_dendritic = FALSE,
-                               warn = FALSE)
+                               warn = FALSE, exclude_cats = 5329305)
 
-  fline_ref <- sf::read_sf("data/temp/subset_refactor.gpkg") %>%
+  fline_ref <- sf::read_sf(out_col) %>%
     dplyr::arrange(COMID)
-  fline_rec <- sf::read_sf("data/temp/subset_reconcile.gpkg")
-
+  fline_rec <- sf::read_sf(out_rec)
+  
+  # 5329305 would get split if not included in exclude_cats
+  expect_true("5329293,5329305" %in% fline_rec$member_COMID)
+  
+  unlink(out_col)
+  unlink(out_rec)
+  
   test_cat_1 <- fline_rec$member_COMID[which(nchar(fline_rec$member_COMID) ==
                                               max(nchar(fline_rec$member_COMID)))]
   test_cat_2 <- fline_rec$member_COMID[which(fline_rec$ID == 2)]
@@ -93,8 +100,6 @@ test_that("split and reconcile works", {
 
   expect_true(nrow(reconciled_cats) == nrow(test_fline_rec))
   expect_true(all(reconciled_cats$member_COMID %in% test_fline_rec$member_COMID))
-
-  unlink("data/temp/*")
 })
 
 
