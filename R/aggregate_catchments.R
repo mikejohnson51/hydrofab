@@ -59,8 +59,6 @@ aggregate_catchments <- function(flowpath, divide, outlets,
                                  da_thresh = NA, only_larger = FALSE, 
                                  post_mortem_file = NA) {
 
-  lps <- get_lps(flowpath)
-
   if (any(!outlets$ID %in% flowpath$ID)) stop("Outlet IDs must all be in flowpaths.")
 
   if (any(!is.na(flowpath$toID[which(flowpath$ID %in%
@@ -68,10 +66,13 @@ aggregate_catchments <- function(flowpath, divide, outlets,
     if(!is.na(post_mortem_file)) save(list = ls(), file = post_mortem_file)
     stop("Terminal paths must have an NA toID")
   }
+
+  lps <- get_lps(flowpath)
+  
   outlets <- make_outlets_valid(outlets, flowpath, lps,
                                 da_thresh = da_thresh, only_larger = only_larger) %>%
     distinct()
-
+  
   if(any(remove_head_div <- !flowpath$ID %in% flowpath$toID & 
          !flowpath$ID %in% divide$ID)) {
     remove_fpaths <- filter(flowpath, remove_head_div)
@@ -79,6 +80,9 @@ aggregate_catchments <- function(flowpath, divide, outlets,
                   "headwater/diversion flowlines without catchments."))
     flowpath <- filter(flowpath, !ID %in% remove_fpaths$ID)
   }
+  
+  lps <- get_lps(flowpath)
+  
   outlets <- mutate(outlets, ID = paste0("cat-", ID))
   divide <- mutate(divide, ID = paste0("cat-", ID))
 
@@ -156,10 +160,25 @@ aggregate_catchments <- function(flowpath, divide, outlets,
     head_id <- head_id[head_id != outlet_id]
 
     if (length(head_id) == 0) head_id <- outlet_id # Then the outlet is a headwater.
-    um <- find_um(us_verts, cat_graph,
-                  cat_id = cat_sets$nexID[cat],
-                  head_id = head_id,
-                  outlet_type = filter(outlets, nexID == cat_sets$nexID[cat])$type)
+    
+    abort_code <- tryCatch(
+      {
+        um <- find_um(us_verts, cat_graph,
+                      cat_id = cat_sets$nexID[cat],
+                      head_id = head_id,
+                      outlet_type = filter(outlets, nexID == cat_sets$nexID[cat])$type)
+        abort_code <- ""
+      }, error = function(e) e
+    )
+    
+    if(abort_code != "")  {
+      if(!is.na(post_mortem_file)) {
+        save(list = ls(), file = post_mortem_file)
+        stop(paste("Upstream Main error, post mortem file:", post_mortem_file))
+      } else {
+        stop(paste("Upstream Main error:", abort_code))
+      }
+    }
 
     if (length(us_verts) > 0) {
       vert <- us_verts[which(um %in% us_verts)]
