@@ -36,7 +36,7 @@
 #'
 #' @export
 #' @importFrom igraph graph_from_data_frame topo_sort incident_edges V bfs head_of shortest_paths
-#' @importFrom sf st_cast st_union st_geometry st_sfc st_sf st_crs st_set_geometry st_line_merge st_geometry_type
+#' @importFrom sf st_cast st_union st_geometry st_sfc st_sf st_crs st_set_geometry st_line_merge st_geometry_type st_multipolygon
 #' @importFrom dplyr filter mutate left_join select distinct case_when bind_rows
 #' @importFrom tidyr unnest
 #' @examples
@@ -210,6 +210,25 @@ aggregate_catchments <- function(flowpath, divide, outlets,
         
         fline_sets$set[[cat]] <- um
         
+        # Excludes the search node to avoid grabbing the downstream catchment.
+        ut_verts <- ut$order[!is.na(ut$order) & names(ut$order) != cat_sets$nexID[cat]]
+        cat_sets$set[[cat]] <- filter(catchment, fromID %in% names(ut_verts))$cat_ID
+        remove <- head_of(cat_graph, unlist(incident_edges(cat_graph, ut_verts, "in")))
+        verts <- verts[!verts %in% remove]
+        
+        if (outlet$type == "outlet") {
+          cat_sets$set[[cat]] <- c(cat_sets$set[[cat]], outlet$ID)
+          verts <- verts[!names(verts) == outlet$nexID]
+        }
+        
+        geom <- st_union(st_geometry(filter(divide, ID %in% unlist(cat_sets$set[cat]))))
+        
+        if(length(geom) > 0) {
+          cat_sets$geom[[cat]] <- geom[[1]]
+        } else {
+          cat_sets$geom[[cat]] <- st_multipolygon()
+        }
+        
         abort_code <- ""
       }, error = function(e) e
     )
@@ -217,24 +236,13 @@ aggregate_catchments <- function(flowpath, divide, outlets,
     if(abort_code != "")  {
       if(!is.na(post_mortem_file)) {
         save(list = ls(), file = post_mortem_file)
-        stop(paste("error getting geometry type, post mortem file:", post_mortem_file))
+        stop(paste("error getting geometry type or with union, post mortem file:", post_mortem_file))
       } else {
-        stop(paste("error getting geometry type for line merge:", abort_code))
+        stop(paste("error getting geometry type or with union for line merge:", abort_code))
       }
     }
 
-    # Excludes the search node to avoid grabbing the downstream catchment.
-    ut_verts <- ut$order[!is.na(ut$order) & names(ut$order) != cat_sets$nexID[cat]]
-    cat_sets$set[[cat]] <- filter(catchment, fromID %in% names(ut_verts))$cat_ID
-    remove <- head_of(cat_graph, unlist(incident_edges(cat_graph, ut_verts, "in")))
-    verts <- verts[!verts %in% remove]
-    if (outlet$type == "outlet") {
-      cat_sets$set[[cat]] <- c(cat_sets$set[[cat]], outlet$ID)
-      verts <- verts[!names(verts) == outlet$nexID]
-    }
-    cat_sets$geom[[cat]] <- st_union(st_geometry(filter(divide, ID %in% unlist(cat_sets$set[cat]))))[[1]]
-
-    if (length(cat_sets$geom[[cat]]) == 0) browser()
+    # if (length(cat_sets$geom[[cat]]) == 0) browser()
 
     cat_sets$set[[cat]] <- as.numeric(gsub("^cat-", "", cat_sets$set[[cat]]))
 
