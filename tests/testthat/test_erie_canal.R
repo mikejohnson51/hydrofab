@@ -39,7 +39,7 @@ flowline <- sf::read_sf("data/erie.gpkg", "NHDFlowline_Network") %>%
 catchment <- sf::read_sf("data/erie.gpkg", "CatchmentSP") %>%
   sf::st_transform(proj)
 
-out_collapse <- tempfile(fileext = ".gpkg")
+out_refactor <- tempfile(fileext = ".gpkg")
 out_rec <- tempfile(fileext = ".gpkg")
 
 flowline <- right_join(dplyr::select(flowline, COMID), 
@@ -62,14 +62,14 @@ refactor_nhdplus(nhdplus_flines = flowline,
                  collapse_flines_meters = 1000,
                  collapse_flines_main_meters = 1000,
                  split_flines_cores = 1,
-                 out_collapsed = out_collapse,
+                 out_refactored = out_refactor,
                  out_reconciled = out_rec,
                  three_pass = TRUE,
                  purge_non_dendritic = FALSE,
                  warn = FALSE, exclude_cats = outlets$ID)
 
 
-fline_ref <- sf::read_sf(out_collapse) %>%
+fline_ref <- sf::read_sf(out_refactor) %>%
   sf::st_transform(proj)
 fline_rec <- sf::read_sf(out_rec) %>%
   sf::st_transform(proj)

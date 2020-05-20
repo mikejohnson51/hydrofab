@@ -47,7 +47,7 @@ new_hope_catchment_rec <- sf::read_sf(file.path(extdata, "new_hope_cat_rec.gpkg"
 #                  collapse_flines_meters = 1000,
 #                  collapse_flines_main_meters = 1000,
 #                  split_flines_cores = 2,
-#                  out_collapsed = "new_hope_refactor.gpkg",
+#                  out_refactored = "new_hope_refactor.gpkg",
 #                  out_reconciled = "new_hope_reconcile.gpkg",
 #                  three_pass = TRUE,
 #                  purge_non_dendritic = FALSE,

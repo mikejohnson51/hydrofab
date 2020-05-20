@@ -11,7 +11,7 @@ test_that("refactor_nhdplus works as expected with three pass mode", {
   split_flines_meters <- 2000
   split_flines_cores <- 3
   collapse_flines_meters <- collapse_flines_main_meters <- 1000
-  out_collapsed <- "nhdplus_collapsed.gpkg"
+  out_refactored <- "nhdplus_collapsed.gpkg"
   out_reconciled <- "nhdplus_reconciled.gpkg"
 
   flines <- suppressWarnings(
@@ -76,7 +76,7 @@ test_that("The refactor_nhdplus function runs as expected", {
                    split_flines_cores = 3,
                    collapse_flines_meters = 500,
                    collapse_flines_main_meters = 500,
-                   out_collapsed = "temp.gpkg",
+                   out_refactored = "temp.gpkg",
                    out_reconciled = "temp_rec.gpkg",
                    three_pass = TRUE, warn = TRUE)))
     sink()
@@ -96,7 +96,7 @@ test_that("The refactor_nhdplus function runs as expected", {
                    split_flines_cores = 3,
                    collapse_flines_meters = 500,
                    collapse_flines_main_meters = 500,
-                   out_collapsed = "temp.gpkg",
+                   out_refactored = "temp.gpkg",
                    out_reconciled = "temp_rec.gpkg",
                    three_pass = FALSE,
                    warn = FALSE)

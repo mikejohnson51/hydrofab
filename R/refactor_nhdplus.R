@@ -12,7 +12,7 @@
 #' inter-confluence flowpath desired in the output.
 #' @param collapse_flines_main_meters numeric the minimum length of
 #' between-confluence flowpaths.
-#' @param out_collapsed character where to write a geopackage containing
+#' @param out_refactored character where to write a geopackage containing
 #' the split and collapsed flowlines.
 #' @param out_reconciled character where to write a geopackage containing
 #' the reconciled flowpaths.
@@ -45,7 +45,7 @@
 #'                  split_flines_cores = 3,
 #'                  collapse_flines_meters = 500,
 #'                  collapse_flines_main_meters = 500,
-#'                  out_collapsed = "temp.gpkg",
+#'                  out_refactored = "temp.gpkg",
 #'                  out_reconciled = "temp_rec.gpkg",
 #'                  three_pass = TRUE,
 #'                  purge_non_dendritic = FALSE,
@@ -59,7 +59,7 @@ refactor_nhdplus <- function(nhdplus_flines,
                              split_flines_cores,
                              collapse_flines_meters,
                              collapse_flines_main_meters,
-                             out_collapsed,
+                             out_refactored,
                              out_reconciled,
                              three_pass = FALSE,
                              purge_non_dendritic = TRUE,
@@ -125,7 +125,7 @@ refactor_nhdplus <- function(nhdplus_flines,
     dplyr::inner_join(collapsed_flines, by = "COMID") %>%
     sf::st_as_sf() %>%
     sf::st_transform(in_proj) %>%
-    sf::st_write(out_collapsed, layer_options = "OVERWRITE=YES",
+    sf::st_write(out_refactored, layer_options = "OVERWRITE=YES",
                  quiet = !warn)
 
   if (warn) {

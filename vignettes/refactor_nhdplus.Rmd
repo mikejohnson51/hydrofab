@@ -88,7 +88,7 @@ refactor_nhdplus(nhdplus_flines = nhdplus_flines,
                  split_flines_cores = 3,
                  collapse_flines_meters = 500, 
                  collapse_flines_main_meters = 500,
-                 out_collapsed = "nhdplus_collapsed.gpkg",
+                 out_refactored = "nhdplus_collapsed.gpkg",
                  out_reconciled = "nhdplus_reconciled.gpkg",
                  three_pass = TRUE)
 ```
@@ -99,7 +99,7 @@ The inputs to this are:
 * split_flines_cores: the number of processing cores to use while splitting flowlines.
 * collapse flines_meters: the minimum length of inter-confluence flowline desired in the output.
 * collapse_flines_main_meters: the minimum length of between-confluence flowlines.
-* out_collapsed: where to write a geopackage containing the split and collapsed flowlines.
+* out_refactored: where to write a geopackage containing the split and collapsed flowlines.
 * out_reconciled: where to write a geoppackage containing the reconciled flowlines.
 * three_pass: whether to perform a three pass collapse or single pass.
 These inputs are described in detail below.

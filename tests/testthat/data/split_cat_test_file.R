@@ -6,14 +6,14 @@ fac <- raster::raster("~/Documents/active_code/gfv2/workspace/data/fdrfac/NHDPlu
 test_cat <- sf::read_sf("~/Documents/active_code/gfv2/workspace/cache/test.gpkg", "nhd_catchment")
 test_fline <- sf::read_sf("~/Documents/active_code/gfv2/workspace/cache/test.gpkg", "nhd_flowline")
 
-tc <- "~/temp/collapsed.gpkg"
+tf <- "~/temp/refactored.gpkg"
 tr <- "~/temp/reconciled.gpkg"
 refactor_nhdplus(nhdplus_flines = test_fline, 
                  split_flines_meters = 10000, 
                  split_flines_cores = 2, 
                  collapse_flines_meters = 1000,
                  collapse_flines_main_meters = 1000,
-                 out_collapsed = tc, 
+                 out_refactored = tf, 
                  out_reconciled = tr, 
                  three_pass = TRUE, 
                  purge_non_dendritic = FALSE, 

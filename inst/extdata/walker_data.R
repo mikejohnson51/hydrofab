@@ -17,7 +17,7 @@ walker_flowline <- sf::st_transform(walker_flowline, proj)
 #                              collapse_flines_meters = 1,
 #                              collapse_flines_main_meters = 1,
 #                              split_flines_cores = 2,
-#                              out_collapsed = "walker_refactor.gpkg",
+#                              out_refactored = "walker_refactor.gpkg",
 #                              out_reconciled = "walker_reconcile.gpkg",
 #                              three_pass = TRUE,
 #                              purge_non_dendritic = FALSE,
