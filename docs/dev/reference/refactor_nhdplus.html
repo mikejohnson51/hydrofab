@@ -139,7 +139,7 @@ input flowline features. See details and vignettes for more information.</p>
   <span class='no'>split_flines_cores</span>,
   <span class='no'>collapse_flines_meters</span>,
   <span class='no'>collapse_flines_main_meters</span>,
-  <span class='no'>out_collapsed</span>,
+  <span class='no'>out_refactored</span>,
   <span class='no'>out_reconciled</span>,
   <span class='kw'>three_pass</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
   <span class='kw'>purge_non_dendritic</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
@@ -176,7 +176,7 @@ inter-confluence flowpath desired in the output.</p></td>
 between-confluence flowpaths.</p></td>
     </tr>
     <tr>
-      <th>out_collapsed</th>
+      <th>out_refactored</th>
       <td><p>character where to write a geopackage containing
 the split and collapsed flowlines.</p></td>
     </tr>
@@ -230,7 +230,7 @@ The following three functions are used in the `refactor_nhdplus` workflow.</p><o
                  <span class='kw'>split_flines_cores</span> <span class='kw'>=</span> <span class='fl'>3</span>,
                  <span class='kw'>collapse_flines_meters</span> <span class='kw'>=</span> <span class='fl'>500</span>,
                  <span class='kw'>collapse_flines_main_meters</span> <span class='kw'>=</span> <span class='fl'>500</span>,
-                 <span class='kw'>out_collapsed</span> <span class='kw'>=</span> <span class='st'>"temp.gpkg"</span>,
+                 <span class='kw'>out_refactored</span> <span class='kw'>=</span> <span class='st'>"temp.gpkg"</span>,
                  <span class='kw'>out_reconciled</span> <span class='kw'>=</span> <span class='st'>"temp_rec.gpkg"</span>,
                  <span class='kw'>three_pass</span> <span class='kw'>=</span> <span class='fl'>TRUE</span>,
                  <span class='kw'>purge_non_dendritic</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>,
