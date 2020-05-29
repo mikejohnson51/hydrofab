@@ -209,13 +209,12 @@
 <span id="cb7-2"><a href="#cb7-2"></a>                                           <span class="dt">geom =</span> <span class="kw">select</span>(flines, COMID), </span>
 <span id="cb7-3"><a href="#cb7-3"></a>                                           <span class="dt">id =</span> <span class="st">"COMID"</span>)</span>
 <span id="cb7-4"><a href="#cb7-4"></a></span>
-<span id="cb7-5"><a href="#cb7-5"></a>collapsed<span class="op">$</span>member_COMID &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/unlist.html">unlist</a></span>(<span class="kw"><a href="https://rdrr.io/r/base/lapply.html">lapply</a></span>(collapsed<span class="op">$</span>member_COMID, </span>
-<span id="cb7-6"><a href="#cb7-6"></a>                                        <span class="cf">function</span>(x) <span class="kw"><a href="https://rdrr.io/r/base/paste.html">paste</a></span>(x, <span class="dt">collapse =</span> <span class="st">","</span>)))</span>
-<span id="cb7-7"><a href="#cb7-7"></a></span>
-<span id="cb7-8"><a href="#cb7-8"></a><span class="kw">st_write</span>(<span class="kw">st_transform</span>(collapsed, <span class="dv">4326</span>), <span class="st">"nhdplus_reconciled.gpkg"</span>, <span class="dt">layer_options =</span> <span class="st">"OVERWRITE=YES"</span>)</span>
-<span id="cb7-9"><a href="#cb7-9"></a><span class="co">#&gt; Writing layer `nhdplus_reconciled' to data source `nhdplus_reconciled.gpkg' using driver `GPKG'</span></span>
-<span id="cb7-10"><a href="#cb7-10"></a><span class="co">#&gt; options:        OVERWRITE=YES </span></span>
-<span id="cb7-11"><a href="#cb7-11"></a><span class="co">#&gt; Writing 877 features with 7 fields and geometry type Unknown (any).</span></span></code></pre></div>
+<span id="cb7-5"><a href="#cb7-5"></a>collapsed<span class="op">$</span>member_COMID &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span>(collapsed<span class="op">$</span>member_COMID, paste, <span class="dt">collapse =</span> <span class="st">","</span>)</span>
+<span id="cb7-6"><a href="#cb7-6"></a></span>
+<span id="cb7-7"><a href="#cb7-7"></a><span class="kw">st_write</span>(<span class="kw">st_transform</span>(collapsed, <span class="dv">4326</span>), <span class="st">"nhdplus_reconciled.gpkg"</span>, <span class="dt">layer_options =</span> <span class="st">"OVERWRITE=YES"</span>)</span>
+<span id="cb7-8"><a href="#cb7-8"></a><span class="co">#&gt; Writing layer `nhdplus_reconciled' to data source `nhdplus_reconciled.gpkg' using driver `GPKG'</span></span>
+<span id="cb7-9"><a href="#cb7-9"></a><span class="co">#&gt; options:        OVERWRITE=YES </span></span>
+<span id="cb7-10"><a href="#cb7-10"></a><span class="co">#&gt; Writing 877 features with 7 fields and geometry type Unknown (any).</span></span></code></pre></div>
 <p><img src="refactor_nhdplus_files/figure-html/reconcile_secret-1.png" width="576"></p>
 </div>
 <div id="examples" class="section level2">

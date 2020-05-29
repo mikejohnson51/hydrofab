@@ -17,7 +17,10 @@ and LINESTRING sf column in "meters" projection}
 \item{avoid}{vector of ids to avoid}
 }
 \value{
-All the flowlines with some split apart.
+All the flowlines with some split apart. COMIDs are returned as strings 
+with a semantic part number appended. That is .1, .2, ... .10, .11, etc. are 
+appended and must be treated as one would treat a semantic version. .1 is the 
+most upstream and the sequence increases in the downstream direction.
 }
 \description{
 A wrapper for split_lines that works on nhdplus attributes

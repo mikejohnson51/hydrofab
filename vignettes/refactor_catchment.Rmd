@@ -160,10 +160,10 @@ aggregate_lookup_catchment <- dplyr::select(st_drop_geometry(aggregated$cat_sets
   tidyr::unnest(cols = set) %>%
   dplyr::rename(aggregated_catchment_ID = ID, reconciled_ID = set)
 
-(lookup_table <- tibble(NHDPlusV2_COMID = input_ids) %>%
-  left_join(refactor_lookup, by = "NHDPlusV2_COMID") %>%
-  left_join(aggregate_lookup_fline, by = "reconciled_ID") %>%
-  left_join(aggregate_lookup_catchment, by = "reconciled_ID"))
+(lookup_table <- tibble::tibble(NHDPlusV2_COMID = input_ids) %>%
+  dplyr::left_join(refactor_lookup, by = "NHDPlusV2_COMID") %>%
+  dplyr::left_join(aggregate_lookup_fline, by = "reconciled_ID") %>%
+  dplyr::left_join(aggregate_lookup_catchment, by = "reconciled_ID"))
 
 ```
 
