@@ -5,7 +5,10 @@
 #' @param max_length maximum segment length to return
 #' @param para numeric how many threads to use in parallel computation
 #' @param avoid vector of ids to avoid
-#' @return All the flowlines with some split apart.
+#' @return All the flowlines with some split apart. COMIDs are returned as strings 
+#' with a semantic part number appended. That is .1, .2, ... .10, .11, etc. are 
+#' appended and must be treated as one would treat a semantic version. .1 is the 
+#' most upstream and the sequence increases in the downstream direction.
 #' @importFrom dplyr group_by ungroup filter select mutate lead n right_join
 #' @seealso The \code{\link{refactor_nhdplus}} function implements a complete
 #' workflow using `split_flowlines()`.
