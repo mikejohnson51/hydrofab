@@ -205,8 +205,7 @@ collapsed <- reconcile_collapsed_flowlines(collapsed_flines,
                                            geom = select(flines, COMID), 
                                            id = "COMID")
 
-collapsed$member_COMID <- unlist(lapply(collapsed$member_COMID, 
-                                        function(x) paste(x, collapse = ",")))
+collapsed$member_COMID <- sapply(collapsed$member_COMID, paste, collapse = ",")
 
 st_write(st_transform(collapsed, 4326), "nhdplus_reconciled.gpkg", layer_options = "OVERWRITE=YES")
 ```
