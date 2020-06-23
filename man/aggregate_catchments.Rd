@@ -8,6 +8,8 @@ aggregate_catchments(
   flowpath,
   divide,
   outlets,
+  zero_order = NULL,
+  coastal_cats = NULL,
   da_thresh = NA,
   only_larger = FALSE,
   post_mortem_file = NA
@@ -23,6 +25,10 @@ aggregate_catchments(
 fowpath and divide data.frames. "type" should be "outlet", or "terminal".
 "outlet" will include the specified ID.
 "terminal" will be treated as a terminal node with nothing downstream.}
+
+\item{zero_order}{list of vectors containing IDs to be aggregated into 0-order catchments.}
+
+\item{coastal_cats}{sf data.frame with coastal catchments to be used with zero order.}
 
 \item{da_thresh}{numeric Defaults to NA. A threshold total drainage area in the
 units of the TotDASqKM
