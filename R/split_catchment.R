@@ -179,10 +179,10 @@ split_catchment_divide <- function(catchment, fline, fdr, fac) {
 
       raster_function <- function(x) x == 1
 
-      out <- st_as_sf(
+      suppressWarnings(out <- st_as_sf(
         raster::rasterToPolygons(out,
                                  fun = raster_function,
-                                 dissolve = TRUE))
+                                 dissolve = TRUE)))
 
 
       smaller_than_one_pixel <- units::set_units(800, "m^2")

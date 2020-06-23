@@ -24,7 +24,26 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
              ifelse((is.na(joined_fromCOMID) | joined_fromCOMID == -9999),
                      ifelse((is.na(joined_toCOMID) | joined_toCOMID == -9999),
                              COMID, joined_toCOMID),
-                     joined_fromCOMID)) %>%
+                     joined_fromCOMID))
+  
+  # In the case that something is first joined to then the thing it joins with joins from
+  # we have to do a little reassignment.
+  joined_from <- new_flines[new_flines$joined_fromCOMID %in% new_flines$becomes, ]
+  joined_to <- new_flines[new_flines$joined_toCOMID %in% new_flines$becomes, ]
+  
+  joined_tofrom <- joined_to[joined_to$becomes %in% joined_from$COMID, ]
+  
+  update_tofrom <- left_join(select(joined_tofrom, COMID, becomes), 
+                             select(joined_from, COMID, new_becomes = becomes), 
+                             by = c("becomes" = "COMID"))
+  
+  if(nrow(update_tofrom) > 0) {
+    new_flines <- left_join(new_flines, select(update_tofrom, COMID, new_becomes), by = "COMID") %>%
+      mutate(becomes = ifelse(!is.na(new_becomes), new_becomes, becomes)) %>%
+      select(-new_becomes)
+  }
+  
+  new_flines <- new_flines %>%
     group_by(becomes) %>%
     mutate(LENGTHKM = max(LENGTHKM),
            Hydroseq = min(Hydroseq),
@@ -46,7 +65,7 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
                          ID = seq_len(length(unique(new_flines$becomes))),
                          stringsAsFactors = FALSE),
               by = "becomes")
-
+  
   tocomid_updater <- filter(select(new_flines, becomes, toCOMID),
                             !is.na(toCOMID))
 

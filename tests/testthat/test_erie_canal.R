@@ -30,13 +30,15 @@
 #####
 context("erie")
 test_that("Erie Canal area works", {
-fac <- raster::raster("data/erie_fac.tif")
-fdr <- raster::raster("data/erie_fdr.tif")
+fac <- raster::raster(list.files(pattern = "erie_fac.tif$", full.names = TRUE, recursive = TRUE))
+fdr <- raster::raster(list.files(pattern = "erie_fdr.tif$", full.names = TRUE, recursive = TRUE))
 proj <- as.character(raster::crs(fdr))
 
-flowline <- sf::read_sf("data/erie.gpkg", "NHDFlowline_Network") %>%
+gpkg <- list.files(pattern = "erie.gpkg$", full.names = TRUE, recursive = TRUE)
+
+flowline <- sf::read_sf(gpkg, "NHDFlowline_Network") %>%
   sf::st_transform(proj)
-catchment <- sf::read_sf("data/erie.gpkg", "CatchmentSP") %>%
+catchment <- sf::read_sf(gpkg, "CatchmentSP") %>%
   sf::st_transform(proj)
 
 out_refactor <- tempfile(fileext = ".gpkg")
@@ -55,7 +57,7 @@ flowline <- right_join(dplyr::select(flowline, COMID),
 # 
 # saveRDS(outlets, "data/erie_outlets.rds")
 
-outlets <- readRDS("data/erie_outlets.rds")
+outlets <- readRDS(list.files(pattern = "erie_outlets.rds$", full.names = TRUE, recursive = TRUE))
 
 refactor_nhdplus(nhdplus_flines = flowline,
                  split_flines_meters = 10000,
@@ -74,9 +76,9 @@ fline_ref <- sf::read_sf(out_refactor) %>%
 fline_rec <- sf::read_sf(out_rec) %>%
   sf::st_transform(proj)
 
-cat_rec <- reconcile_catchment_divides(catchment, fline_ref, 
+suppressWarnings(cat_rec <- reconcile_catchment_divides(catchment, fline_ref, 
                                        fline_rec, fdr, fac, 
-                                       para = 1)
+                                       para = 1))
 
 fline_rec$member_COMID <- strsplit(fline_rec$member_COMID, ",")
 fline_rec$member_COMID <- lapply(fline_rec$member_COMID, as.integer)
@@ -104,7 +106,7 @@ cat_agg <- aggregate_catchments(fline_rec, cat_rec,
 
 # mapview::mapview(cat_agg)
 
-expect_equal(nrow(cat_agg$cat_sets), 514)
+expect_equal(nrow(cat_agg$cat_sets), 513)
 
-expect_equal(nrow(cat_agg$fline_sets), 514)
+expect_equal(nrow(cat_agg$fline_sets), 513)
 })

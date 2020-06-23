@@ -1,8 +1,10 @@
 context("split_catchment_divides")
 
+options("rgdal_show_exportToProj4_warnings"="none")
+
 test_that("split_catchment_divides works", {
-  unlink("data/temp/*")
-  dir.create("data/temp", showWarnings = FALSE, recursive = TRUE)
+  tf <- file.path(tempfile(fileext = ".gpkg"))
+  tr <- file.path(tempfile(fileext = ".gpkg"))
 
   source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
 
@@ -11,15 +13,15 @@ test_that("split_catchment_divides works", {
                                collapse_flines_meters = 1,
                                collapse_flines_main_meters = 1,
                                split_flines_cores = 2,
-                               out_refactored = "data/temp/subset_refactor.gpkg",
-                               out_reconciled = "data/temp/subset_reconcile.gpkg",
+                               out_refactored = tf,
+                               out_reconciled = tr,
                                three_pass = TRUE,
                                purge_non_dendritic = FALSE,
                                warn = FALSE)
 
-  fline_ref <- sf::read_sf("data/temp/subset_refactor.gpkg") %>%
+  fline_ref <- sf::read_sf(tf) %>%
     dplyr::arrange(COMID)
-  fline_rec <- sf::read_sf("data/temp/subset_reconcile.gpkg")
+  fline_rec <- sf::read_sf(tr)
 
   test_flines <- dplyr::filter(fline_ref, as.integer(COMID) == 5329435)
 
@@ -27,8 +29,8 @@ test_that("split_catchment_divides works", {
 
   expect_true(nrow(test_flines) == 5, "got wrong number of test_flines")
 
-  split_cat <- split_catchment_divide(test_cat, test_flines, 
-                                      walker_fdr, walker_fac)
+  suppressWarnings(split_cat <- split_catchment_divide(test_cat, test_flines, 
+                                      walker_fdr, walker_fac))
 
   expect_true(length(split_cat) == 5, "Got the wrong number of cathment split polygons")
   expect_true(all(c("XY", "MULTIPOLYGON", "sfg") %in% class(split_cat[[5]])),
@@ -43,13 +45,12 @@ test_that("split_catchment_divides works", {
   test_cat <- dplyr::filter(walker_catchment,
                   FEATUREID %in% unique(as.integer(test_fline_ref$COMID)))
 
-  reconciled_cats <- reconcile_catchment_divides(test_cat, test_fline_ref, test_fline_rec,
-                                          walker_fdr, walker_fac, para = 2)
+  suppressWarnings(reconciled_cats <- reconcile_catchment_divides(test_cat, test_fline_ref, test_fline_rec,
+                                          walker_fdr, walker_fac, para = 1))
 
   expect_true(nrow(reconciled_cats) == nrow(test_fline_ref), "got the wrong number of split catchments")
   expect_true(all(reconciled_cats$member_COMID %in% test_fline_ref$COMID))
 
-  unlink("data/temp/*")
 })
 
 test_that("split and reconcile works", {
@@ -96,7 +97,7 @@ test_that("split and reconcile works", {
 
   reconciled_cats <- reconcile_catchment_divides(test_cat, test_fline_ref,
                                           test_fline_rec, walker_fdr, walker_fac, 
-                                          para = 2)
+                                          para = 1)
 
   expect_true(nrow(reconciled_cats) == nrow(test_fline_rec))
   expect_true(all(reconciled_cats$member_COMID %in% test_fline_rec$member_COMID))
@@ -108,8 +109,8 @@ test_that("reconcile catchments works with reconciled flowline from split", {
   # "166755072,8866562.2"
   # "8833300.1", "8833300.2"
 
-  fdr <- raster::raster("data/reconcile_test_fdr.tif")
-  fac <- raster::raster("data/reconcile_test_fac.tif")
+  fdr <- suppressWarnings(raster::raster("data/reconcile_test_fdr.tif"))
+  fac <- suppressWarnings(raster::raster("data/reconcile_test_fac.tif"))
   
   raster_proj <- st_crs(as.character(raster::crs(fdr)))
   
@@ -122,8 +123,8 @@ test_that("reconcile catchments works with reconciled flowline from split", {
   test_cat <- st_transform(
     sf::read_sf("data/reconcile_test.gpkg", "catchment"), raster_proj)
 
-  reconciled_cats <- reconcile_catchment_divides(test_cat, test_fline_ref,
-                                          test_fline_rec, fdr, fac, para = 2)
+  suppressWarnings(reconciled_cats <- reconcile_catchment_divides(test_cat, test_fline_ref,
+                                          test_fline_rec, fdr, fac, para = 1))
 
   expect_true(nrow(reconciled_cats) == nrow(test_fline_rec) - 1,
          "Got the wrong number of reconciled catchments")
