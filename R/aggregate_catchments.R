@@ -7,6 +7,8 @@
 #' fowpath and divide data.frames. "type" should be "outlet", or "terminal".
 #' "outlet" will include the specified ID.
 #' "terminal" will be treated as a terminal node with nothing downstream.
+#' @param zero_order list of vectors containing IDs to be aggregated into 0-order catchments.
+#' @param coastal_cats sf data.frame with coastal catchments to be used with zero order.
 #' @param da_thresh numeric Defaults to NA. A threshold total drainage area in the
 #' units of the TotDASqKM
 #' field of the flowpath data.frame. When automatically adding confluences to make
@@ -55,10 +57,37 @@
 #' plot(walker_flowline$geom, lwd = .7, col = "blue", add = TRUE)
 #'
 
-aggregate_catchments <- function(flowpath, divide, outlets,
+aggregate_catchments <- function(flowpath, divide, outlets, zero_order = NULL,
+                                 coastal_cats = NULL,
                                  da_thresh = NA, only_larger = FALSE, 
                                  post_mortem_file = NA) {
 
+  if(!is.null(zero_order)) {
+    
+    if(is.null(coastal_cats)) stop("must supply coastal_cats with zero order")
+    
+    if(st_crs(coastal_cats) != st_crs(divide)) st_transform(coastal_cats, st_crs(divide))
+    
+    zero_flowpath <- filter(flowpath, member_COMID %in% do.call(c, zero_order))
+  
+    flowpath <- filter(flowpath, !ID %in% zero_flowpath$ID)
+    
+    coastal <- lapply(zero_order, function(x, coastal_cats, divide) {
+      
+      zero_cats <- filter(coastal_cats, FEATUREID %in% x)
+      
+      zero_div <- filter(divide, member_COMID %in% as.character(x))
+      
+      st_union(c(st_geometry(zero_cats), st_geometry(zero_div)))[[1]]
+    }, coastal_cats = coastal_cats, divide = divide)
+    
+    coastal <- st_sfc(coastal, crs = st_crs(divide))
+    
+    coastal <- st_sf(ID = names(coastal), geom = coastal)
+  } else {
+    coastal <- NULL
+  }
+  
   if (any(!outlets$ID %in% flowpath$ID)) stop("Outlet IDs must all be in flowpaths.")
 
   if (any(!is.na(flowpath$toID[which(flowpath$ID %in%
@@ -88,7 +117,7 @@ aggregate_catchments <- function(flowpath, divide, outlets,
 
   # Build catchment and nexus data.frames to preserve sanity in graph traversal.
   catchment <- flowpath %>%
-    mutate(toID = ifelse(is.na(toID), 0, toID))
+    mutate(toID = ifelse(is.na(toID), -ID, toID))
 
   # Join id to toID use ID as from nexus ID since we are assuming dendritic.
   nexus <- left_join(select(st_set_geometry(catchment, NULL), toID = ID),
@@ -279,7 +308,7 @@ aggregate_catchments <- function(flowpath, divide, outlets,
   fline_sets <- left_join(fline_sets, next_id, by = "ID")
   cat_sets <- left_join(cat_sets, next_id, by = "ID")
 
-  return(list(cat_sets = cat_sets, fline_sets = fline_sets))
+  return(list(cat_sets = cat_sets, fline_sets = fline_sets, coastal_sets = coastal))
 }
 
 get_lps <- function(flowpath) {
