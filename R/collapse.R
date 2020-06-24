@@ -510,10 +510,10 @@ reconcile_removed_flowlines <- function(flines, reroute_set, removed,
   # Need to sort removed_COMID by drainage area to get
   # the right "first matches" below.
   removed <- left_join(rbind(removed, already_removed),
-                       select(original_fline_atts, COMID, Hydroseq),
+                       select(original_fline_atts, .data$COMID, .data$Hydroseq),
                        by = c("removed_COMID" = "COMID")) %>%
-    arrange(Hydroseq) %>%
-    select(-Hydroseq) %>%
+    arrange(.data$Hydroseq) %>%
+    select(-.data$Hydroseq) %>%
     distinct()
 
   # This is a pointer to joined_fromCOMID records
