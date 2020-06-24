@@ -102,8 +102,8 @@ split_lines <- function(input_lines, max_length, id = "ID", para = 0,
   attr(input_lines[["geom_len"]], "units") <- NULL
   input_lines[["geom_len"]] <- as.numeric(input_lines[["geom_len"]])
 
-  too_long <- filter(select(input_lines, id_col, geom_column, geom_len),
-                     geom_len >= max_length & !id_col %in% avoid)
+  too_long <- filter(select(input_lines, .data$id_col, geom_column, geom_len),
+                     geom_len >= max_length & !.data$id_col %in% avoid)
 
   if (nrow(too_long) != 0) {
 

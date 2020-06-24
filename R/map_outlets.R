@@ -52,7 +52,7 @@ map_outlet_ids <- function(source_outlets, reconciled) {
   if(nrow(missing_terminals) > 0) {
     missing_terminals <- select(missing_terminals, ID, COMID = member_COMID) %>%
       mutate(COMID = strsplit(COMID, split = ",")) %>%
-      mutate(COMID = sapply(COMID, tail, n = 1), type = "terminal")
+      mutate(COMID = sapply(COMID, utils::tail, n = 1), type = "terminal")
     
     outlets <- rbind(source_outlets, missing_terminals)
   } else {

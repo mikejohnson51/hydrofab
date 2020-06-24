@@ -1,9 +1,9 @@
 ---
-title: "Coastal Units"
+title: "Coastal Units wit hyRefactor"
 author: "dblodgett@usgs.gov"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{refactor_catchment}
+  %\VignetteIndexEntry{coastal_units}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -15,7 +15,8 @@ vignette: >
   fig.width=6,
   fig.height=4
 )
-options("rgdal_show_exportToProj4_warnings"="none")
+options("rgdal_show_exportToProj4_warnings"="none",
+        rmarkdown.html_vignette.check_title = FALSE)
 library(magrittr)
 
 fdr_path <- "../../gfv2/workspace/data/fdrfac/NHDPlusCA/NHDPlus18/NHDPlusFdrFac18c/fdr/"
@@ -35,6 +36,7 @@ bbox <- sf::st_bbox(c(xmin = -124.4, ymin = 39.8, xmax = -123.7, ymax = 40.3),
                     crs = sf::st_crs(4326))
 nhd_data <- nhdplusTools::plot_nhdplus(bbox = bbox, gpkg = temp_gpkg, overwrite = TRUE)
 ```
+
 Now that we have some data to work with, we need to subset it so we have a few complete basins to work with. 
 
 _Note that both basins that terminate at the coast AND the coastal flowlines are included in out subset below._
@@ -77,7 +79,7 @@ fac <- raster::raster(fac_path)
 crs <- raster::crs(fac)
 fdr <- raster::crop(fdr, sf::as_Spatial(sf::st_transform(sub$CatchmentSP, crs)))
 fac <- raster::crop(fac, sf::as_Spatial(sf::st_transform(sub$CatchmentSP, crs)))
-mapview::mapview(fdr)
+suppressWarnings(mapview::mapview(fdr))
 ```
 Now that we have all our data ready to go, we can get our networks that we want to refactor pulled out from our coastal catchments and small coastal basins. 
 ```{r}

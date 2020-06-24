@@ -33,14 +33,14 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
   
   joined_tofrom <- joined_to[joined_to$becomes %in% joined_from$COMID, ]
   
-  update_tofrom <- left_join(select(joined_tofrom, COMID, becomes), 
-                             select(joined_from, COMID, new_becomes = becomes), 
+  update_tofrom <- left_join(select(joined_tofrom, COMID, .data$becomes), 
+                             select(joined_from, COMID, new_becomes = .data$becomes), 
                              by = c("becomes" = "COMID"))
   
   if(nrow(update_tofrom) > 0) {
-    new_flines <- left_join(new_flines, select(update_tofrom, COMID, new_becomes), by = "COMID") %>%
-      mutate(becomes = ifelse(!is.na(new_becomes), new_becomes, becomes)) %>%
-      select(-new_becomes)
+    new_flines <- left_join(new_flines, select(update_tofrom, .data$COMID, .data$new_becomes), by = "COMID") %>%
+      mutate(becomes = ifelse(!is.na(.data$new_becomes), .data$new_becomes, .data$becomes)) %>%
+      select(-.data$new_becomes)
   }
   
   new_flines <- new_flines %>%

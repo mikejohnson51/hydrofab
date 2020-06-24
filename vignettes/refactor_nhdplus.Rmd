@@ -20,6 +20,7 @@ library(hyRefactor)
 library(dplyr)
 library(sf)
 options(scipen = 9999)
+options(rmarkdown.html_vignette.check_title = FALSE)
 ```
 
 ## NHDPlus Network Refactor
