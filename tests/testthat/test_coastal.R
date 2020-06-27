@@ -48,18 +48,18 @@ min_da_km <- 10
 
 test_that("basic coastal aggregation", {
   nhd <- sf::read_sf(source_gpkg, "NHDFlowline_Network") %>%
-    align_nhdplus_names()
+    nhdplusTools::align_nhdplus_names()
   
   coastal <- nhd[nhd$FTYPE == "Coastline", ]
   
   nhd <- dplyr::filter(nhd, COMID %in% nhdplusTools::prepare_nhdplus(nhd, 0, 0, 0, FALSE, skip_toCOMID = TRUE, warn = FALSE)$COMID)
   
   networks <- do.call(c, sapply(dplyr::filter(nhd, TerminalFl == 1)$COMID, 
-                                function(x, nhd) get_UT(network = nhd, x), nhd = nhd))
+                                function(x, nhd) nhdplusTools::get_UT(network = nhd, x), nhd = nhd))
   
   nhd <- dplyr::filter(nhd, COMID %in% networks)
   
-  nhd <- make_standalone(nhd)
+  nhd <- nhdplusTools::make_standalone(nhd)
   
   nhd_outlets <- dplyr::filter(nhd, TerminalFl == 1 | 
                                  !ToNode %in% FromNode) %>%

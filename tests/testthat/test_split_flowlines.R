@@ -28,7 +28,40 @@ test_that("split lines works", {
                                                        5070), 250, id = "ID")
 
   expect_true(nrow(split) == 573)
-
+  
+  expect_true(all(split$split_fID_event == 1))
+  
+  event <- sf::st_sf(id = 1, 
+                     COMID = 5329357, 
+                     REACHCODE = "18050005000080", 
+                     REACH_meas = 62.3175842930095, 
+                     offset = 26.3950459356741,
+                     sf::st_sfc(sf::st_point(c(-122.818325, 38.175753)), 
+                                crs = 4326))
+  
+  expect_error(hyRefactor:::split_lines(sf::st_transform(walker_flowline, 5070), 
+                                                 max_length = 250, events = event, id = "COMID"),
+               "lines must be class LINESTRING")
+  
+  split <- hyRefactor:::split_lines(sf::st_transform(suppressWarnings(st_cast(walker_flowline, 
+                                                                              "LINESTRING")), 
+                                                     5070), 
+                                    max_length = 250, events = event, id = "COMID")
+  
+  expect_equal(nrow(split), 576)
+  
+  split <- hyRefactor:::split_lines(sf::st_transform(suppressWarnings(st_cast(walker_flowline, 
+                                                                              "LINESTRING")), 
+                                                     5070), 
+                                    max_length = 1000000, events = event, id = "COMID")
+  
+  expect_equal(nrow(split), 2)
+  
+  expect_equal(split$event_REACHCODE, c("18050005000080", ""))
+  
+  expect_equal(split$event_REACH_meas, c(62.31758, NA), tolerance = 0.001)
+  
+  expect_equal(split$split_fID, c("1", "1.1"))
   }
 
 })
@@ -49,10 +82,80 @@ test_that("split lines works", {
     sf::st_as_sf() %>%
     sf::st_cast("LINESTRING") %>%
     sf::st_transform(5070) %>%
-    split_flowlines(2000, 3))
+    split_flowlines(2000, para = 3))
 
   expect_true(length(which(grepl("1623361", as.character(flines$COMID)))) == 10)
 
   }
 
 })
+
+test_that("split_line_event", {
+  input_crs <- sf::st_crs(5070)
+  
+  event <- data.frame(REACHCODE = "03030002000097",
+                      REACH_meas = 71.12384)
+  
+  line <- readRDS("data/event_split_line.rds")
+  
+  test <- hyRefactor:::split_by_event(line, event, input_crs)
+  
+  length <- sf::st_length(test)
+  
+  expect_equal(length[2] / (length[1] + length[2]), event$REACH_meas / 100, tolerance = 0.01)
+  
+  event <- data.frame(REACHCODE = c("03030002000097", "03030002000097", "03030002000097"),
+                      REACH_meas = c(10, 40, 75))
+  
+  test <- hyRefactor:::split_by_event(line, event, input_crs)
+  
+  length <- sf::st_length(test)
+  
+  length_test <- length / sum(length)
+  
+  expect_equal(tail(length_test, 1), event$REACH_meas[1] / 100)
+  
+  expect_equal(sum(tail(length_test, 2)), event$REACH_meas[2] / 100)
+  
+  expect_equal(sum(tail(length_test, 3)), event$REACH_meas[3] / 100)
+  
+  expect_equal(sum(tail(length_test, 4)), 1)
+})
+
+test_that("split_flowlines at scale", {
+  
+  if (suppressWarnings(require(lwgeom)) & exists("st_linesubstring",
+                                                 where = "package:lwgeom",
+                                                 mode = "function")) {
+    
+    source(system.file("extdata", "new_hope_data.R", package = "hyRefactor"))
+    
+    new_hope_flowline <- right_join(select(new_hope_flowline, COMID, REACHCODE, FromMeas, ToMeas), 
+                                    prepare_nhdplus(new_hope_flowline, 0, 0, 0, FALSE), by = "COMID")
+    
+    split <- split_flowlines(suppressWarnings(st_cast(st_transform(new_hope_flowline, 5070), "LINESTRING")), 2000, 
+                             new_hope_events)
+    
+    expect_equal(nrow(split), 824)
+    
+    split <- split_flowlines(suppressWarnings(st_cast(st_transform(new_hope_flowline, 5070), "LINESTRING")), 2000)
+    
+    expect_equal(nrow(split), 817)
+    
+    one_path <- filter(new_hope_flowline, COMID %in% c(new_hope_events[3, ]$COMID))$LevelPathI
+    
+    n <- filter(new_hope_flowline, LevelPathI %in% one_path)
+    e <- new_hope_events[3, ]
+    
+    s <- split_flowlines(suppressWarnings(st_cast(st_transform(n, 5070), "LINESTRING")), 2000000, e)
+    
+  }
+})
+
+test_that("rescale", {
+  expect_equal(hyRefactor:::rf(50, 50, 100), 0)
+  expect_equal(hyRefactor:::rf(50, 0, 50), 100)
+  expect_equal(hyRefactor:::rf(25, 0, 50), 50)
+  expect_error(hyRefactor:::rf(75, 0, 50), "m must be between f and t")
+})
+

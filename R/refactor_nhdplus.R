@@ -80,7 +80,7 @@ refactor_nhdplus <- function(nhdplus_flines,
   flines <- nhdplus_flines %>%
     sf::st_cast("LINESTRING", warn = warn) %>%
     sf::st_transform(5070) %>%
-    split_flowlines(split_flines_meters, split_flines_cores, 
+    split_flowlines(split_flines_meters, para = split_flines_cores, 
                     avoid = exclude_cats)
 
   rm(nhdplus_flines)

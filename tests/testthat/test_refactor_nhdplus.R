@@ -22,7 +22,7 @@ test_that("refactor_nhdplus works as expected with three pass mode", {
     sf::st_as_sf() %>%
       sf::st_cast("LINESTRING") %>%
       sf::st_transform(5070) %>%
-    split_flowlines(split_flines_meters, split_flines_cores))
+    split_flowlines(split_flines_meters, para = split_flines_cores))
 
   collapsed_flines <-
     collapse_flowlines(sf::st_set_geometry(flines, NULL),

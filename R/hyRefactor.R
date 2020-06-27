@@ -68,6 +68,10 @@ assign("match_flowpaths_attributes",
          "Hydroseq", "LevelPathI", "DnLevelPat"),
        envir = hyrefactor_env)
 
+assign("split_lines_event_attributes",
+       c("REACHCODE", "FromMeas", "ToMeas"),
+       envir = hyrefactor_env)
+
 check_names <- function(x, function_name) {
   x <- nhdplusTools::align_nhdplus_names(x)
   names_x <- names(x)

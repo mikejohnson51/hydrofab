@@ -250,7 +250,7 @@ test_that("repeat collapse doesn't leave orphans", {
                                                  where = "package:lwgeom",
                                                  mode = "function")) {
 
-  flines <- split_flowlines(flines, 2000, 3)
+  flines <- split_flowlines(flines, 2000, para = 3)
   flines <- collapse_flowlines(sf::st_set_geometry(flines, NULL),
                                (0.125), TRUE, (0.125))
 
