@@ -22,10 +22,11 @@ test_that("split lines works", {
               TotDASqKM = TotDASqKM[1]) %>%
     sf::st_cast("MULTILINESTRING") %>%
     dplyr::ungroup() %>%
-    sf::st_line_merge()
+    sf::st_line_merge() %>%
+    rename(COMID = ID)
 
-  split <- hyRefactor:::split_lines(sf::st_transform(dplyr::select(flines, ID),
-                                                       5070), 250, id = "ID")
+  split <- hyRefactor:::split_lines(sf::st_transform(dplyr::select(flines, COMID),
+                                                       5070), 250)
 
   expect_true(nrow(split) == 573)
   
@@ -40,20 +41,20 @@ test_that("split lines works", {
                                 crs = 4326))
   
   expect_error(hyRefactor:::split_lines(sf::st_transform(walker_flowline, 5070), 
-                                                 max_length = 250, events = event, id = "COMID"),
+                                                 max_length = 250, events = event),
                "lines must be class LINESTRING")
   
   split <- hyRefactor:::split_lines(sf::st_transform(suppressWarnings(st_cast(walker_flowline, 
                                                                               "LINESTRING")), 
                                                      5070), 
-                                    max_length = 250, events = event, id = "COMID")
+                                    max_length = 250, events = event)
   
   expect_equal(nrow(split), 576)
   
   split <- hyRefactor:::split_lines(sf::st_transform(suppressWarnings(st_cast(walker_flowline, 
                                                                               "LINESTRING")), 
                                                      5070), 
-                                    max_length = 1000000, events = event, id = "COMID")
+                                    max_length = 1000000, events = event)
   
   expect_equal(nrow(split), 2)
   
@@ -131,7 +132,7 @@ test_that("split_flowlines at scale", {
     source(system.file("extdata", "new_hope_data.R", package = "hyRefactor"))
     
     new_hope_flowline <- right_join(select(new_hope_flowline, COMID, REACHCODE, FromMeas, ToMeas), 
-                                    prepare_nhdplus(new_hope_flowline, 0, 0, 0, FALSE), by = "COMID")
+                                    suppressWarnings(prepare_nhdplus(new_hope_flowline, 0, 0, 0, FALSE, warn = FALSE)), by = "COMID")
     
     split <- split_flowlines(suppressWarnings(st_cast(st_transform(new_hope_flowline, 5070), "LINESTRING")), 2000, 
                              new_hope_events)
