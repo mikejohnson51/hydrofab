@@ -148,8 +148,20 @@ test_that("split_flowlines at scale", {
     n <- filter(new_hope_flowline, LevelPathI %in% one_path)
     e <- new_hope_events[3, ]
     
+    s <- split_flowlines(suppressWarnings(st_cast(st_transform(n, 5070), "LINESTRING")), 1000)
+    
+    expect_equal(s$COMID[1], "8893348")
+    expect_equal(s$COMID[6], "8893330.3")
+    expect_equal(s$toCOMID[s$COMID == "8893330.3"], "8893348") # 8893330
+    expect_equal(s$toCOMID[s$COMID == "8893348"], "8893374.1")
+    
     s <- split_flowlines(suppressWarnings(st_cast(st_transform(n, 5070), "LINESTRING")), 2000000, e)
     
+    expect_equal(as.numeric(sf::st_length(s)), 
+                 c(848.46, 2986.85, 1161.69, 666.85), 
+                 tolerance = 0.1)
+    
+    expect_equal()
   }
 })
 
