@@ -26,7 +26,7 @@ split_flowlines <- function(flines, max_length = NULL,
                        para = para, 
                        avoid = avoid)
   
-  if (!is.null(split)) {
+  if (nrow(split) > 0) {
     
     split <- left_join(split, 
                        select(sf::st_set_geometry(flines, NULL), COMID, toCOMID, LevelPathI, Hydroseq, TotDASqKM), 
@@ -78,7 +78,7 @@ split_flowlines <- function(flines, max_length = NULL,
     flines %>%
       mutate(COMID = as.character(COMID),
              toCOMID = as.character(toCOMID),
-             event_REACHCODE = "",
+             event_REACHCODE = NA,
              event_REACH_meas = NA)
   }
 }
@@ -105,88 +105,53 @@ check_split_data <- function(input_lines) {
 #' @noRd
 #'
 split_lines <- function(input_lines, 
-                        max_length, 
+                        max_length = NULL, 
                         events = NULL, para = 0, 
                         avoid = NA, status = FALSE) {
   
-  input_crs <- check_split_data(input_lines)
+  check_split_data(input_lines)
   
   # First split by event and number parts in a seperate column
-  if(!is.null(events)) {
-   
-    already_split <- split_by_event(input_lines, events, input_crs)
-    
-    # Going into the next split, all too-long lines will have a part id of 0 or more
-    # based on the split_fID_event from above.
-    # split_fID_event is 0 for untouched too_long geometries
-    # split_fID_event is 1 and event_REACHCODE is not "" for the top of a split geometry event splitting.
-    # split_fID_event is >1 for any downstream split geometries from event splitting
-    input_lines <- input_lines %>%
-      dplyr::filter(!COMID %in% already_split$COMID) %>%
-      dplyr::select(COMID) %>%
-      dplyr::mutate(split_fID_event = 0,
-                    event_REACHCODE = "", 
-                    event_REACH_meas = NA) %>%
-      rbind(already_split)
-    
-    # Doing this to conserve memory -- it's lumped into input_lines now but need the ids later.
-    already_split <- already_split$COMID
-    
+  event_split_points <- split_by_event(input_lines, events)
+  
+  input_lines <- dplyr::select(input_lines, COMID)
+  
+  too_long_split_points <- split_by_length(input_lines, max_length, event_split_points, avoid)
+  
+  if(nrow(too_long_split_points) >= nrow(event_split_points)) {
+    split_points <- too_long_split_points %>%
+      dplyr::left_join(select(event_split_points, e_start = .data$start, 
+                              e_end = .data$end, .data$event_split_fID), 
+                       by = "event_split_fID")  %>%
+      dplyr::mutate(start = ifelse(!is.na(.data$e_start), 
+                                   .data$start * (.data$e_end - .data$e_start) + .data$e_start, 
+                                   .data$start),
+                    end = ifelse(!is.na(.data$e_start), 
+                                 .data$end * (.data$e_end - .data$e_start) + .data$e_start, 
+                                 .data$end)) %>%
+      dplyr::mutate(event_REACHCODE = ifelse((!.data$event_REACHCODE == "" & !is.na(.data$event_REACHCODE)) & 
+                                               round(.data$end, digits = 5) == round(.data$e_end, digits = 5), 
+                                             .data$event_REACHCODE, 
+                                             NA)) %>%
+      dplyr::mutate(event_REACH_meas = ifelse(is.na(.data$event_REACHCODE), NA, .data$event_REACH_meas))
   } else {
-    
-    input_lines <- dplyr::mutate(input_lines, 
-                                 split_fID_event = 0, 
-                                 event_REACHCODE = "", 
-                                 event_REACH_meas = NA)
-    
-    already_split <- character(0)
+    split_points <- too_long_split_points
   }
   
-  input_lines <- add_length(input_lines)
-
-  if(!is.null(max_length)) {
-    
-    if (max_length < 50) warning(paste("short max length detected,",
-                                       "do you have your units right?"))
-    
-    # Given input that has potentially been split at events, find what's still too long.
-    too_long <- select(input_lines, COMID, split_fID_event, geom_len, event_REACHCODE, event_REACH_meas) %>%
-      filter(COMID %in% already_split | (geom_len >= max_length & !COMID %in% avoid))
-  }
+  input_lines <- split_points %>%  
+    dplyr::group_by(.data$COMID) %>%
+    dplyr::arrange(.data$end) %>%
+    dplyr::mutate(split_fID = ifelse(dplyr::row_number() == 1,
+                            as.character(.data$COMID),
+                            paste0(.data$COMID, ".", dplyr::row_number() - 1))) %>%
+    dplyr::ungroup() %>%
+    dplyr::arrange(.data$fID, .data$end) %>%
+    select(.data$COMID, .data$split_fID, .data$start, .data$end, .data$event_REACHCODE, .data$event_REACH_meas) %>%
+    split_lines_fun(input_lines, para)
   
-  # If anything is too long...
-  if (nrow(too_long) != 0) {
-
-    already_split <- split_by_length(too_long, max_length, para, input_crs)
-    
-  # If nothing is too long, but we DID split by event previously
-  } else if(!is.null(nrow(already_split))) {
-    
-        # Add number of pieces and a sequence identifier.
-    ids <- unique(already_split$COMID)
-    ids <- data.frame(COMID = ids, 
-                      fID = seq_len(length(ids)))
-    
-    ## TODO: Make sure this is still right! (test it)
-    already_split <- already_split %>%
-      left_join(ids, by = "COMID") %>%
-      group_by(fID) %>%
-      mutate(split_fID = ifelse(dplyr::row_number() == 1,
-                                as.character(fID),
-                                paste0(fID, ".", dplyr::row_number() - 1))) %>%
-      select(COMID, split_fID, split_fID_event, event_REACHCODE, event_REACH_meas, -fID)
-    
-  } else {
-    
-    return(NULL)
-    
-  }
+  if(is.logical(input_lines$split_fID)) input_lines$split_fID <- as.character(input_lines$split_fID)
   
-  if("split_fID_event" %in% names(already_split)) {
-    already_split <- dplyr::select(already_split, -split_fID_event)
-  }
-  
-  return(already_split)
+  return(input_lines)
 }
 
 new_line <- function(i, f, t, l) {
@@ -213,7 +178,35 @@ add_length <- function(input_lines) {
   input_lines
 }
 
-split_by_event <- function(input_lines, events, input_crs) {
+split_lines_fun <- function(split_points, lines, para) {
+  cl <- NULL
+  if(para > 1) {
+    cl <- parallel::makeCluster(rep("localhost", para),
+                                type = "SOCK")
+  }
+
+  pbapply::pboptions("none")
+
+  crs <- sf::st_crs(lines)
+  
+  lines <- pbapply::pblapply(seq_len(nrow(split_points)),
+                               FUN = function(x, s, lines) {
+                                 new_line(i = which(lines$COMID == s$COMID[x]),
+                                          f = split_points$start[x],
+                                          t = split_points$end[x],
+                                          l = lines)
+                               }, cl = cl, s = split_points, lines = lines)
+  
+  split_points <- dplyr::select(split_points, -.data$start, -.data$end)
+
+  sf::st_sf(split_points, geom = sf::st_sfc(lines, crs = crs))
+
+}
+
+split_by_event <- function(input_lines, events) {
+  if(is.null(events)) return(data.frame(COMID = integer(0), start = numeric(0), end = numeric(0), 
+                                        event_REACHCODE = character(0), event_REACH_meas = numeric(0), event_split_fID = integer(0)))
+  
   check_names(input_lines, "split_lines_event")
   
   # identify which flowlines need to be split so we can just iterate over those.
@@ -235,7 +228,7 @@ split_by_event <- function(input_lines, events, input_crs) {
   # split into parts and add a "parts" numbered from upstream (0 measure)
   # to downstream (100 measure).
   split_l <- lapply(seq_len(nrow(to_split)), 
-                    function(x, to_split, events, crs) {
+                    function(x, to_split, events) {
                       
                       l <- to_split[x, ]
                       
@@ -256,85 +249,65 @@ split_by_event <- function(input_lines, events, input_crs) {
                       comid_meas <- rf(e$REACH_meas, l$FromMeas, l$ToMeas)
                       
                       split_points <- data.frame(COMID = l$COMID,
-                                                 split_fID_event = seq_len(nrow(e) + 1),
                                                  start = c(0, 100 - comid_meas) / 100, 
                                                  end = c(100 - comid_meas, 100) / 100,
                                                  event_REACHCODE = c(e$REACHCODE, ""),
                                                  event_REACH_meas = c(e$REACH_meas, NA))
                       
-                      sl<- lapply(seq_len(nrow(split_points)),
-                                  function(x, l, s) {
-                                    # Always 1 feature as input so i is degenerate here.
-                                    new_line(i = 1,
-                                             f = s$start[x],
-                                             t = s$end[x], 
-                                             l = l)
-                                  }, l = l, s = split_points)
-                      
-                      sl <- sf::st_sf(split_points[c("COMID", "split_fID_event", "event_REACHCODE", "event_REACH_meas")],
-                                      geom = sf::st_sfc(sl,
-                                                                  crs = crs))
-                      
-                    }, to_split = to_split, events = events, crs = input_crs)
+                    }, to_split = to_split, events = events)
   
-  split_l <- do.call(rbind, split_l)
-  
-  split_l
+  do.call(rbind, split_l) %>%
+    dplyr::mutate(event_split_fID = seq_len(nrow(.)))
 }
 
-split_by_length <- function(too_long, max_length, para, input_crs) {
+split_by_length <- function(lines, max_length, event_split_points, avoid) {
+  
+  if(is.null(max_length)) return(data.frame())
+  
+  lines <- sf::st_drop_geometry(add_length(lines))
+  
+  if(nrow(event_split_points) > 0) {
+    event_split_points <- dplyr::left_join(event_split_points, 
+                                           dplyr::select(lines, .data$COMID, .data$geom_len), 
+                                           by = "COMID") %>%
+      mutate(geom_len = .data$geom_len * (.data$end - .data$start))
+    
+    lines <-  lines %>%
+      dplyr::filter(!COMID %in% event_split_points$COMID) %>%
+      dplyr::bind_rows(event_split_points)
+  } else {
+    lines <-  lines %>% 
+      dplyr::mutate(event_REACHCODE = NA, event_REACH_meas = NA, event_split_fID = NA)
+  }
+  
+  if (max_length < 50) warning(paste("short max length detected,",
+                                     "do you have your units right?"))
   
   # pieces is the number of pieces we need to break each too long feature into.
   # fID is an identifier for a given geometry which may have already been split!
-  too_long <- too_long %>%
-    mutate(pieces = ceiling(geom_len / max_length),
-           fID = seq_len(nrow(too_long))) %>%
-    select(-geom_len)
+  lines <- lines %>%
+    filter((.data$geom_len >= max_length & !.data$COMID %in% avoid) | !is.na(.data$event_split_fID)) %>%
+    mutate(pieces = ceiling(.data$geom_len / max_length), 
+           fID = seq_len(nrow(.))) %>%
+    select(-.data$geom_len)
   
-  # rep here is done by row of too_long so we get a row with the correct fID 
+  if(nrow(lines) == 0) {
+    return(dplyr::select(event_split_points, .data$COMID, .data$start, .data$end, 
+                         .data$event_REACHCODE, .data$event_REACH_meas, .data$event_split_fID) %>%
+             dplyr::mutate(fID = .data$event_split_fID))
+  } 
+  
+  # rep here is done by row of lines so we get a row with the correct fID 
   # for each part we expect in the output.
-  split_points <-
-    sf::st_set_geometry(too_long, NULL)[rep(seq_len(nrow(too_long)),
-                                            too_long[["pieces"]]), ] %>%
-    select(-pieces)
   
-  event_test <- c(diff(split_points$split_fID_event) == 1, FALSE)
+  lines[rep(seq_len(nrow(lines)),lines$pieces), ] %>%
+    dplyr::select(-.data$pieces) %>%
+    # Assign featureIDs to the output. start and end are decimal % along catchment
+    dplyr::group_by(.data$fID) %>%
+    dplyr::mutate(piece = 1:n()) %>%
+    dplyr::mutate(start = (.data$piece - 1) / dplyr::n(),
+                  end = .data$piece / dplyr::n()) %>%
+    dplyr::ungroup() %>%
+    dplyr::select(-.data$piece)
   
-  split_points <- mutate(split_points, 
-                         event_REACHCODE = ifelse(event_test, event_REACHCODE, ""),
-                         event_REACH_meas = ifelse(event_test, event_REACH_meas, NA))
-  
-  # Assign featureIDs to the output. start and end are decimal % along catchment
-  split_points <- split_points %>%
-    group_by(fID) %>%
-    mutate(split_fID = ifelse(dplyr::row_number() == 1,
-                              as.character(fID),
-                              paste0(fID, ".", dplyr::row_number() - 1))) %>%
-    mutate(piece = 1:n()) %>%
-    mutate(start = (piece - 1) / n(),
-           end = piece / n()) %>%
-    ungroup()
-  
-  cl <- NULL
-  if(para > 1) {
-    cl <- parallel::makeCluster(rep("localhost", para),
-                                type = "SOCK")
-  }
-  
-  pbapply::pboptions("none")
-  
-  split_l <- pbapply::pblapply(seq_len(nrow(split_points)),
-                              FUN = function(x, s, too_long) {
-                                new_line(i = which(too_long$fID == s$fID[x]),
-                                         f = split_points$start[x],
-                                         t = split_points$end[x], 
-                                         l = too_long)
-                              }, cl = cl, s = split_points, too_long = too_long)
-  
-  rm(too_long)
-  
-  split_l <- sf::st_sf(split_points[c("COMID", "split_fID", "event_REACHCODE", "event_REACH_meas")],
-                       geom = sf::st_sfc(split_l, crs = input_crs))
-  
-  split_l
 }

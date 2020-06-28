@@ -58,11 +58,11 @@ test_that("split lines works", {
   
   expect_equal(nrow(split), 2)
   
-  expect_equal(split$event_REACHCODE, c("18050005000080", ""))
+  expect_equal(split$event_REACHCODE, c("18050005000080", NA))
   
   expect_equal(split$event_REACH_meas, c(62.31758, NA), tolerance = 0.001)
   
-  expect_equal(split$split_fID, c("1", "1.1"))
+  expect_equal(split$split_fID, c("5329357", "5329357.1"))
   }
 
 })
@@ -92,35 +92,24 @@ test_that("split lines works", {
 })
 
 test_that("split_line_event", {
-  input_crs <- sf::st_crs(5070)
   
   event <- data.frame(REACHCODE = "03030002000097",
                       REACH_meas = 71.12384)
   
   line <- readRDS("data/event_split_line.rds")
   
-  test <- hyRefactor:::split_by_event(line, event, input_crs)
-  
-  length <- sf::st_length(test)
-  
-  expect_equal(length[2] / (length[1] + length[2]), event$REACH_meas / 100, tolerance = 0.01)
+  test <- hyRefactor:::split_by_event(line, event)
+
+  expect_equal(test$start, c(0, 0.289), tolerance = 0.01)
+  expect_equal(test$end, c(0.289, 1), tolerance = 0.01)
   
   event <- data.frame(REACHCODE = c("03030002000097", "03030002000097", "03030002000097"),
                       REACH_meas = c(10, 40, 75))
   
-  test <- hyRefactor:::split_by_event(line, event, input_crs)
+  test <- hyRefactor:::split_by_event(line, event)
   
-  length <- sf::st_length(test)
-  
-  length_test <- length / sum(length)
-  
-  expect_equal(tail(length_test, 1), event$REACH_meas[1] / 100)
-  
-  expect_equal(sum(tail(length_test, 2)), event$REACH_meas[2] / 100)
-  
-  expect_equal(sum(tail(length_test, 3)), event$REACH_meas[3] / 100)
-  
-  expect_equal(sum(tail(length_test, 4)), 1)
+  expect_equal(test$start, c(0, 0.25, 0.6, 0.9), tolerance = 0.01)
+  expect_equal(test$end, c(0.25, 0.6, 0.9, 1), tolerance = 0.01)
 })
 
 test_that("split_flowlines at scale", {
@@ -133,6 +122,10 @@ test_that("split_flowlines at scale", {
     
     new_hope_flowline <- right_join(select(new_hope_flowline, COMID, REACHCODE, FromMeas, ToMeas), 
                                     suppressWarnings(prepare_nhdplus(new_hope_flowline, 0, 0, 0, FALSE, warn = FALSE)), by = "COMID")
+    
+    split <- split_flowlines(suppressWarnings(st_cast(st_transform(new_hope_flowline, 5070), "LINESTRING")), 20000000)
+    
+    expect_true(is.character(split$COMID))
     
     split <- split_flowlines(suppressWarnings(st_cast(st_transform(new_hope_flowline, 5070), "LINESTRING")), 2000, 
                              new_hope_events)
@@ -160,8 +153,6 @@ test_that("split_flowlines at scale", {
     expect_equal(as.numeric(sf::st_length(s)), 
                  c(848.46, 2986.85, 1161.69, 666.85), 
                  tolerance = 0.1)
-    
-    expect_equal()
   }
 })
 
