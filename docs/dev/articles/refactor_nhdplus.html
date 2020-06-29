@@ -6,20 +6,20 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Refactor Flowlines • hyRefactor</title>
-<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script><!-- Bootstrap --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha256-916EbMg70RQy9LHiGkXzG8hSg9EdNy97GazNG/aiY1w=" crossorigin="anonymous">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha256-U5ZEeKfGNOja007MMD3YBI0A3OSZOQbeG6z2f2Y0hu8=" crossorigin="anonymous"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/all.min.css" integrity="sha256-nAmazAk6vS34Xqo0BSrTb+abbtFlgsFK7NKSi6o7Y78=" crossorigin="anonymous">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.7.1/css/v4-shims.min.css" integrity="sha256-6qHlizsOWFskGlwVOKuns+D1nB6ssZrHQrNj1wGplHc=" crossorigin="anonymous">
-<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.4/clipboard.min.js" integrity="sha256-FiZwavyI2V6+EXO1U+xzLG3IKldpiTFf3153ea9zikQ=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/headroom.min.js" integrity="sha256-DJFC1kqIhelURkuza0AvYal5RxMtpzLjFhsnVIeuk+U=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.9.4/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
+<!-- jquery --><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script><!-- Bootstrap --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha256-bZLfwXAP04zRMK2BjiO8iu9pf4FbLqX6zitd+tIvLhE=" crossorigin="anonymous">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha256-nuL8/2cJ5NDSSwnKD8VqreErSWHtnEP9E7AySL+1ev4=" crossorigin="anonymous"></script><!-- bootstrap-toc --><link rel="stylesheet" href="../bootstrap-toc.css">
+<script src="../bootstrap-toc.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
+<!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.6/clipboard.min.js" integrity="sha256-inc5kl9MA1hkeYUt+EC3BhlIgyp/2jDIyBLS6k3UxPI=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- pkgdown --><link href="../pkgdown.css" rel="stylesheet">
 <script src="../pkgdown.js"></script><meta property="og:title" content="Refactor Flowlines">
-<meta property="og:description" content="">
-<meta name="twitter:card" content="summary">
+<meta property="og:description" content="hyRefactor">
 <meta name="robots" content="noindex">
 <!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
 <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
 <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
 <![endif]-->
 </head>
-<body>
+<body data-spy="scroll" data-target="#toc">
     <div class="container template-article">
       <header><div class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="container">
@@ -55,17 +55,23 @@
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
+      <a href="../articles/coastal_units.html">Coastal Units wit hyRefactor</a>
+    </li>
+    <li>
       <a href="../articles/refactor_catchment.html">Refactor Catchments</a>
     </li>
     <li>
       <a href="../articles/refactor_nhdplus.html">Refactor Flowlines</a>
+    </li>
+    <li>
+      <a href="../articles/split_refactor.html">Split Flowlines</a>
     </li>
   </ul>
 </li>
       </ul>
 <ul class="nav navbar-nav navbar-right">
 <li>
-  <a href="https://github.com/dblodgett-usgs/hyrefactor">
+  <a href="https://github.com/dblodgett-usgs/hyrefactor/">
     <span class="fab fa fab fa-github fa-lg"></span>
      
   </a>
@@ -80,10 +86,10 @@
 
       
 
-      </header><script src="refactor_nhdplus_files/header-attrs-2.1.4/header-attrs.js"></script><div class="row">
+      </header><script src="refactor_nhdplus_files/header-attrs-2.3/header-attrs.js"></script><script src="refactor_nhdplus_files/accessible-code-block-0.0.1/empty-anchor.js"></script><div class="row">
   <div class="col-md-9 contents">
     <div class="page-header toc-ignore">
-      <h1>Refactor Flowlines</h1>
+      <h1 data-toc-skip>Refactor Flowlines</h1>
                         <h4 class="author"><a href="mailto:dblodgett@usgs.gov" class="email">dblodgett@usgs.gov</a></h4>
             
       
@@ -105,32 +111,32 @@
 <h2 class="hasAnchor">
 <a href="#network-preparation" class="anchor"></a>Network Preparation</h2>
 <p>Prior to summarizing the network, some NHDPlus conditioning can be performed. The following function removes coastal and non-dendritic flowlines. It can also remove networks with an outlet drainage area under a threshold or a longest path length under a threshold, but those inputs are set to 0 such that all networks are included here. Note that this is especially important when running the whole country – little change is applied to network subsets that follow the network upstream with tributaries.</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a>nhdplus_flines &lt;-<span class="st"> </span><span class="kw">read_sf</span>(<span class="kw"><a href="https://rdrr.io/r/base/system.file.html">system.file</a></span>(<span class="st">"extdata"</span>,</span>
-<span id="cb1-2"><a href="#cb1-2"></a>                                    <span class="st">"petapsco_flowlines.gpkg"</span>,</span>
-<span id="cb1-3"><a href="#cb1-3"></a>                                    <span class="dt">package =</span> <span class="st">"nhdplusTools"</span>))</span>
-<span id="cb1-4"><a href="#cb1-4"></a>min_network_size &lt;-<span class="st"> </span><span class="dv">0</span></span>
-<span id="cb1-5"><a href="#cb1-5"></a>min_path_length &lt;-<span class="st"> </span><span class="dv">0</span></span>
-<span id="cb1-6"><a href="#cb1-6"></a>flines &lt;-<span class="st"> </span><span class="kw">prepare_nhdplus</span>(<span class="kw">st_set_geometry</span>(nhdplus_flines, <span class="ot">NULL</span>), </span>
-<span id="cb1-7"><a href="#cb1-7"></a>                          min_network_size, </span>
-<span id="cb1-8"><a href="#cb1-8"></a>                          min_path_length)</span>
-<span id="cb1-9"><a href="#cb1-9"></a><span class="co">#&gt; Warning in prepare_nhdplus(st_set_geometry(nhdplus_flines, NULL), min_network_size, : Removed 10 flowlines that don't apply.</span></span>
-<span id="cb1-10"><a href="#cb1-10"></a><span class="co">#&gt;  Includes: Coastlines, non-dendritic paths, </span></span>
-<span id="cb1-11"><a href="#cb1-11"></a><span class="co">#&gt; and networks with drainage area less than 0 sqkm, and drainage basins smaller than 0</span></span></code></pre></div>
+<div class="sourceCode" id="cb1"><html><body><pre class="r"><span class="no">nhdplus_flines</span> <span class="kw">&lt;-</span> <span class="fu">read_sf</span>(<span class="fu"><a href="https://rdrr.io/r/base/system.file.html">system.file</a></span>(<span class="st">"extdata"</span>,
+                                    <span class="st">"petapsco_flowlines.gpkg"</span>,
+                                    <span class="kw">package</span> <span class="kw">=</span> <span class="st">"nhdplusTools"</span>))
+<span class="no">min_network_size</span> <span class="kw">&lt;-</span> <span class="fl">0</span>
+<span class="no">min_path_length</span> <span class="kw">&lt;-</span> <span class="fl">0</span>
+<span class="no">flines</span> <span class="kw">&lt;-</span> <span class="fu">prepare_nhdplus</span>(<span class="fu">st_set_geometry</span>(<span class="no">nhdplus_flines</span>, <span class="kw">NULL</span>),
+                          <span class="no">min_network_size</span>,
+                          <span class="no">min_path_length</span>)
+<span class="co">#&gt; Warning in prepare_nhdplus(st_set_geometry(nhdplus_flines, NULL), min_network_size, : Removed 10 flowlines that don't apply.</span>
+<span class="co">#&gt;  Includes: Coastlines, non-dendritic paths, </span>
+<span class="co">#&gt; and networks with drainage area less than 0 sqkm, and drainage basins smaller than 0</span></pre></body></html></div>
 <p>The following histograms and plots show characteristics of the NHDPlusV2 network flowline lengths. <img src="refactor_nhdplus_files/figure-html/nhdplus-1.png" width="576"><img src="refactor_nhdplus_files/figure-html/nhdplus-2.png" width="576"><img src="refactor_nhdplus_files/figure-html/nhdplus-3.png" width="576"><img src="refactor_nhdplus_files/figure-html/nhdplus-4.png" width="576"><img src="refactor_nhdplus_files/figure-html/nhdplus-5.png" width="576"></p>
 </div>
 <div id="refactor_nhdplus-function" class="section level2">
 <h2 class="hasAnchor">
 <a href="#refactor_nhdplus-function" class="anchor"></a>refactor_nhdplus function</h2>
 <p>The complete refactor workflow has been packaged into a single function that can be called as shown below. For the purposes of demonstration this function is not used and individual package functions called by it are shown.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a><span class="co">## Not Run ##</span></span>
-<span id="cb2-2"><a href="#cb2-2"></a><span class="kw"><a href="../reference/refactor_nhdplus.html">refactor_nhdplus</a></span>(<span class="dt">nhdplus_flines =</span> nhdplus_flines,</span>
-<span id="cb2-3"><a href="#cb2-3"></a>                 <span class="dt">split_flines_meters =</span> <span class="dv">2000</span>, </span>
-<span id="cb2-4"><a href="#cb2-4"></a>                 <span class="dt">split_flines_cores =</span> <span class="dv">3</span>,</span>
-<span id="cb2-5"><a href="#cb2-5"></a>                 <span class="dt">collapse_flines_meters =</span> <span class="dv">500</span>, </span>
-<span id="cb2-6"><a href="#cb2-6"></a>                 <span class="dt">collapse_flines_main_meters =</span> <span class="dv">500</span>,</span>
-<span id="cb2-7"><a href="#cb2-7"></a>                 <span class="dt">out_refactored =</span> <span class="st">"nhdplus_collapsed.gpkg"</span>,</span>
-<span id="cb2-8"><a href="#cb2-8"></a>                 <span class="dt">out_reconciled =</span> <span class="st">"nhdplus_reconciled.gpkg"</span>,</span>
-<span id="cb2-9"><a href="#cb2-9"></a>                 <span class="dt">three_pass =</span> <span class="ot">TRUE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb2"><html><body><pre class="r"><span class="co">## Not Run ##</span>
+<span class="fu"><a href="../reference/refactor_nhdplus.html">refactor_nhdplus</a></span>(<span class="kw">nhdplus_flines</span> <span class="kw">=</span> <span class="no">nhdplus_flines</span>,
+                 <span class="kw">split_flines_meters</span> <span class="kw">=</span> <span class="fl">2000</span>,
+                 <span class="kw">split_flines_cores</span> <span class="kw">=</span> <span class="fl">3</span>,
+                 <span class="kw">collapse_flines_meters</span> <span class="kw">=</span> <span class="fl">500</span>,
+                 <span class="kw">collapse_flines_main_meters</span> <span class="kw">=</span> <span class="fl">500</span>,
+                 <span class="kw">out_refactored</span> <span class="kw">=</span> <span class="st">"nhdplus_collapsed.gpkg"</span>,
+                 <span class="kw">out_reconciled</span> <span class="kw">=</span> <span class="st">"nhdplus_reconciled.gpkg"</span>,
+                 <span class="kw">three_pass</span> <span class="kw">=</span> <span class="fl">TRUE</span>)</pre></body></html></div>
 <p>The inputs to this are:</p>
 <ul>
 <li>nhdplus_flines: raw nhdplus flowline features as derived from the national seamless geodatabase.</li>
@@ -147,16 +153,16 @@
 <h2 class="hasAnchor">
 <a href="#split-flowlines" class="anchor"></a>Split flowlines</h2>
 <p>The split_flowlines feature requires flowlines with geometry but for performance reasons, the prep_nhdplus function works with attributes only. The code below, joins the geometry back, coerces it to the required geometry type, and projects it to a projection suited to distance measurement at the contental scale of NHDPlus. It then executes the split_flowlines function.</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a>flines &lt;-<span class="st"> </span><span class="kw">inner_join</span>(<span class="kw">select</span>(nhdplus_flines, COMID), flines, <span class="dt">by =</span> <span class="st">"COMID"</span>) <span class="op">%&gt;%</span></span>
-<span id="cb3-2"><a href="#cb3-2"></a><span class="st">    </span><span class="kw">st_as_sf</span>() <span class="op">%&gt;%</span></span>
-<span id="cb3-3"><a href="#cb3-3"></a><span class="st">    </span><span class="kw">st_cast</span>(<span class="st">"LINESTRING"</span>) <span class="op">%&gt;%</span></span>
-<span id="cb3-4"><a href="#cb3-4"></a><span class="st">    </span><span class="kw">st_transform</span>(<span class="dv">5070</span>)</span>
-<span id="cb3-5"><a href="#cb3-5"></a><span class="co">#&gt; Warning in st_cast.sf(., "LINESTRING"): repeating attributes for all sub-</span></span>
-<span id="cb3-6"><a href="#cb3-6"></a><span class="co">#&gt; geometries for which they may not be constant</span></span>
-<span id="cb3-7"><a href="#cb3-7"></a></span>
-<span id="cb3-8"><a href="#cb3-8"></a>flines &lt;-<span class="st"> </span><span class="kw"><a href="../reference/split_flowlines.html">split_flowlines</a></span>(flines, </span>
-<span id="cb3-9"><a href="#cb3-9"></a>                          <span class="dt">max_length =</span> <span class="dv">2000</span>, </span>
-<span id="cb3-10"><a href="#cb3-10"></a>                          <span class="dt">para =</span> <span class="dv">3</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb3"><html><body><pre class="r"><span class="no">flines</span> <span class="kw">&lt;-</span> <span class="fu">inner_join</span>(<span class="fu">select</span>(<span class="no">nhdplus_flines</span>, <span class="no">COMID</span>), <span class="no">flines</span>, <span class="kw">by</span> <span class="kw">=</span> <span class="st">"COMID"</span>) <span class="kw">%&gt;%</span>
+    <span class="fu">st_as_sf</span>() <span class="kw">%&gt;%</span>
+    <span class="fu">st_cast</span>(<span class="st">"LINESTRING"</span>) <span class="kw">%&gt;%</span>
+    <span class="fu">st_transform</span>(<span class="fl">5070</span>)
+<span class="co">#&gt; Warning in st_cast.sf(., "LINESTRING"): repeating attributes for all sub-</span>
+<span class="co">#&gt; geometries for which they may not be constant</span>
+
+<span class="no">flines</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/split_flowlines.html">split_flowlines</a></span>(<span class="no">flines</span>,
+                          <span class="kw">max_length</span> <span class="kw">=</span> <span class="fl">2000</span>,
+                          <span class="kw">para</span> <span class="kw">=</span> <span class="fl">3</span>)</pre></body></html></div>
 <p><img src="refactor_nhdplus_files/figure-html/split_plots-1.png" width="576"></p>
 <p>As can be seen here, <code>split_flowlines</code> breaks long flowlines into equal length pieces, which results in the new distribution of flowline lengths shown.</p>
 </div>
@@ -164,57 +170,57 @@
 <h2 class="hasAnchor">
 <a href="#collapse-flowlines" class="anchor"></a>Collapse Flowlines</h2>
 <p>Now we can collapse very short flowlines.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a>collapse_flines_meters &lt;-<span class="st"> </span><span class="dv">500</span></span>
-<span id="cb4-2"><a href="#cb4-2"></a>collapse_flines_main_meters &lt;-<span class="st"> </span><span class="dv">500</span></span>
-<span id="cb4-3"><a href="#cb4-3"></a>collapsed_flines &lt;-<span class="st"> </span><span class="kw"><a href="../reference/collapse_flowlines.html">collapse_flowlines</a></span>(<span class="kw">st_set_geometry</span>(flines, <span class="ot">NULL</span>),</span>
-<span id="cb4-4"><a href="#cb4-4"></a>                                           (<span class="fl">0.25</span><span class="op">*</span>collapse_flines_meters<span class="op">/</span><span class="dv">1000</span>),</span>
-<span id="cb4-5"><a href="#cb4-5"></a>                                           <span class="ot">TRUE</span>,</span>
-<span id="cb4-6"><a href="#cb4-6"></a>                                           (<span class="fl">0.25</span><span class="op">*</span>collapse_flines_main_meters<span class="op">/</span><span class="dv">1000</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb4"><html><body><pre class="r"><span class="no">collapse_flines_meters</span> <span class="kw">&lt;-</span> <span class="fl">500</span>
+<span class="no">collapse_flines_main_meters</span> <span class="kw">&lt;-</span> <span class="fl">500</span>
+<span class="no">collapsed_flines</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/collapse_flowlines.html">collapse_flowlines</a></span>(<span class="fu">st_set_geometry</span>(<span class="no">flines</span>, <span class="kw">NULL</span>),
+                                           (<span class="fl">0.25</span>*<span class="no">collapse_flines_meters</span>/<span class="fl">1000</span>),
+                                           <span class="fl">TRUE</span>,
+                                           (<span class="fl">0.25</span>*<span class="no">collapse_flines_main_meters</span>/<span class="fl">1000</span>))</pre></body></html></div>
 <p><img src="refactor_nhdplus_files/figure-html/collapse1_secret-1.png" width="576"> As can be seen here, some collapsed flowlines extend the split flowlines. This is a result of chains of very short flowlines being collapsed together. This problem is more or less unavoidable but is improved by running the collapse step a few times with small to large input thresholds as is done next.</p>
 </div>
 <div id="collapse-step-two-and-three" class="section level2">
 <h2 class="hasAnchor">
 <a href="#collapse-step-two-and-three" class="anchor"></a>Collapse step two and three</h2>
 <p>Now we can collapse twice more</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a>collapsed_flines &lt;-<span class="st"> </span><span class="kw"><a href="../reference/collapse_flowlines.html">collapse_flowlines</a></span>(collapsed_flines,</span>
-<span id="cb5-2"><a href="#cb5-2"></a>                                       (<span class="fl">0.5</span><span class="op">*</span>collapse_flines_meters<span class="op">/</span><span class="dv">1000</span>),</span>
-<span id="cb5-3"><a href="#cb5-3"></a>                                       <span class="ot">TRUE</span>,</span>
-<span id="cb5-4"><a href="#cb5-4"></a>                                       (<span class="fl">0.5</span><span class="op">*</span>collapse_flines_main_meters<span class="op">/</span><span class="dv">1000</span>),</span>
-<span id="cb5-5"><a href="#cb5-5"></a>                                       <span class="dt">warn =</span> <span class="ot">FALSE</span>)</span>
-<span id="cb5-6"><a href="#cb5-6"></a></span>
-<span id="cb5-7"><a href="#cb5-7"></a>collapsed_flines &lt;-<span class="st"> </span><span class="kw"><a href="../reference/collapse_flowlines.html">collapse_flowlines</a></span>(collapsed_flines,</span>
-<span id="cb5-8"><a href="#cb5-8"></a>                                       (collapse_flines_meters<span class="op">/</span><span class="dv">1000</span>),</span>
-<span id="cb5-9"><a href="#cb5-9"></a>                                       <span class="ot">TRUE</span>,</span>
-<span id="cb5-10"><a href="#cb5-10"></a>                                       (collapse_flines_main_meters<span class="op">/</span><span class="dv">1000</span>),</span>
-<span id="cb5-11"><a href="#cb5-11"></a>                                       <span class="dt">warn =</span> <span class="ot">FALSE</span>)</span>
-<span id="cb5-12"><a href="#cb5-12"></a></span>
-<span id="cb5-13"><a href="#cb5-13"></a><span class="co"># Now we can save the output</span></span>
-<span id="cb5-14"><a href="#cb5-14"></a> <span class="kw">select</span>(flines, COMID) <span class="op">%&gt;%</span></span>
-<span id="cb5-15"><a href="#cb5-15"></a><span class="st">    </span><span class="kw">inner_join</span>(collapsed_flines, <span class="dt">by =</span> <span class="st">"COMID"</span>) <span class="op">%&gt;%</span></span>
-<span id="cb5-16"><a href="#cb5-16"></a><span class="st">    </span><span class="kw">st_as_sf</span>() <span class="op">%&gt;%</span></span>
-<span id="cb5-17"><a href="#cb5-17"></a><span class="st">    </span><span class="kw">st_transform</span>(<span class="dv">4326</span>) <span class="op">%&gt;%</span></span>
-<span id="cb5-18"><a href="#cb5-18"></a><span class="st">    </span><span class="kw">st_write</span>(<span class="st">"nhdplus_collapsed.gpkg"</span>, <span class="dt">layer_options =</span> <span class="st">"OVERWRITE=YES"</span>, <span class="dt">quiet =</span> <span class="ot">TRUE</span>)</span></code></pre></div>
+<div class="sourceCode" id="cb5"><html><body><pre class="r"><span class="no">collapsed_flines</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/collapse_flowlines.html">collapse_flowlines</a></span>(<span class="no">collapsed_flines</span>,
+                                       (<span class="fl">0.5</span>*<span class="no">collapse_flines_meters</span>/<span class="fl">1000</span>),
+                                       <span class="fl">TRUE</span>,
+                                       (<span class="fl">0.5</span>*<span class="no">collapse_flines_main_meters</span>/<span class="fl">1000</span>),
+                                       <span class="kw">warn</span> <span class="kw">=</span> <span class="fl">FALSE</span>)
+
+<span class="no">collapsed_flines</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/collapse_flowlines.html">collapse_flowlines</a></span>(<span class="no">collapsed_flines</span>,
+                                       (<span class="no">collapse_flines_meters</span>/<span class="fl">1000</span>),
+                                       <span class="fl">TRUE</span>,
+                                       (<span class="no">collapse_flines_main_meters</span>/<span class="fl">1000</span>),
+                                       <span class="kw">warn</span> <span class="kw">=</span> <span class="fl">FALSE</span>)
+
+<span class="co"># Now we can save the output</span>
+ <span class="fu">select</span>(<span class="no">flines</span>, <span class="no">COMID</span>) <span class="kw">%&gt;%</span>
+    <span class="fu">inner_join</span>(<span class="no">collapsed_flines</span>, <span class="kw">by</span> <span class="kw">=</span> <span class="st">"COMID"</span>) <span class="kw">%&gt;%</span>
+    <span class="fu">st_as_sf</span>() <span class="kw">%&gt;%</span>
+    <span class="fu">st_transform</span>(<span class="fl">4326</span>) <span class="kw">%&gt;%</span>
+    <span class="fu">st_write</span>(<span class="st">"nhdplus_collapsed.gpkg"</span>, <span class="kw">layer_options</span> <span class="kw">=</span> <span class="st">"OVERWRITE=YES"</span>, <span class="kw">quiet</span> <span class="kw">=</span> <span class="fl">TRUE</span>)</pre></body></html></div>
 <p><img src="refactor_nhdplus_files/figure-html/collapse2_secret-1.png" width="576"> As shown here, the distribution of flowline lengths is much tighter now but very small headwaters and long chains of collapsed flowlines remain out of the desired range. For the sake of completness,</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a>collapsed_flines_one_pass &lt;-<span class="st"> </span><span class="kw"><a href="../reference/collapse_flowlines.html">collapse_flowlines</a></span>(<span class="kw">st_set_geometry</span>(flines, <span class="ot">NULL</span>),</span>
-<span id="cb6-2"><a href="#cb6-2"></a>                                                (collapse_flines_meters<span class="op">/</span><span class="dv">1000</span>),</span>
-<span id="cb6-3"><a href="#cb6-3"></a>                                                <span class="ot">TRUE</span>,</span>
-<span id="cb6-4"><a href="#cb6-4"></a>                                                (collapse_flines_main_meters<span class="op">/</span><span class="dv">1000</span>))</span></code></pre></div>
+<div class="sourceCode" id="cb6"><html><body><pre class="r"><span class="no">collapsed_flines_one_pass</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/collapse_flowlines.html">collapse_flowlines</a></span>(<span class="fu">st_set_geometry</span>(<span class="no">flines</span>, <span class="kw">NULL</span>),
+                                                (<span class="no">collapse_flines_meters</span>/<span class="fl">1000</span>),
+                                                <span class="fl">TRUE</span>,
+                                                (<span class="no">collapse_flines_main_meters</span>/<span class="fl">1000</span>))</pre></body></html></div>
 <p><img src="refactor_nhdplus_files/figure-html/collapseonepass_secret-1.png" width="576"> As shown in this historigram, the problem of long chains of collapsed flowlines is much worse when the collapse is run only once.</p>
 </div>
 <div id="reconcile-collapsed-flowlines" class="section level2">
 <h2 class="hasAnchor">
 <a href="#reconcile-collapsed-flowlines" class="anchor"></a>Reconcile collapsed flowlines</h2>
 <p>Now that we have our flowlines collapsed, we need to reconcile the results into merged geometries with updated ids. The reconcile_collapsed_flowlines function does this including a column that contains a comma seperated list of catchment ids that were merged together to form each new flowline.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a>collapsed &lt;-<span class="st"> </span><span class="kw"><a href="../reference/reconcile_collapsed_flowlines.html">reconcile_collapsed_flowlines</a></span>(collapsed_flines, </span>
-<span id="cb7-2"><a href="#cb7-2"></a>                                           <span class="dt">geom =</span> <span class="kw">select</span>(flines, COMID), </span>
-<span id="cb7-3"><a href="#cb7-3"></a>                                           <span class="dt">id =</span> <span class="st">"COMID"</span>)</span>
-<span id="cb7-4"><a href="#cb7-4"></a></span>
-<span id="cb7-5"><a href="#cb7-5"></a>collapsed<span class="op">$</span>member_COMID &lt;-<span class="st"> </span><span class="kw"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span>(collapsed<span class="op">$</span>member_COMID, paste, <span class="dt">collapse =</span> <span class="st">","</span>)</span>
-<span id="cb7-6"><a href="#cb7-6"></a></span>
-<span id="cb7-7"><a href="#cb7-7"></a><span class="kw">st_write</span>(<span class="kw">st_transform</span>(collapsed, <span class="dv">4326</span>), <span class="st">"nhdplus_reconciled.gpkg"</span>, <span class="dt">layer_options =</span> <span class="st">"OVERWRITE=YES"</span>)</span>
-<span id="cb7-8"><a href="#cb7-8"></a><span class="co">#&gt; Writing layer `nhdplus_reconciled' to data source `nhdplus_reconciled.gpkg' using driver `GPKG'</span></span>
-<span id="cb7-9"><a href="#cb7-9"></a><span class="co">#&gt; options:        OVERWRITE=YES </span></span>
-<span id="cb7-10"><a href="#cb7-10"></a><span class="co">#&gt; Writing 877 features with 7 fields and geometry type Unknown (any).</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><html><body><pre class="r"><span class="no">collapsed</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/reconcile_collapsed_flowlines.html">reconcile_collapsed_flowlines</a></span>(<span class="no">collapsed_flines</span>,
+                                           <span class="kw">geom</span> <span class="kw">=</span> <span class="fu">select</span>(<span class="no">flines</span>, <span class="no">COMID</span>),
+                                           <span class="kw">id</span> <span class="kw">=</span> <span class="st">"COMID"</span>)
+
+<span class="no">collapsed</span>$<span class="no">member_COMID</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html">sapply</a></span>(<span class="no">collapsed</span>$<span class="no">member_COMID</span>, <span class="no">paste</span>, <span class="kw">collapse</span> <span class="kw">=</span> <span class="st">","</span>)
+
+<span class="fu">st_write</span>(<span class="fu">st_transform</span>(<span class="no">collapsed</span>, <span class="fl">4326</span>), <span class="st">"nhdplus_reconciled.gpkg"</span>, <span class="kw">layer_options</span> <span class="kw">=</span> <span class="st">"OVERWRITE=YES"</span>)
+<span class="co">#&gt; Writing layer `nhdplus_reconciled' to data source `nhdplus_reconciled.gpkg' using driver `GPKG'</span>
+<span class="co">#&gt; options:        OVERWRITE=YES </span>
+<span class="co">#&gt; Writing 877 features with 7 fields and geometry type Unknown (any).</span></pre></body></html></div>
 <p><img src="refactor_nhdplus_files/figure-html/reconcile_secret-1.png" width="576"></p>
 </div>
 <div id="examples" class="section level2">
@@ -233,23 +239,11 @@ This image is a zoomed in view of the outlet and coastal drainages of the system
 </div>
   </div>
 
-  <div class="col-md-3 hidden-xs hidden-sm" id="sidebar">
+  <div class="col-md-3 hidden-xs hidden-sm" id="pkgdown-sidebar">
 
-        <div id="tocnav">
-      <h2 class="hasAnchor">
-<a href="#tocnav" class="anchor"></a>Contents</h2>
-      <ul class="nav nav-pills nav-stacked">
-<li><a href="#nhdplus-network-refactor">NHDPlus Network Refactor</a></li>
-      <li><a href="#network-preparation">Network Preparation</a></li>
-      <li><a href="#refactor_nhdplus-function">refactor_nhdplus function</a></li>
-      <li><a href="#split-flowlines">Split flowlines</a></li>
-      <li><a href="#collapse-flowlines">Collapse Flowlines</a></li>
-      <li><a href="#collapse-step-two-and-three">Collapse step two and three</a></li>
-      <li><a href="#reconcile-collapsed-flowlines">Reconcile collapsed flowlines</a></li>
-      <li><a href="#examples">Examples</a></li>
-      </ul>
+        <nav id="toc" data-toggle="toc"><h2 data-toc-skip>Contents</h2>
+    </nav>
 </div>
-      </div>
 
 </div>
 
@@ -260,7 +254,7 @@ This image is a zoomed in view of the outlet and coastal drainages of the system
 </div>
 
 <div class="pkgdown">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.4.1.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/">pkgdown</a> 1.5.1.</p>
 </div>
 
       </footer>
