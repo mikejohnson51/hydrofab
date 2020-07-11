@@ -72,7 +72,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">hyRefactor</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="In-development version">0.4.5</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="In-development version">0.4.6</span>
       </span>
     </div>
 
@@ -95,13 +95,16 @@
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="../articles/coastal_units.html">Coastal Units wit hyRefactor</a>
+      <a href="../articles/coastal_units.html">Coastal Units with hyRefactor</a>
     </li>
     <li>
       <a href="../articles/refactor_catchment.html">Refactor Catchments</a>
     </li>
     <li>
       <a href="../articles/refactor_nhdplus.html">Refactor Flowlines</a>
+    </li>
+    <li>
+      <a href="../articles/split_refactor.html">Split Flowlines</a>
     </li>
   </ul>
 </li>
@@ -177,13 +180,16 @@ workflow using `split_flowlines()`.</p></div>
     <h2 class="hasAnchor" id="examples"><a class="anchor" href="#examples"></a>Examples</h2>
     <pre class="examples"><div class='input'><span class='fu'><a href='https://rdrr.io/r/base/source.html'>source</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/system.file.html'>system.file</a></span>(<span class='st'>"extdata"</span>, <span class='st'>"new_hope_data.R"</span>, <span class='kw'>package</span> <span class='kw'>=</span> <span class='st'>"hyRefactor"</span>))
 
-<span class='no'>new_hope_flowline</span> <span class='kw'>&lt;-</span> <span class='kw pkg'>dplyr</span><span class='kw ns'>::</span><span class='fu'><a href='https://dplyr.tidyverse.org/reference/mutate-joins.html'>right_join</a></span>(<span class='kw pkg'>dplyr</span><span class='kw ns'>::</span><span class='fu'><a href='https://dplyr.tidyverse.org/reference/select.html'>select</a></span>(<span class='no'>new_hope_flowline</span>, <span class='no'>COMID</span>, <span class='no'>REACHCODE</span>, <span class='no'>FromMeas</span>, <span class='no'>ToMeas</span>),
-                                       <span class='fu'><a href='https://rdrr.io/r/base/warning.html'>suppressWarnings</a></span>(<span class='kw pkg'>nhdplusTools</span><span class='kw ns'>::</span><span class='fu'><a href='https://usgs-r.github.io/nhdplusTools//reference/prepare_nhdplus.html'>prepare_nhdplus</a></span>(<span class='no'>new_hope_flowline</span>,
-                                                                                      <span class='fl'>0</span>, <span class='fl'>0</span>, <span class='fl'>0</span>, <span class='fl'>FALSE</span>, <span class='kw'>warn</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)),
-                                       <span class='kw'>by</span> <span class='kw'>=</span> <span class='st'>"COMID"</span>)
+<span class='no'>new_hope_flowline</span> <span class='kw'>&lt;-</span>
+  <span class='kw pkg'>dplyr</span><span class='kw ns'>::</span><span class='fu'><a href='https://dplyr.tidyverse.org/reference/mutate-joins.html'>right_join</a></span>(<span class='kw pkg'>dplyr</span><span class='kw ns'>::</span><span class='fu'><a href='https://dplyr.tidyverse.org/reference/select.html'>select</a></span>(<span class='no'>new_hope_flowline</span>, <span class='no'>COMID</span>, <span class='no'>REACHCODE</span>, <span class='no'>FromMeas</span>, <span class='no'>ToMeas</span>),
+                    <span class='fu'><a href='https://rdrr.io/r/base/warning.html'>suppressWarnings</a></span>(<span class='kw pkg'>nhdplusTools</span><span class='kw ns'>::</span><span class='fu'><a href='https://usgs-r.github.io/nhdplusTools//reference/prepare_nhdplus.html'>prepare_nhdplus</a></span>(
+                      <span class='no'>new_hope_flowline</span>, <span class='fl'>0</span>, <span class='fl'>0</span>, <span class='fl'>0</span>, <span class='fl'>FALSE</span>, <span class='kw'>warn</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)),
+                    <span class='kw'>by</span> <span class='kw'>=</span> <span class='st'>"COMID"</span>)
 
-<span class='no'>split</span> <span class='kw'>&lt;-</span> <span class='fu'>split_flowlines</span>(<span class='fu'><a href='https://rdrr.io/r/base/warning.html'>suppressWarnings</a></span>(<span class='kw pkg'>sf</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/pkg/sf/man/st_cast.html'>st_cast</a></span>(<span class='kw pkg'>sf</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/pkg/sf/man/st_transform.html'>st_transform</a></span>(<span class='no'>new_hope_flowline</span>, <span class='fl'>5070</span>), <span class='st'>"LINESTRING"</span>)),
-                         <span class='kw'>max_length</span> <span class='kw'>=</span> <span class='fl'>2000</span>, <span class='kw'>events</span> <span class='kw'>=</span> <span class='no'>new_hope_events</span>)</div><div class='output co'>#&gt; <span class='message'>Linking to GEOS 3.8.1, GDAL 3.1.0, PROJ 6.3.2</span></div><div class='input'><span class='kw pkg'>mapview</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/pkg/mapview/man/mapView.html'>mapview</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='no'>new_hope_events</span>, <span class='no'>new_hope_flowline</span>))
+<span class='no'>split</span> <span class='kw'>&lt;-</span> <span class='fu'>split_flowlines</span>(<span class='fu'><a href='https://rdrr.io/r/base/warning.html'>suppressWarnings</a></span>(<span class='kw pkg'>sf</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/pkg/sf/man/st_cast.html'>st_cast</a></span>(<span class='kw pkg'>sf</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/pkg/sf/man/st_transform.html'>st_transform</a></span>(
+  <span class='no'>new_hope_flowline</span>, <span class='fl'>5070</span>), <span class='st'>"LINESTRING"</span>)),
+                         <span class='kw'>max_length</span> <span class='kw'>=</span> <span class='fl'>2000</span>, <span class='kw'>events</span> <span class='kw'>=</span> <span class='no'>new_hope_events</span>)</div><div class='output co'>#&gt; <span class='message'>Linking to GEOS 3.8.1, GDAL 3.1.0, PROJ 6.3.2</span></div><div class='input'>
+<span class='kw pkg'>mapview</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/pkg/mapview/man/mapView.html'>mapview</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='no'>new_hope_events</span>, <span class='no'>new_hope_flowline</span>))
 
 <span class='kw pkg'>mapview</span><span class='kw ns'>::</span><span class='fu'><a href='https://rdrr.io/pkg/mapview/man/mapView.html'>mapview</a></span>(<span class='fu'><a href='https://rdrr.io/r/base/list.html'>list</a></span>(<span class='no'>new_hope_events</span>, <span class='no'>split</span>))</div></pre>
   </div>

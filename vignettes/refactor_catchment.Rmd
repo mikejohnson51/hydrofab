@@ -17,6 +17,7 @@ knitr::opts_chunk$set(
 )
 options(rmarkdown.html_vignette.check_title = FALSE)
 options(scipen = 9999)
+options("rgdal_show_exportToProj4_warnings"="none")
 ```
 # Refactoring Catchments with NHDPlusTools
 
@@ -115,6 +116,38 @@ plot(walker_flowline$geom, lwd = .7, col = "blue", add = TRUE)
 plot(aggregated$cat_sets$geom, lwd = 3, border = "black")
 plot(aggregated$fline_sets$geom, lwd = 3, col = "red", add = TRUE)
 plot(walker_flowline$geom, lwd = .7, col = "blue", add = TRUE)
+```
+
+## Splitting Catchments
+
+The `split_catchment_divide()` function can be used in two ways. If provided with multiple flowpaths per catchment boundary, it will split catchments along their length. If provided one or more with the `lr` parameter set to `TRUE`, it will also split each catchment into two pieces along the flowpath. In headwater catchments, the left-right split will extend upstream along the maximum upstream flow accumulation path till it reaches the catchment divide. `split_catchment_divide()` is called in the `refactor_nhdplus()` workflow but this left-right split is not applied then. This next block shows how to apply the split to aggregated results.
+
+```{r split}
+
+split_catchments <- do.call(c, lapply(c(1:nrow(aggregated$cat_sets)), 
+                                      function(g, ac, af, fdr, fac) {
+                                        split_catchment_divide(ac[g, ], af[g, ], 
+                                                               fdr, fac, lr = TRUE)
+                                      }, 
+                                      ac = aggregated$cat_sets, 
+                                      af = aggregated$fline_sets, 
+                                      fdr = walker_fdr, 
+                                      fac = walker_fac))
+```
+
+Here we see the split geometry in black and the original catchments in red.
+
+```{r split1}
+plot(split_catchments, lwd = 3)
+plot(st_geometry(aggregated$cat_sets), lwd = 2, border = "red", add = TRUE)
+```
+
+Here we see the split geometry in black again with the flowline used for the split in red.
+
+```{r split2}
+plot(split_catchments, lwd = 3)
+plot(aggregated$fline_sets$geom, lwd = 1, col = "red", add = TRUE)
+
 ```
 
 ## Identifiers

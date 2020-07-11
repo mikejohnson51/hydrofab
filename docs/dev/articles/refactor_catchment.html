@@ -32,7 +32,7 @@
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">hyRefactor</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="In-development version">0.4.5</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="In-development version">0.4.6</span>
       </span>
     </div>
 
@@ -55,13 +55,16 @@
   </a>
   <ul class="dropdown-menu" role="menu">
 <li>
-      <a href="../articles/coastal_units.html">Coastal Units wit hyRefactor</a>
+      <a href="../articles/coastal_units.html">Coastal Units with hyRefactor</a>
     </li>
     <li>
       <a href="../articles/refactor_catchment.html">Refactor Catchments</a>
     </li>
     <li>
       <a href="../articles/refactor_nhdplus.html">Refactor Flowlines</a>
+    </li>
+    <li>
+      <a href="../articles/split_refactor.html">Split Flowlines</a>
     </li>
   </ul>
 </li>
@@ -151,66 +154,13 @@
 <span class="fu"><a href="https://rdrr.io/pkg/sf/man/plot.html">plot</a></span>(<span class="no">sample_flowline</span>[<span class="st">"COMID"</span>], <span class="kw">add</span> <span class="kw">=</span> <span class="fl">TRUE</span>)</pre></body></html></div>
 <p><img src="refactor_catchment_files/figure-html/single_plots-1.png" width="576"></p>
 <div class="sourceCode" id="cb3"><html><body><pre class="r">
-<span class="kw pkg">raster</span><span class="kw ns">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/plot.html">plot</a></span>(<span class="no">walker_fdr</span>)
-<span class="co">#&gt; Warning in showSRID(uprojargs, format = "PROJ", multiline = "NO"): Discarded datum Unknown based on GRS80 ellipsoid in CRS definition,</span>
-<span class="co">#&gt;  but +towgs84= values preserved</span>
-
-<span class="co">#&gt; Warning in showSRID(uprojargs, format = "PROJ", multiline = "NO"): Discarded datum Unknown based on GRS80 ellipsoid in CRS definition,</span>
-<span class="co">#&gt;  but +towgs84= values preserved</span></pre></body></html></div>
+<span class="kw pkg">raster</span><span class="kw ns">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/plot.html">plot</a></span>(<span class="no">walker_fdr</span>)</pre></body></html></div>
 <p><img src="refactor_catchment_files/figure-html/single_plots-2.png" width="576"></p>
-<div class="sourceCode" id="cb4"><html><body><pre class="r"><span class="kw pkg">raster</span><span class="kw ns">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/plot.html">plot</a></span>( <span class="no">walker_fac</span>)
-<span class="co">#&gt; Warning in showSRID(uprojargs, format = "PROJ", multiline = "NO"): Discarded datum Unknown based on GRS80 ellipsoid in CRS definition,</span>
-<span class="co">#&gt;  but +towgs84= values preserved</span>
-
-<span class="co">#&gt; Warning in showSRID(uprojargs, format = "PROJ", multiline = "NO"): Discarded datum Unknown based on GRS80 ellipsoid in CRS definition,</span>
-<span class="co">#&gt;  but +towgs84= values preserved</span></pre></body></html></div>
+<div class="sourceCode" id="cb4"><html><body><pre class="r"><span class="kw pkg">raster</span><span class="kw ns">::</span><span class="fu"><a href="https://rdrr.io/pkg/raster/man/plot.html">plot</a></span>( <span class="no">walker_fac</span>)</pre></body></html></div>
 <p><img src="refactor_catchment_files/figure-html/single_plots-3.png" width="576"></p>
 <p>Now we can run the <code><a href="../reference/split_catchment_divide.html">split_catchment_divide()</a></code> function which is designed to take one catchment and its associated (split) flowlines. The split flowlines are the “refactored” but not “reconciled” output of the <code>nhdplus_refactor()</code> function we ran above. Here we run the <code>split_catchment()</code> function and plot up the resulting data to show what it did.</p>
 <div class="sourceCode" id="cb5"><html><body><pre class="r"><span class="no">split_cat</span> <span class="kw">&lt;-</span> <span class="fu"><a href="../reference/split_catchment_divide.html">split_catchment_divide</a></span>(<span class="no">sample_catchment</span>, <span class="no">sample_flowline</span>, <span class="no">walker_fdr</span>,  <span class="no">walker_fac</span>)
-<span class="co">#&gt; Warning in showSRID(uprojargs, format = "PROJ", multiline = "NO"): Discarded datum Unknown based on GRS80 ellipsoid in CRS definition,</span>
-<span class="co">#&gt;  but +towgs84= values preserved</span>
-
-<span class="co">#&gt; Warning in showSRID(uprojargs, format = "PROJ", multiline = "NO"): Discarded datum Unknown based on GRS80 ellipsoid in CRS definition,</span>
-<span class="co">#&gt;  but +towgs84= values preserved</span>
-
-<span class="co">#&gt; Warning in showSRID(uprojargs, format = "PROJ", multiline = "NO"): Discarded datum Unknown based on GRS80 ellipsoid in CRS definition,</span>
-<span class="co">#&gt;  but +towgs84= values preserved</span>
-
-<span class="co">#&gt; Warning in showSRID(uprojargs, format = "PROJ", multiline = "NO"): Discarded datum Unknown based on GRS80 ellipsoid in CRS definition,</span>
-<span class="co">#&gt;  but +towgs84= values preserved</span>
-
-<span class="co">#&gt; Warning in showSRID(uprojargs, format = "PROJ", multiline = "NO"): Discarded datum Unknown based on GRS80 ellipsoid in CRS definition,</span>
-<span class="co">#&gt;  but +towgs84= values preserved</span>
-
-<span class="co">#&gt; Warning in showSRID(uprojargs, format = "PROJ", multiline = "NO"): Discarded datum Unknown based on GRS80 ellipsoid in CRS definition,</span>
-<span class="co">#&gt;  but +towgs84= values preserved</span>
-
-<span class="co">#&gt; Warning in showSRID(uprojargs, format = "PROJ", multiline = "NO"): Discarded datum Unknown based on GRS80 ellipsoid in CRS definition,</span>
-<span class="co">#&gt;  but +towgs84= values preserved</span>
-
-<span class="co">#&gt; Warning in showSRID(uprojargs, format = "PROJ", multiline = "NO"): Discarded datum Unknown based on GRS80 ellipsoid in CRS definition,</span>
-<span class="co">#&gt;  but +towgs84= values preserved</span>
-
-<span class="co">#&gt; Warning in showSRID(uprojargs, format = "PROJ", multiline = "NO"): Discarded datum Unknown based on GRS80 ellipsoid in CRS definition,</span>
-<span class="co">#&gt;  but +towgs84= values preserved</span>
 <span class="co">#&gt; Loading required namespace: rgeos</span>
-<span class="co">#&gt; Warning in showSRID(uprojargs, format = "PROJ", multiline = "NO"): Discarded datum Unknown based on GRS80 ellipsoid in CRS definition,</span>
-<span class="co">#&gt;  but +towgs84= values preserved</span>
-
-<span class="co">#&gt; Warning in showSRID(uprojargs, format = "PROJ", multiline = "NO"): Discarded datum Unknown based on GRS80 ellipsoid in CRS definition,</span>
-<span class="co">#&gt;  but +towgs84= values preserved</span>
-
-<span class="co">#&gt; Warning in showSRID(uprojargs, format = "PROJ", multiline = "NO"): Discarded datum Unknown based on GRS80 ellipsoid in CRS definition,</span>
-<span class="co">#&gt;  but +towgs84= values preserved</span>
-
-<span class="co">#&gt; Warning in showSRID(uprojargs, format = "PROJ", multiline = "NO"): Discarded datum Unknown based on GRS80 ellipsoid in CRS definition,</span>
-<span class="co">#&gt;  but +towgs84= values preserved</span>
-
-<span class="co">#&gt; Warning in showSRID(uprojargs, format = "PROJ", multiline = "NO"): Discarded datum Unknown based on GRS80 ellipsoid in CRS definition,</span>
-<span class="co">#&gt;  but +towgs84= values preserved</span>
-
-<span class="co">#&gt; Warning in showSRID(uprojargs, format = "PROJ", multiline = "NO"): Discarded datum Unknown based on GRS80 ellipsoid in CRS definition,</span>
-<span class="co">#&gt;  but +towgs84= values preserved</span>
 
 <span class="fu"><a href="https://rdrr.io/pkg/sf/man/plot.html">plot</a></span>(<span class="fu"><a href="https://rdrr.io/pkg/sf/man/st_geometry.html">st_geometry</a></span>(<span class="no">split_cat</span>), <span class="kw">col</span> <span class="kw">=</span> <span class="fl">NA</span>, <span class="kw">border</span> <span class="kw">=</span> <span class="st">"red"</span>)
 <span class="fu"><a href="https://rdrr.io/pkg/sf/man/plot.html">plot</a></span>(<span class="fu"><a href="https://rdrr.io/pkg/sf/man/st_geometry.html">st_geometry</a></span>(<span class="no">sample_catchment</span>), <span class="kw">add</span> <span class="kw">=</span> <span class="fl">TRUE</span>)
@@ -258,11 +208,34 @@
 <span class="fu"><a href="https://rdrr.io/pkg/sf/man/plot.html">plot</a></span>(<span class="no">walker_flowline</span>$<span class="no">geom</span>, <span class="kw">lwd</span> <span class="kw">=</span> <span class="fl">.7</span>, <span class="kw">col</span> <span class="kw">=</span> <span class="st">"blue"</span>, <span class="kw">add</span> <span class="kw">=</span> <span class="fl">TRUE</span>)</pre></body></html></div>
 <p><img src="refactor_catchment_files/figure-html/aggregate-2.png" width="576"></p>
 </div>
+<div id="splitting-catchments" class="section level2">
+<h2 class="hasAnchor">
+<a href="#splitting-catchments" class="anchor"></a>Splitting Catchments</h2>
+<p>The <code><a href="../reference/split_catchment_divide.html">split_catchment_divide()</a></code> function can be used in two ways. If provided with multiple flowpaths per catchment boundary, it will split catchments along their length. If provided one or more with the <code>lr</code> parameter set to <code>TRUE</code>, it will also split each catchment into two pieces along the flowpath. In headwater catchments, the left-right split will extend upstream along the maximum upstream flow accumulation path till it reaches the catchment divide. <code><a href="../reference/split_catchment_divide.html">split_catchment_divide()</a></code> is called in the <code><a href="../reference/refactor_nhdplus.html">refactor_nhdplus()</a></code> workflow but this left-right split is not applied then. This next block shows how to apply the split to aggregated results.</p>
+<div class="sourceCode" id="cb11"><html><body><pre class="r">
+<span class="no">split_catchments</span> <span class="kw">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html">do.call</a></span>(<span class="no">c</span>, <span class="fu"><a href="https://rdrr.io/r/base/lapply.html">lapply</a></span>(<span class="fu"><a href="https://rdrr.io/r/base/c.html">c</a></span>(<span class="fl">1</span>:<span class="fu"><a href="https://rdrr.io/pkg/raster/man/ncell.html">nrow</a></span>(<span class="no">aggregated</span>$<span class="no">cat_sets</span>)),
+                                      <span class="kw">function</span>(<span class="no">g</span>, <span class="no">ac</span>, <span class="no">af</span>, <span class="no">fdr</span>, <span class="no">fac</span>) {
+                                        <span class="fu"><a href="../reference/split_catchment_divide.html">split_catchment_divide</a></span>(<span class="no">ac</span>[<span class="no">g</span>, ], <span class="no">af</span>[<span class="no">g</span>, ],
+                                                               <span class="no">fdr</span>, <span class="no">fac</span>, <span class="kw">lr</span> <span class="kw">=</span> <span class="fl">TRUE</span>)
+                                      },
+                                      <span class="kw">ac</span> <span class="kw">=</span> <span class="no">aggregated</span>$<span class="no">cat_sets</span>,
+                                      <span class="kw">af</span> <span class="kw">=</span> <span class="no">aggregated</span>$<span class="no">fline_sets</span>,
+                                      <span class="kw">fdr</span> <span class="kw">=</span> <span class="no">walker_fdr</span>,
+                                      <span class="kw">fac</span> <span class="kw">=</span> <span class="no">walker_fac</span>))</pre></body></html></div>
+<p>Here we see the split geometry in black and the original catchments in red.</p>
+<div class="sourceCode" id="cb12"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/pkg/sf/man/plot.html">plot</a></span>(<span class="no">split_catchments</span>, <span class="kw">lwd</span> <span class="kw">=</span> <span class="fl">3</span>)
+<span class="fu"><a href="https://rdrr.io/pkg/sf/man/plot.html">plot</a></span>(<span class="fu"><a href="https://rdrr.io/pkg/sf/man/st_geometry.html">st_geometry</a></span>(<span class="no">aggregated</span>$<span class="no">cat_sets</span>), <span class="kw">lwd</span> <span class="kw">=</span> <span class="fl">2</span>, <span class="kw">border</span> <span class="kw">=</span> <span class="st">"red"</span>, <span class="kw">add</span> <span class="kw">=</span> <span class="fl">TRUE</span>)</pre></body></html></div>
+<p><img src="refactor_catchment_files/figure-html/split1-1.png" width="576"></p>
+<p>Here we see the split geometry in black again with the flowline used for the split in red.</p>
+<div class="sourceCode" id="cb13"><html><body><pre class="r"><span class="fu"><a href="https://rdrr.io/pkg/sf/man/plot.html">plot</a></span>(<span class="no">split_catchments</span>, <span class="kw">lwd</span> <span class="kw">=</span> <span class="fl">3</span>)
+<span class="fu"><a href="https://rdrr.io/pkg/sf/man/plot.html">plot</a></span>(<span class="no">aggregated</span>$<span class="no">fline_sets</span>$<span class="no">geom</span>, <span class="kw">lwd</span> <span class="kw">=</span> <span class="fl">1</span>, <span class="kw">col</span> <span class="kw">=</span> <span class="st">"red"</span>, <span class="kw">add</span> <span class="kw">=</span> <span class="fl">TRUE</span>)</pre></body></html></div>
+<p><img src="refactor_catchment_files/figure-html/split2-1.png" width="576"></p>
+</div>
 <div id="identifiers" class="section level2">
 <h2 class="hasAnchor">
 <a href="#identifiers" class="anchor"></a>Identifiers</h2>
 <p>So you want to know how the identifiers from the original NHDPlus Catchments relate to the output? Let’s look at what’s in the output.</p>
-<div class="sourceCode" id="cb11"><html><body><pre class="r">(<span class="no">input_ids</span> <span class="kw">&lt;-</span> <span class="no">walker_flowline</span>$<span class="no">COMID</span>)
+<div class="sourceCode" id="cb14"><html><body><pre class="r">(<span class="no">input_ids</span> <span class="kw">&lt;-</span> <span class="no">walker_flowline</span>$<span class="no">COMID</span>)
 <span class="co">#&gt;  [1] 5329303 5329293 5329305 5329317 5329315 5329339 5329343 5329357 5329365</span>
 <span class="co">#&gt; [10] 5329373 5329385 5329821 5329395 5329397 5329389 5329435 5329313 5329311</span>
 <span class="co">#&gt; [19] 5329817 5329323 5329325 5329327 5329347 5329291 5329363 5329819 5329359</span>
@@ -371,7 +344,7 @@
 <li>Aggregated catchments use the identifer of the outlet catchment.</li>
 </ol>
 <p>Given these caveats, we can build a complete lookup table from source catchment to output aggregate identifier.</p>
-<div class="sourceCode" id="cb12"><html><body><pre class="r">
+<div class="sourceCode" id="cb15"><html><body><pre class="r">
 <span class="no">refactor_lookup</span> <span class="kw">&lt;-</span> <span class="kw pkg">dplyr</span><span class="kw ns">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html">select</a></span>(<span class="fu"><a href="https://rdrr.io/pkg/sf/man/st_geometry.html">st_drop_geometry</a></span>(<span class="no">flowline_rec</span>), <span class="no">ID</span>, <span class="no">member_COMID</span>) <span class="kw">%&gt;%</span>
   <span class="kw pkg">dplyr</span><span class="kw ns">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html">mutate</a></span>(<span class="kw">member_COMID</span> <span class="kw">=</span> <span class="fu"><a href="https://rdrr.io/r/base/strsplit.html">strsplit</a></span>(<span class="no">member_COMID</span>, <span class="st">","</span>)) <span class="kw">%&gt;%</span>
   <span class="kw pkg">tidyr</span><span class="kw ns">::</span><span class="fu"><a href="https://tidyr.tidyverse.org/reference/nest.html">unnest</a></span>(<span class="kw">cols</span> <span class="kw">=</span> <span class="no">member_COMID</span>) <span class="kw">%&gt;%</span>

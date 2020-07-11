@@ -74,7 +74,7 @@ for examples." />
       </button>
       <span class="navbar-brand">
         <a class="navbar-link" href="../index.html">hyRefactor</a>
-        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="In-development version">0.4.5</span>
+        <span class="version label label-danger" data-toggle="tooltip" data-placement="bottom" title="In-development version">0.4.6</span>
       </span>
     </div>
 
@@ -97,13 +97,16 @@ for examples." />
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="../articles/coastal_units.html">Coastal Units wit hyRefactor</a>
+      <a href="../articles/coastal_units.html">Coastal Units with hyRefactor</a>
     </li>
     <li>
       <a href="../articles/refactor_catchment.html">Refactor Catchments</a>
     </li>
     <li>
       <a href="../articles/refactor_nhdplus.html">Refactor Flowlines</a>
+    </li>
+    <li>
+      <a href="../articles/split_refactor.html">Split Flowlines</a>
     </li>
   </ul>
 </li>
@@ -139,7 +142,7 @@ flow direction grid and the output of nhdplus_refactor. See Vignette
 for examples.</p>
     </div>
 
-    <pre class="usage"><span class='fu'>split_catchment_divide</span>(<span class='no'>catchment</span>, <span class='no'>fline</span>, <span class='no'>fdr</span>, <span class='no'>fac</span>)</pre>
+    <pre class="usage"><span class='fu'>split_catchment_divide</span>(<span class='no'>catchment</span>, <span class='no'>fline</span>, <span class='no'>fdr</span>, <span class='no'>fac</span>, <span class='kw'>lr</span> <span class='kw'>=</span> <span class='fl'>FALSE</span>)</pre>
 
     <h2 class="hasAnchor" id="arguments"><a class="anchor" href="#arguments"></a>Arguments</h2>
     <table class="ref-arguments">
@@ -150,7 +153,7 @@ for examples.</p>
     </tr>
     <tr>
       <th>fline</th>
-      <td><p>sf data.frame with two or more flowline segments in
+      <td><p>sf data.frame with one or more flowline segments in
 upstream downstream order.</p></td>
     </tr>
     <tr>
@@ -160,6 +163,10 @@ upstream downstream order.</p></td>
     <tr>
       <th>fac</th>
       <td><p>raster a flow accumulation raster that fuller covers the catchment</p></td>
+    </tr>
+    <tr>
+      <th>lr</th>
+      <td><p>boolean should catchments be split along the left/right bank?</p></td>
     </tr>
     </table>
 

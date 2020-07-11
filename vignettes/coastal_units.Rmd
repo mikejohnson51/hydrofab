@@ -1,5 +1,5 @@
 ---
-title: "Coastal Units wit hyRefactor"
+title: "Coastal Units with hyRefactor"
 author: "dblodgett@usgs.gov"
 output: rmarkdown::html_vignette
 vignette: >
