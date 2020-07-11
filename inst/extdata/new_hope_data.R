@@ -1,4 +1,5 @@
 # nolint start
+options("rgdal_show_exportToProj4_warnings"="none")
 library(rgdal)
 library(raster)
 extdata <- system.file("extdata", package = "hyRefactor")

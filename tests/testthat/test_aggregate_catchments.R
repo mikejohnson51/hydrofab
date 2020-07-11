@@ -1,4 +1,7 @@
 context("aggregate catchment")
+
+options("rgdal_show_exportToProj4_warnings"="none")
+
 test_that("walker aggregate runs", {
 source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
 
@@ -40,6 +43,17 @@ expect_true(all(walker_fline_rec$ID %in% aggregate_lookup_cat$reconciled_ID),
 expect_equal(aggregated_cat$toID, get_id(c("5329843", "5329339.1", "5329303", NA)), info = "Expect these toIDs")
 expect_true(all(aggregated_cat$toID[!is.na(aggregated_cat$toID)] %in% aggregated_cat$ID),
        "All not NA toIDs should be in IDs")
+
+### Make sure we can run split_catchment_divide on aggregate output.
+crs <- raster::crs(walker_fdr)
+aggregated_cat <- st_transform(aggregated_cat, crs)
+aggregated_fline <- st_transform(aggregated_fline, crs)
+
+new_geom <- do.call(c, lapply(c(1:nrow(aggregated_cat)), function(g, ac, af, fdr, fac) {
+  split_catchment_divide(ac[g, ], af[g, ], fdr, fac, lr = TRUE)
+}, ac = aggregated_cat, af = aggregated_fline, fdr = walker_fdr, fac = walker_fac))
+
+expect_true(all(lengths(new_geom) == 2))
 
 outlets <- data.frame(ID = get_id(c("5329843", "5329339.1", "5329385", "5329303", "5329321")),
                       type = c("outlet", "outlet", "outlet", "terminal", "outlet"),

@@ -31,13 +31,20 @@ test_that("split_catchment_divides works", {
 
   suppressWarnings(split_cat <- split_catchment_divide(test_cat, test_flines, 
                                       walker_fdr, walker_fac))
-
+  
   expect_true(length(split_cat) == 5, "Got the wrong number of cathment split polygons")
   expect_true(all(c("XY", "MULTIPOLYGON", "sfg") %in% class(split_cat[[5]])),
          "Got wrong class for polygon with pixel dribble out the bottom")
   expect_true(all(c("XY", "POLYGON", "sfg") %in% class(split_cat[[2]])),
          "Got wrong class for polygon with one ring")
 
+  split_cat <- split_catchment_divide(test_cat, test_flines, 
+                                      walker_fdr, walker_fac, lr = TRUE)
+  
+  expect_true(length(split_cat) == 5, "Got the wrong number of cathment split polygons")
+  
+  expect_true(all(lengths(st_geometry(split_cat)) == 2))
+  
   test_fline_ref <- fline_ref[1:9, ] # this sucks, but works.
   test_fline_rec <- dplyr::filter(fline_rec,
                               member_COMID %in% as.character(test_fline_ref$COMID))
@@ -51,6 +58,28 @@ test_that("split_catchment_divides works", {
   expect_true(nrow(reconciled_cats) == nrow(test_fline_ref), "got the wrong number of split catchments")
   expect_true(all(reconciled_cats$member_COMID %in% test_fline_ref$COMID))
 
+})
+
+test_that("split catchment divide left right", {
+  source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
+  
+  cat <- dplyr::filter(walker_catchment, FEATUREID == 5329357)
+  fline <- dplyr::filter(walker_flowline, COMID == 5329357)
+  
+  sc <- split_catchment_divide(cat, fline, walker_fdr, walker_fac, lr = TRUE)
+  
+  expect_is(sc, "sfc_MULTIPOLYGON")
+  
+  expect_equal(length(sc[[1]]), 2)
+  
+  cat <- dplyr::filter(walker_catchment, FEATUREID == 5329435)
+  fline <- dplyr::filter(walker_flowline, COMID == 5329435)
+  
+  sc <- split_catchment_divide(cat, fline, walker_fdr, walker_fac, lr = TRUE)
+  
+  expect_is(sc, "sfc_MULTIPOLYGON")
+  
+  expect_equal(length(sc[[1]]), 2)
 })
 
 test_that("split and reconcile works", {

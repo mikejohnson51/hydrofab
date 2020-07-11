@@ -4,17 +4,19 @@
 \alias{split_catchment_divide}
 \title{Split Catchment Divides}
 \usage{
-split_catchment_divide(catchment, fline, fdr, fac)
+split_catchment_divide(catchment, fline, fdr, fac, lr = FALSE)
 }
 \arguments{
 \item{catchment}{sf data.frame with one catchment divide}
 
-\item{fline}{sf data.frame with two or more flowline segments in
+\item{fline}{sf data.frame with one or more flowline segments in
 upstream downstream order.}
 
 \item{fdr}{raster a flow direction raster that fully covers the catchment}
 
 \item{fac}{raster a flow accumulation raster that fuller covers the catchment}
+
+\item{lr}{boolean should catchments be split along the left/right bank?}
 }
 \value{
 Split catchment divides as an sfc geometry.

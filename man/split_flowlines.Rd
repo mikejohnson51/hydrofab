@@ -30,13 +30,16 @@ A wrapper for split_lines that works on nhdplus attributes
 \examples{
 source(system.file("extdata", "new_hope_data.R", package = "hyRefactor"))
 
-new_hope_flowline <- dplyr::right_join(dplyr::select(new_hope_flowline, COMID, REACHCODE, FromMeas, ToMeas), 
-                                       suppressWarnings(nhdplusTools::prepare_nhdplus(new_hope_flowline, 
-                                                                                      0, 0, 0, FALSE, warn = FALSE)), 
-                                       by = "COMID")
+new_hope_flowline <- 
+  dplyr::right_join(dplyr::select(new_hope_flowline, COMID, REACHCODE, FromMeas, ToMeas),
+                    suppressWarnings(nhdplusTools::prepare_nhdplus(
+                      new_hope_flowline, 0, 0, 0, FALSE, warn = FALSE)),
+                    by = "COMID")
 
-split <- split_flowlines(suppressWarnings(sf::st_cast(sf::st_transform(new_hope_flowline, 5070), "LINESTRING")), 
+split <- split_flowlines(suppressWarnings(sf::st_cast(sf::st_transform(
+  new_hope_flowline, 5070), "LINESTRING")),
                          max_length = 2000, events = new_hope_events)
+
 mapview::mapview(list(new_hope_events, new_hope_flowline))
 
 mapview::mapview(list(new_hope_events, split))
