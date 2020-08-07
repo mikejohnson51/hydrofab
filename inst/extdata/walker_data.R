@@ -6,9 +6,14 @@ extdata <- system.file("extdata", package = "hyRefactor")
 walker_fac <- suppressWarnings(raster::raster(file.path(extdata, "walker_fac.tif")))
 walker_fdr <- suppressWarnings(raster::raster(file.path(extdata, "walker_fdr.tif")))
 proj <- as.character(raster::crs(walker_fdr))
-walker_catchment <- sf::read_sf(file.path(extdata, "walker.gpkg"), "CatchmentSP")
+
+wgpkg <- tempfile(fileext = ".gpkg")
+
+file.copy(file.path(extdata, "walker.gpkg"), wgpkg)
+
+walker_catchment <- sf::read_sf(wgpkg, "CatchmentSP")
 walker_catchment <- sf::st_transform(walker_catchment, proj)
-walker_flowline <- sf::read_sf(file.path(extdata, "walker.gpkg"), "NHDFlowline_Network")
+walker_flowline <- sf::read_sf(wgpkg, "NHDFlowline_Network")
 walker_flowline <- sf::st_transform(walker_flowline, proj)
 
 # walker.gpkg turned into pre-processed sample data.

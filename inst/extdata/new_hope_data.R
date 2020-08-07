@@ -3,17 +3,36 @@ options("rgdal_show_exportToProj4_warnings"="none")
 library(rgdal)
 library(raster)
 extdata <- system.file("extdata", package = "hyRefactor")
+
 new_hope_fac <- suppressWarnings(raster::raster(file.path(extdata, "new_hope_fac.tif")))
 new_hope_fdr <- suppressWarnings(raster::raster(file.path(extdata, "new_hope_fdr.tif")))
+
 proj <- as.character(raster::crs(new_hope_fdr))
-new_hope_catchment <- sf::read_sf(file.path(extdata, "new_hope.gpkg"), "CatchmentSP")
+
+nhpgpkg <- tempfile(fileext = ".gpkg")
+
+file.copy(file.path(extdata, "new_hope.gpkg"), nhpgpkg)
+
+nhpgpkgref <- tempfile(fileext = ".gpkg")
+
+file.copy(file.path(extdata, "new_hope_refactor.gpkg"), nhpgpkgref)
+
+nhpgpkgrec <- tempfile(fileext = ".gpkg")
+
+file.copy(file.path(extdata, "new_hope_reconcile.gpkg"), nhpgpkgrec)
+
+nhpgpkgev <- tempfile(fileext = ".gpkg")
+
+file.copy(file.path(extdata, "new_hope_event.gpkg"), nhpgpkgev)
+
+new_hope_catchment <- sf::read_sf(nhpgpkg, "CatchmentSP")
 new_hope_catchment <- sf::st_transform(new_hope_catchment, proj)
-new_hope_flowline <- sf::read_sf(file.path(extdata, "new_hope.gpkg"), "NHDFlowline_Network")
+new_hope_flowline <- sf::read_sf(nhpgpkg, "NHDFlowline_Network")
 new_hope_flowline <- sf::st_transform(new_hope_flowline, proj)
-new_hope_fline_ref <- sf::read_sf(file.path(extdata, "new_hope_refactor.gpkg"))
-new_hope_fline_rec <- sf::read_sf(file.path(extdata, "new_hope_reconcile.gpkg"))
-new_hope_catchment_rec <- sf::read_sf(file.path(extdata, "new_hope_cat_rec.gpkg"))
-new_hope_events <- sf::read_sf(file.path(extdata, "new_hope_event.gpkg"))
+new_hope_fline_ref <- sf::read_sf(nhpgpkgref)
+new_hope_fline_rec <- sf::read_sf(nhpgpkgrec)
+new_hope_catchment_rec <- sf::read_sf(nhpgpkgrec)
+new_hope_events <- sf::read_sf(nhpgpkgev)
 
 ####
 # This is how the raster data was created.
