@@ -21,6 +21,10 @@ nhpgpkgrec <- tempfile(fileext = ".gpkg")
 
 file.copy(file.path(extdata, "new_hope_reconcile.gpkg"), nhpgpkgrec)
 
+nhpgpkgreccat <- tempfile(fileext = ".gpkg")
+
+file.copy(file.path(extdata, "new_hope_cat_rec.gpkg"), nhpgpkgreccat)
+
 nhpgpkgev <- tempfile(fileext = ".gpkg")
 
 file.copy(file.path(extdata, "new_hope_event.gpkg"), nhpgpkgev)
@@ -31,7 +35,7 @@ new_hope_flowline <- sf::read_sf(nhpgpkg, "NHDFlowline_Network")
 new_hope_flowline <- sf::st_transform(new_hope_flowline, proj)
 new_hope_fline_ref <- sf::read_sf(nhpgpkgref)
 new_hope_fline_rec <- sf::read_sf(nhpgpkgrec)
-new_hope_catchment_rec <- sf::read_sf(nhpgpkgrec)
+new_hope_catchment_rec <- sf::read_sf(nhpgpkgreccat)
 new_hope_events <- sf::read_sf(nhpgpkgev)
 
 ####
