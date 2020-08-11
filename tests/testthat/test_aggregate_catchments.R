@@ -137,7 +137,8 @@ test_that("new_hope aggregate", {
   expect_true(all(!fline_sets$set[fline_sets$ID == get_id("8896032.2")][[1]] %in% fline_sets$set[fline_sets$ID == get_id("8896032.1")][[1]]),
          "a downstream catchment should not contain flowpaths from upstream catchments")
   
-  new_hope_catchment_rec$area_sqkm <- as.numeric(st_area(new_hope_catchment_rec)) / (1000^2)
+  new_hope_catchment_rec$area_sqkm <- as.numeric(st_area(
+    st_transform(new_hope_catchment_rec, 5070))) / (1000^2)
   new_hope_fline_rec <- dplyr::inner_join(new_hope_fline_rec,
                                    select(st_set_geometry(new_hope_catchment_rec, NULL),
                                           ID, area_sqkm), by = "ID")
@@ -168,7 +169,8 @@ test_that("new_hope aggregate", {
     new_hope_catchment_rec$ID[ind]
   }
 
-  new_hope_catchment_rec$area_sqkm <- as.numeric(st_area(new_hope_catchment_rec)) / (1000^2)
+  new_hope_catchment_rec$area_sqkm <- as.numeric(st_area(
+    st_transform(new_hope_catchment_rec, 5070))) / (1000^2)
   new_hope_fline_rec <- dplyr::inner_join(new_hope_fline_rec,
                                           select(st_set_geometry(new_hope_catchment_rec, NULL),
                                                  ID, area_sqkm), by = "ID")
