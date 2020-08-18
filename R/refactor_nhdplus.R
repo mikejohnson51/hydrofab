@@ -70,7 +70,7 @@ refactor_nhdplus <- function(nhdplus_flines,
 
   if ("FTYPE" %in% names(nhdplus_flines)) {
     nhdplus_flines <- dplyr::inner_join(
-      select(nhdplus_flines, COMID),
+      select(nhdplus_flines, COMID, REACHCODE, FromMeas, ToMeas),
       sf::st_set_geometry(nhdplus_flines, NULL) %>%
         prepare_nhdplus(0, 0, 0, purge_non_dendritic = purge_non_dendritic,
                         warn = warn), by = "COMID") %>%

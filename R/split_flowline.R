@@ -223,7 +223,7 @@ split_lines_fun <- function(split_points, lines, para) {
 }
 
 split_by_event <- function(input_lines, events) {
-  if(is.null(events)) return(data.frame(COMID = integer(0), start = numeric(0), end = numeric(0), 
+  if(is.null(events) || nrow(events) == 0) return(data.frame(COMID = integer(0), start = numeric(0), end = numeric(0), 
                                         event_REACHCODE = character(0), event_REACH_meas = numeric(0), event_split_fID = integer(0)))
   
   check_names(input_lines, "split_lines_event")
