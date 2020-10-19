@@ -191,3 +191,23 @@ test_that("doing nothing does nothing", {
 
   unlink("data/temp", recursive = TRUE)
 })
+
+test_that("too small split", {
+  
+  # Tests the snap_distance_m parameter.
+  
+  catchment <- read_sf("data/split_bug.gpkg", "catchment")
+  fline <- read_sf("data/split_bug.gpkg", "fline")
+  fdr <- raster("data/split_bug_fdr.tif")
+  fac <- raster("data/split_bug_fac.tif")
+  
+  expect_error(split_catchment_divide(catchment, fline, fdr, fac, 
+                                      min_area_m = 800, snap_distance_m = 100),
+               "Nothing left over. Split too small?")
+  
+  out <- split_catchment_divide(catchment, fline, fdr, fac, 
+                                min_area_m = 800, snap_distance_m = 40)
+  
+  expect_equal(length(out), 2)
+  
+})

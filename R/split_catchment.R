@@ -143,6 +143,8 @@ trace_upstream <- function(start_point, cat, fdr, fac_matrix, fdr_matrix) {
 #' @param fdr raster a flow direction raster that fully covers the catchment
 #' @param fac raster a flow accumulation raster that fuller covers the catchment
 #' @param lr boolean should catchments be split along the left/right bank?
+#' @param min_area_m minimum area in meters to filter out slivers (caution, use with care!!)
+#' @param snap_distance_m distance to snap raster generated geometry to polygon geometry
 #' @return Split catchment divides as an sfc geometry.
 #' @importFrom raster raster crs crop mask rowColFromCell cellFromXY rasterToPolygons as.matrix
 #' @importFrom dplyr group_by ungroup filter select mutate lead n
@@ -153,7 +155,8 @@ trace_upstream <- function(start_point, cat, fdr, fac_matrix, fdr_matrix) {
 #' @importFrom nhdplusTools get_node
 #' @export
 #'
-split_catchment_divide <- function(catchment, fline, fdr, fac, lr = FALSE) {
+split_catchment_divide <- function(catchment, fline, fdr, fac, lr = FALSE, 
+                                   min_area_m = 800, snap_distance_m = 100) {
 
   check_proj(catchment, fline, fdr)
 
@@ -199,8 +202,8 @@ split_catchment_divide <- function(catchment, fline, fdr, fac, lr = FALSE) {
                                  dissolve = TRUE)))
 
 
-      smaller_than_one_pixel <- units::set_units(800, "m^2")
-      snap_distance <- units::set_units(100, "m")
+      smaller_than_one_pixel <- units::set_units(min_area_m, "m^2")
+      snap_distance <- units::set_units(snap_distance_m, "m")
 
       ds_catchment <- st_geometry(out) %>%
         st_simplify(dTolerance = 40) %>%
@@ -237,8 +240,14 @@ split_catchment_divide <- function(catchment, fline, fdr, fac, lr = FALSE) {
       browser()
     }
   }
+  
+  if(sf::st_is_empty(st_geometry(catchment))) {
+    stop("Nothing left over. Split too small?")
+  } else {
+    out <- c(return_cats, st_geometry(catchment))
+  }
 
-  out <- st_as_sfc(c(return_cats, st_geometry(catchment)), crs = st_crs(catchment))
+  out <- st_as_sfc(out, crs = st_crs(catchment))
   
   if(lr) {
     return(split_lr(out, fline, fdr, fac_matrix, fdr_matrix))
