@@ -90,6 +90,9 @@ refactor_nhdplus <- function(nhdplus_flines,
   if (warn) {
     message("flowlines split complete, collapsing")
   }
+  
+  exclude_cats <- c(exclude_cats, dplyr::filter(flines, !is.na(event_REACH_meas))$COMID,
+                    dplyr::filter(flines, !is.na(event_REACH_meas))$toCOMID)
 
   if (three_pass) {
     collapsed_flines <-
