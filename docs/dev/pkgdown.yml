@@ -1,4 +1,4 @@
-pandoc: 2.9.2.1
+pandoc: 2.10.1
 pkgdown: 1.5.1
 pkgdown_sha: ~
 articles:
@@ -6,5 +6,5 @@ articles:
   refactor_catchment: refactor_catchment.html
   refactor_nhdplus: refactor_nhdplus.html
   split_refactor: split_refactor.html
-last_built: 2020-07-11T19:11Z
+last_built: 2020-10-23T14:03Z
 
