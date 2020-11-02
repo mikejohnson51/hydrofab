@@ -335,12 +335,21 @@ prep_cat_fdr_fac <- function(cat, fdr, fac) {
               fac = fac))
 }
 
-check_proj <- function(catchment, fline, fdr) {
-  proj <- as.character(raster::crs(fdr))
-  if (st_crs(catchment) != st_crs(proj) |
-      st_crs(fline) != st_crs(proj) |
-      st_crs(fline) != st_crs(catchment)) {
-    stop("All inputs must have the same projection.")
+check_proj <- function(catchment, fline, fdr = NULL) {
+  
+  er <- "All inputs must have the same projection."
+  
+  if(st_crs(fline) != st_crs(catchment)) {
+    stop(er)
+  }
+  
+  if(!is.null(fdr)) {
+    
+    proj <- as.character(raster::crs(fdr))
+    if (st_crs(catchment) != st_crs(proj) |
+        st_crs(fline) != st_crs(proj)) {
+      stop(er)
+    }
   }
   return(invisible(1))
 }

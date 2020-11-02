@@ -211,3 +211,36 @@ test_that("too small split", {
   expect_equal(length(out), 2)
   
 })
+
+test_that("no fdr", {
+  
+  tf <- file.path(tempfile(fileext = ".gpkg"))
+  tr <- file.path(tempfile(fileext = ".gpkg"))
+  
+  unlink(tf)
+  unlink(tr)
+  
+  source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
+  
+  refactor <- refactor_nhdplus(nhdplus_flines = walker_flowline,
+                               split_flines_meters = 2000000,
+                               collapse_flines_meters = 2000,
+                               collapse_flines_main_meters = 1000,
+                               split_flines_cores = 2,
+                               out_refactored = tf,
+                               out_reconciled = tr,
+                               three_pass = TRUE,
+                               purge_non_dendritic = FALSE,
+                               warn = FALSE)
+  
+  fline_ref <- sf::read_sf(tf) %>%
+    dplyr::arrange(COMID)
+  fline_rec <- sf::read_sf(tr)
+  
+  cat <- sf::st_transform(walker_catchment, sf::st_crs(fline_rec))
+  
+  reconcile <- reconcile_catchment_divides(walker_catchment, fline_ref, fline_rec)
+  
+  expect_equal(nrow(reconcile), 42)
+  
+})

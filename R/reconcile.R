@@ -142,7 +142,7 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 #' @importFrom dplyr select filter mutate left_join
 #' @importFrom data.table rbindlist
 #'
-reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr, fac, para = 2, cache = NULL) {
+reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr = NULL, fac = NULL, para = 2, cache = NULL) {
 
   # This is a hack until I find time to get the geometry name dynamically.
   catchment <- rename_sf(catchment, "geom")
