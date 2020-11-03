@@ -4,7 +4,15 @@
 \alias{split_catchment_divide}
 \title{Split Catchment Divides}
 \usage{
-split_catchment_divide(catchment, fline, fdr, fac, lr = FALSE)
+split_catchment_divide(
+  catchment,
+  fline,
+  fdr,
+  fac,
+  lr = FALSE,
+  min_area_m = 800,
+  snap_distance_m = 100
+)
 }
 \arguments{
 \item{catchment}{sf data.frame with one catchment divide}
@@ -17,6 +25,10 @@ upstream downstream order.}
 \item{fac}{raster a flow accumulation raster that fuller covers the catchment}
 
 \item{lr}{boolean should catchments be split along the left/right bank?}
+
+\item{min_area_m}{minimum area in meters to filter out slivers (caution, use with care!!)}
+
+\item{snap_distance_m}{distance to snap raster generated geometry to polygon geometry}
 }
 \value{
 Split catchment divides as an sfc geometry.

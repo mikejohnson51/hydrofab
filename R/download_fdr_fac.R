@@ -1,14 +1,17 @@
-#' Download FDR FAC
+#' Download Elevation and Derivatives
+#' @param product character DEM, hydroDEM, or FDRFAC.  
 #' @param out_dir path to directory to store output.
 #' @param regions character vector of two digit hydrologic 
-#' regions to download. Omit for all.
 #' @importFrom rvest html_nodes html_attr
 #' @importFrom xml2 read_html
 #' @importFrom httr RETRY write_disk progress
 #' @export
-download_fdr_fac <- function(out_dir, regions = NULL) {
-  
+download_elev <- function(product, out_dir, regions = NULL) {
   dev_null <- nhdplusTools:::check7z()
+  
+  allowable <- c("DEM" = ".*NEDSnapshot.*", "hydroDEM" = ".*HydroDem.*", "FDRFAC" = ".*FdrFac.*")
+  
+  if(!all(product %in% names(allowable))) stop(paste("product must be one of", allowable))
   
   dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
   
@@ -30,7 +33,7 @@ download_fdr_fac <- function(out_dir, regions = NULL) {
     
     check <- c(check, pg_links[!grepl("[.][.]/", pg_links) & grepl(".*/$", pg_links)])
     
-    found <- c(found, pg_links[grepl(".*FdrFac.*", pg_links)])
+    found <- c(found, pg_links[grepl(paste(allowable[products], collapse = "|"), pg_links)])
     
     i <- i + 1
     
@@ -51,9 +54,18 @@ download_fdr_fac <- function(out_dir, regions = NULL) {
     
     if(!file.exists(out_fi)) {
       RETRY("GET", url, write_disk(out_fi), progress())
-    
+      
       system(paste0("7z -y -o", path.expand(out_dir), " x ", 
                     path.expand(out_fi)), intern = TRUE)
     }
   }
+}
+
+#' Download FDR FAC
+#' @inheritParams download_elev
+#' @export
+download_fdr_fac <- function(out_dir, regions = NULL) {
+  
+  download_elev(product = c("FDRFAC", out_dir, regions))
+  
 }

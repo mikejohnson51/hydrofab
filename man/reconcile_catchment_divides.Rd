@@ -8,8 +8,8 @@ reconcile_catchment_divides(
   catchment,
   fline_ref,
   fline_rec,
-  fdr,
-  fac,
+  fdr = NULL,
+  fac = NULL,
   para = 2,
   cache = NULL
 )
