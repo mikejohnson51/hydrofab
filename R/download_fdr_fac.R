@@ -33,7 +33,7 @@ download_elev <- function(product, out_dir, regions = NULL) {
     
     check <- c(check, pg_links[!grepl("[.][.]/", pg_links) & grepl(".*/$", pg_links)])
     
-    found <- c(found, pg_links[grepl(paste(allowable[products], collapse = "|"), pg_links)])
+    found <- c(found, pg_links[grepl(paste(allowable[product], collapse = "|"), pg_links, ignore.case = TRUE)])
     
     i <- i + 1
     
@@ -42,7 +42,7 @@ download_elev <- function(product, out_dir, regions = NULL) {
   
   if(!is.null(regions)) {
     found <- found[grepl(paste(paste0(".*_", regions, "?[a-z]_.*"), 
-                               collapse = "|"), found)]
+                               collapse = "|"), found, ignore.case = TRUE)]
   }
   
   for(f in found) {
