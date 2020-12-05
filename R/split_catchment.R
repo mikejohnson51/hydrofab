@@ -353,3 +353,85 @@ check_proj <- function(catchment, fline, fdr = NULL) {
   }
   return(invisible(1))
 }
+
+#' trace downstream (raindrop trace)
+#' @description proof of concept raindrop trace. 
+#' Example shown works but not tested beyond happy path
+#' Stop condition is distance or NA flow direction.
+#' Set edge of fdr and river path to NA to control stop.
+#' @noRd
+#' @param start_point sfc point where trace should start
+#' @param fdr raster flow direction grid
+#' @param distance numeric max distance in number of grid cells
+#' @return sfc linestring path traced along flow direction in crs of rasterr
+#' @examples 
+#' source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
+#' 
+#' start_point <- sf::st_sfc(sf::st_point(c(-122.7, 38.126)), crs = 4326)
+#' fdr <- walker_fdr
+#' distance <- 100
+#' 
+#' line <- sf::st_transform(dplyr::filter(walker_flowline, 
+#'                                        COMID == 5329435), 
+#'                          sf::st_crs(fdr))
+#' 
+#' fdr <- raster::mask(fdr, line, inverse = TRUE)
+#' 
+#' xy <- trace_downstream(start_point, fdr, distance)
+#' 
+#' mapview::mapview(list(line, xy))
+
+trace_downstream <- function(start_point, fdr, distance = 10000) {
+
+  lookup_rowcol <- rep(list(list()), 128)
+  lookup_rowcol[[1]] <- c(0, 1)
+  lookup_rowcol[[2]] <- c(1, 1)
+  lookup_rowcol[[4]] <- c(1, 0)
+  lookup_rowcol[[8]] <- c(1, -1)
+  lookup_rowcol[[16]] <- c(0, -1)
+  lookup_rowcol[[32]] <- c(-1, -1)
+  lookup_rowcol[[64]] <- c(-1, 0)
+  lookup_rowcol[[128]] <- c(-1, 1)
+  
+  # start point in raster projection
+  stp <- sf::st_transform(start_point, sf::st_crs(fdr))
+
+  # 1X2 matrix giving start row and col in raster
+  sti <- raster::rowColFromCell(fdr, raster::cellFromXY(fdr, sf::as_Spatial(stp)))    
+  
+  fdr_matrix <- raster::as.matrix(fdr)
+  
+  # empty max distance X 2 matrix 
+  track <- matrix(nrow = distance, ncol = 2)
+  
+  # distance counter
+  d <- 1
+
+  # starting local flow direction
+  local_dir <- fdr_matrix[sti]
+  
+  # stop if at distance or local direction is NA
+  while(d <= distance & !is.na(local_dir)) {
+
+    # add row col to track
+    track[d, ] <- sti
+    
+    d <- d + 1
+    
+    # next row col based on local flow direction
+    sti <- sti + lookup_rowcol[[local_dir]]
+    
+    # next local flow direction from matrix
+    local_dir <- fdr_matrix[sti]
+  }
+  
+  # truncate track in case of NA stop
+  track <- track[!is.na(track[,1]), ]
+  
+  # get xy for all row/col from track and fddr
+  xy <- raster::xyFromCell(fdr, raster::cellFromRowCol(fdr, track[, 1], track[, 2]))
+  
+  # return sfc linestring in projection of fdr
+  sf::st_sfc(sf::st_linestring(xy), crs = sf::st_crs(fdr))
+  
+}
