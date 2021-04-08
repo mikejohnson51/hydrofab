@@ -134,7 +134,7 @@ split_lines <- function(input_lines,
   
   too_long_split_points <- split_by_length(input_lines, max_length, event_split_points, avoid)
   
-  if(nrow(too_long_split_points) >= nrow(event_split_points)) {
+  if(nrow(event_split_points) > 0) {
     split_points <- too_long_split_points %>%
       dplyr::left_join(select(event_split_points, e_start = .data$start, 
                               e_end = .data$end, .data$event_split_fID), 

@@ -66,6 +66,6 @@ download_elev <- function(product, out_dir, regions = NULL) {
 #' @export
 download_fdr_fac <- function(out_dir, regions = NULL) {
   
-  download_elev(product = c("FDRFAC", out_dir, regions))
+  download_elev(product = c("FDRFAC"), out_dir, regions)
   
 }
