@@ -250,7 +250,12 @@ aggregate_catchments <- function(flowpath, divide, outlets, zero_order = NULL,
           verts <- verts[!names(verts) == outlet$nexID]
         }
         
-        geom <- st_union(st_geometry(filter(divide, ID %in% unlist(cat_sets$set[cat]))))
+        geom <- try(st_union(st_geometry(filter(divide, ID %in% unlist(cat_sets$set[cat])))), 
+                    silent = TRUE)
+        
+        if(inherits(geom, "try-error")) {
+          geom <- try(st_union(st_make_valid(st_geometry(filter(divide, ID %in% unlist(cat_sets$set[cat]))))))
+        }
         
         if(length(geom) > 0) {
           cat_sets$geom[[cat]] <- geom[[1]]
