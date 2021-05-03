@@ -141,6 +141,7 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 #' @importFrom sf st_drop_geometry st_dimension st_as_sf st_cast
 #' @importFrom dplyr select filter mutate left_join
 #' @importFrom data.table rbindlist
+#' @importFrom methods is
 #'
 reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr = NULL, fac = NULL, para = 2, cache = NULL) {
 
@@ -286,6 +287,8 @@ par_split_cat <- function(fid, to_split_ids, fline_ref, catchment, fdr, fac) {
 }
 
 get_split_cats <- function(cats, split_cats, cache = NULL) {
+  error_found <- TRUE
+  tryCatch({
   cats_vec <- unlist(strsplit(cats, ","))
   
   union_cats <- dplyr::filter(split_cats, FEATUREID %in% cats_vec)
@@ -306,6 +309,13 @@ get_split_cats <- function(cats, split_cats, cache = NULL) {
   }
   
   return(unioned)
+  }, error = function(e) {
+    warning(paste0("error in get_split_cats", e))
+  })
+  
+  save(list = ls(), file = cache)
+  stop(paste("Something went wrong in get_split_cats. The environment was saved to", cache))
+  
 }
 
 rename_sf <- function(sf_df, geom_name) {
