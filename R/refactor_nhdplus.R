@@ -37,9 +37,10 @@
 #' @export
 #' @importFrom nhdplusTools prepare_nhdplus
 #' @examples
-#' sample_flines <- sf::read_sf(system.file("extdata",
-#'                                           "petapsco_flowlines.gpkg",
-#'                                           package = "nhdplusTools"))
+#' source(system.file("extdata",
+#'                    "sample_flines.R",
+#'                    package = "nhdplusTools"))
+#' 
 #' nhdplus_flowlines <- sf::st_zm(sample_flines)
 #' refactor_nhdplus(nhdplus_flines = nhdplus_flowlines,
 #'                  split_flines_meters = 2000,

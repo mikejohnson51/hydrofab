@@ -141,6 +141,7 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 #' @importFrom sf st_drop_geometry st_dimension st_as_sf st_cast
 #' @importFrom dplyr select filter mutate left_join
 #' @importFrom data.table rbindlist
+#' @importFrom methods is
 #'
 reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr = NULL, fac = NULL, para = 2, cache = NULL) {
 
