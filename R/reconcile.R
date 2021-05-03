@@ -183,8 +183,7 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr = N
   if(para > 1) {
     log_file <- ""
     if(!is.null(cache)) log_file <- paste0(cache, "_par.log")  
-    cl <- parallel::makeCluster(rep("localhost", para),
-                                type = "SOCK", outfile = log_file)
+    cl <- parallel::makeCluster(para, outfile = log_file)
   }
   if(!is.null(cache)) {
     try(load(cache), silent = TRUE)
@@ -299,9 +298,18 @@ get_split_cats <- function(cats, split_cats, cache = NULL) {
                cats_vec, "environment saved to:", cache))
   }
   
+  geom <- try(sf::st_cast(sf::st_union(union_cats), 
+                          "MULTIPOLYGON"), silent = TRUE)
+  
+  if(inherits(geom, "try-error")) {
+    union_cats <- sf::st_make_valid(union_cats)
+    
+    geom <- sf::st_cast(sf::st_union(union_cats), 
+                        "MULTIPOLYGON")
+  }
+  
   unioned <- sf::st_sf(FEATUREID = cats, 
-                       geom = sf::st_cast(sf::st_union(union_cats), 
-                                          "MULTIPOLYGON"),
+                       geom = geom,
                        stringsAsFactors = FALSE)
   
   if (!any(grepl("MULTIPOLYGON", class(sf::st_geometry(unioned))))) {

@@ -197,8 +197,7 @@ add_length <- function(input_lines) {
 split_lines_fun <- function(split_points, lines, para) {
   cl <- NULL
   if(para > 1) {
-    cl <- parallel::makeCluster(rep("localhost", para),
-                                type = "SOCK")
+    cl <- parallel::makeCluster(para)
   }
 
   pbapply::pboptions("none")
