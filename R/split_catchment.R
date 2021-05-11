@@ -143,8 +143,11 @@ trace_upstream <- function(start_point, cat, fdr, fac_matrix, fdr_matrix) {
 #' @param fdr raster a flow direction raster that fully covers the catchment
 #' @param fac raster a flow accumulation raster that fuller covers the catchment
 #' @param lr boolean should catchments be split along the left/right bank?
-#' @param min_area_m minimum area in meters to filter out slivers (caution, use with care!!)
-#' @param snap_distance_m distance to snap raster generated geometry to polygon geometry
+#' @param min_area_m minimum area in m^2 to filter out slivers (caution, use with care!!)
+#' @param snap_distance_m distance in meters to snap raster generated geometry to polygon geometry
+#' @param simplify_tolerance_m dTolerance in meters for simplification of grid-cell based polygons
+#' @param vector_crs any object compatible with sf::st_crs. Used for vector-based calculations in case that 
+#' raster projection is not suitable (e.g. lon/lat) -- must result in units of meters.
 #' @return Split catchment divides as an sfc geometry.
 #' @importFrom raster raster crs crop mask rowColFromCell cellFromXY rasterToPolygons as.matrix
 #' @importFrom dplyr group_by ungroup filter select mutate lead n
@@ -156,10 +159,13 @@ trace_upstream <- function(start_point, cat, fdr, fac_matrix, fdr_matrix) {
 #' @export
 #'
 split_catchment_divide <- function(catchment, fline, fdr, fac, lr = FALSE, 
-                                   min_area_m = 800, snap_distance_m = 100) {
+                                   min_area_m = 800, snap_distance_m = 100,
+                                   simplify_tolerance_m = 40, vector_crs = NULL) {
 
   check_proj(catchment, fline, fdr)
 
+  cat_crs <- sf::st_crs(catchment)
+  
   outlets <- st_coordinates(fline) %>%
     data.frame() %>%
     group_by(L1) %>%
@@ -201,12 +207,16 @@ split_catchment_divide <- function(catchment, fline, fdr, fac, lr = FALSE,
                                  fun = raster_function,
                                  dissolve = TRUE)))
 
-
       smaller_than_one_pixel <- units::set_units(min_area_m, "m^2")
       snap_distance <- units::set_units(snap_distance_m, "m")
-
+      
+      if(!is.null(vector_crs)) {
+        out <- sf::st_transform(out, vector_crs)
+        catchment <- sf::st_transform(catchment, vector_crs)
+      }
+      
       ds_catchment <- st_geometry(out) %>%
-        st_simplify(dTolerance = 40) %>%
+        st_simplify(dTolerance = simplify_tolerance_m) %>%
         st_snap(st_geometry(catchment), tolerance = snap_distance)
 
       retry_cat_fun <- function(catchment, ds_catchment, smaller_than_one_pixel) {
@@ -220,21 +230,20 @@ split_catchment_divide <- function(catchment, fline, fdr, fac, lr = FALSE,
 
       suppressWarnings(st_crs(catchment) <- st_crs(ds_catchment))
       
-      ds_catchment <- tryCatch(retry_cat_fun(catchment,
-                                             ds_catchment,
-                                             smaller_than_one_pixel),
-                               error = function(e)
-                                 retry_cat_fun(st_make_valid(catchment),
-                                               st_make_valid(ds_catchment),
-                                               smaller_than_one_pixel))
+      ds_catchment <- retry_cat_fun(st_make_valid(catchment),
+                                    st_make_valid(ds_catchment),
+                                    smaller_than_one_pixel)
 
-      us_catchment <- tryCatch(st_difference(st_geometry(catchment), ds_catchment),
-                               error = function(e)
-                                 st_difference(st_geometry(st_make_valid(catchment)),
-                                               st_make_valid(ds_catchment)))
-
+      us_catchment <- st_difference(st_geometry(st_make_valid(catchment)),
+                                    st_make_valid(ds_catchment))
+      
       catchment <- ds_catchment
 
+      if(sf::st_crs(catchment) != cat_crs) {
+        catchment <- sf::st_transform(catchment, cat_crs)
+        us_catchment <- sf::st_transform(us_catchment, cat_crs)
+      }
+      
       return_cats <- c(return_cats, us_catchment)
     } else {
       browser()
@@ -317,7 +326,11 @@ get_row_col <- function(fdr, start, fac_matrix) {
 }
 
 prep_cat_fdr_fac <- function(cat, fdr, fac) {
-  sp_cat_buffer <- as_Spatial(st_buffer(cat, 200))
+  sp_cat_buffer <- as_Spatial(if(sf::st_is_longlat(cat)) {
+    st_buffer(cat, 0.002)
+  } else {
+    st_buffer(cat, 200)
+  })
   
   fdr <- raster::crop(fdr, sp_cat_buffer,
                       snap = "out")

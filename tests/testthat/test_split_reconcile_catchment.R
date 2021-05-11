@@ -244,3 +244,23 @@ test_that("no fdr", {
   expect_equal(nrow(reconcile), 42)
   
 })
+
+test_that("merrit dem", {
+  fdr <- raster::raster("data/ak_fdr.tif")
+  fac <- raster::raster("data/ak_fac.tif")
+  cat <- sf::read_sf("data/ak_vector.gpkg", "catchment")
+  ref <- sf::read_sf("data/ak_vector.gpkg", "fline_ref")
+  rec <- sf::read_sf("data/ak_vector.gpkg", "fline_rec")
+  
+  rec_cat <- suppressWarnings(reconcile_catchment_divides(cat, ref, rec, fdr, fac,
+                              para = 1, min_area_m = 10000, 
+                              snap_distance_m = 5, 
+                              simplify_tolerance_m = 5, 
+                              vector_crs = 3338))
+  
+  expect_equal(rec_cat$member_COMID, c("81000012.1", "81000012.2"))
+  
+  # plot(rec_cat$geom[2])
+  # plot(rec_cat$geom[1], add = TRUE, col = "red")
+  
+})

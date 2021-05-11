@@ -130,6 +130,7 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 #' @param fac raster flow accumulation
 #' @param para integer numer of cores to use for parallel execution
 #' @param cache path .rda to cache incremental outputs
+#' @inheritParams split_catchment_divides
 #' @return Catchment divides that have been split and collapsed according to
 #' input flowpaths
 #' @seealso The \code{\link{refactor_nhdplus}} function implements a complete
@@ -143,7 +144,10 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 #' @importFrom data.table rbindlist
 #' @importFrom methods is
 #'
-reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr = NULL, fac = NULL, para = 2, cache = NULL) {
+reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, 
+                                        fdr = NULL, fac = NULL, para = 2, cache = NULL, 
+                                        min_area_m = 800, snap_distance_m = 100,
+                                        simplify_tolerance_m = 40, vector_crs = NULL) {
 
   # This is a hack until I find time to get the geometry name dynamically.
   catchment <- rename_sf(catchment, "geom")
@@ -190,13 +194,17 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr = N
   }
   
   if(!exists("split_cats")) {
-  split_cats <- pbapply::pblapply(to_split_featureids, par_split_cat,
+    split_cats <- pbapply::pblapply(to_split_featureids, par_split_cat,
                                     to_split_ids = to_split_ids,
                                     fline_ref = fline_ref,
                                     catchment = catchment,
-                                    fdr = fdr, fac = fac, 
-                                  cl = cl)
-  if(!is.null(cache)) save(split_cats, file = cache)
+                                    fdr = fdr, fac = fac,
+                                    min_area_m = min_area_m, 
+                                    snap_distance_m = snap_distance_m,
+                                    simplify_tolerance_m = simplify_tolerance_m, 
+                                    vector_crs = vector_crs,
+                                    cl = cl)
+    if(!is.null(cache)) save(split_cats, file = cache)
   }
 
   
@@ -213,9 +221,13 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr = N
     dplyr::filter(dplyr::row_number() == 1) %>%
     dplyr::ungroup()
   
-  split_cats <- st_as_sf(rbindlist(list(
-    get_cat_unsplit(catchment, fline_ref, to_split_featureids),
-    split_cats)))
+  unsplit <- get_cat_unsplit(catchment, fline_ref, to_split_featureids)
+  
+  if(nrow(unsplit) > 0) {
+    split_cats <- st_as_sf(rbindlist(list(
+      unsplit,
+      split_cats)))
+  }
 
   combinations <- reconciled$member_COMID[grepl(",", reconciled$member_COMID)]
   
@@ -262,7 +274,9 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, fdr = N
   }
 }
 
-par_split_cat <- function(fid, to_split_ids, fline_ref, catchment, fdr, fac) {
+par_split_cat <- function(fid, to_split_ids, fline_ref, catchment, fdr, fac,
+                          min_area_m, snap_distance_m,
+                          simplify_tolerance_m, vector_crs) {
   out <- NULL
   try({
     # nolint start
@@ -275,7 +289,12 @@ par_split_cat <- function(fid, to_split_ids, fline_ref, catchment, fdr, fac) {
     split_cats <- split_catchment_divide(catchment = to_split_cat,
                                          fline = to_split_flines,
                                          fdr = fdr,
-                                         fac = fac)
+                                         fac = fac, 
+                                         lr = FALSE,
+                                         min_area_m = min_area_m, 
+                                         snap_distance_m = snap_distance_m,
+                                         simplify_tolerance_m = simplify_tolerance_m, 
+                                         vector_crs = vector_crs)
     
     out <- sf::st_sf(FEATUREID = to_split_flines$COMID,
                      geom = sf::st_cast(split_cats, "MULTIPOLYGON"), 
@@ -298,15 +317,8 @@ get_split_cats <- function(cats, split_cats, cache = NULL) {
                cats_vec, "environment saved to:", cache))
   }
   
-  geom <- try(sf::st_cast(sf::st_union(union_cats), 
-                          "MULTIPOLYGON"), silent = TRUE)
-  
-  if(inherits(geom, "try-error")) {
-    union_cats <- sf::st_make_valid(union_cats)
-    
-    geom <- sf::st_cast(sf::st_union(union_cats), 
-                        "MULTIPOLYGON")
-  }
+  geom <- sf::st_cast(sf::st_union(sf::st_make_valid(union_cats)), 
+                      "MULTIPOLYGON")
   
   unioned <- sf::st_sf(FEATUREID = cats, 
                        geom = geom,
