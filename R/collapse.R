@@ -577,8 +577,10 @@ reconcile_downstream <- function(flines, remove_fun,
       flines[["ds_joined_fromCOMID"]] <- get_ds_joined_fromcomid(flines)
 
       # problem headwaters
-      ph <- rfl & (flines$ds_num_upstream > 1 |
-                     !is.na(flines$ds_joined_fromCOMID))
+      ph <- (rfl & (flines$ds_num_upstream > 1 |
+                     !is.na(flines$ds_joined_fromCOMID))) | 
+        (rfl & (flines$toCOMID == 0)) # flows to the coast
+               
 
       # remove problems from remove
       rfl <- rfl & !ph
