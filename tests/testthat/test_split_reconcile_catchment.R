@@ -1,8 +1,8 @@
-context("split_catchment_divides")
+context("split_catchment_divide")
 
 options("rgdal_show_exportToProj4_warnings"="none")
 
-test_that("split_catchment_divides works", {
+test_that("split_catchment_divide works", {
   tf <- file.path(tempfile(fileext = ".gpkg"))
   tr <- file.path(tempfile(fileext = ".gpkg"))
 

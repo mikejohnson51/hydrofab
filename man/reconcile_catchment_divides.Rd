@@ -11,7 +11,11 @@ reconcile_catchment_divides(
   fdr = NULL,
   fac = NULL,
   para = 2,
-  cache = NULL
+  cache = NULL,
+  min_area_m = 800,
+  snap_distance_m = 100,
+  simplify_tolerance_m = 40,
+  vector_crs = NULL
 )
 }
 \arguments{
@@ -31,6 +35,15 @@ included COMIDs}
 \item{para}{integer numer of cores to use for parallel execution}
 
 \item{cache}{path .rda to cache incremental outputs}
+
+\item{min_area_m}{minimum area in m^2 to filter out slivers (caution, use with care!!)}
+
+\item{snap_distance_m}{distance in meters to snap raster generated geometry to polygon geometry}
+
+\item{simplify_tolerance_m}{dTolerance in meters for simplification of grid-cell based polygons}
+
+\item{vector_crs}{any object compatible with sf::st_crs. Used for vector-based calculations in case that 
+raster projection is not suitable (e.g. lon/lat) -- must result in units of meters.}
 }
 \value{
 Catchment divides that have been split and collapsed according to

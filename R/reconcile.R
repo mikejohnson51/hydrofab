@@ -130,7 +130,7 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 #' @param fac raster flow accumulation
 #' @param para integer numer of cores to use for parallel execution
 #' @param cache path .rda to cache incremental outputs
-#' @inheritParams split_catchment_divides
+#' @inheritParams split_catchment_divide
 #' @return Catchment divides that have been split and collapsed according to
 #' input flowpaths
 #' @seealso The \code{\link{refactor_nhdplus}} function implements a complete

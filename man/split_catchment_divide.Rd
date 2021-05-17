@@ -11,7 +11,9 @@ split_catchment_divide(
   fac,
   lr = FALSE,
   min_area_m = 800,
-  snap_distance_m = 100
+  snap_distance_m = 100,
+  simplify_tolerance_m = 40,
+  vector_crs = NULL
 )
 }
 \arguments{
@@ -26,9 +28,14 @@ upstream downstream order.}
 
 \item{lr}{boolean should catchments be split along the left/right bank?}
 
-\item{min_area_m}{minimum area in meters to filter out slivers (caution, use with care!!)}
+\item{min_area_m}{minimum area in m^2 to filter out slivers (caution, use with care!!)}
 
-\item{snap_distance_m}{distance to snap raster generated geometry to polygon geometry}
+\item{snap_distance_m}{distance in meters to snap raster generated geometry to polygon geometry}
+
+\item{simplify_tolerance_m}{dTolerance in meters for simplification of grid-cell based polygons}
+
+\item{vector_crs}{any object compatible with sf::st_crs. Used for vector-based calculations in case that 
+raster projection is not suitable (e.g. lon/lat) -- must result in units of meters.}
 }
 \value{
 Split catchment divides as an sfc geometry.
