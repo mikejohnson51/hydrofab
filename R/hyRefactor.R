@@ -72,6 +72,10 @@ assign("split_lines_event_attributes",
        c("REACHCODE", "FromMeas", "ToMeas"),
        envir = hyrefactor_env)
 
+assign("aggregate_network_attributes",
+       c("ID", "toID", "LevelPathID", "Hydroseq"),
+       envir = hyrefactor_env)
+
 check_names <- function(x, function_name) {
   x <- nhdplusTools::align_nhdplus_names(x)
   names_x <- names(x)
@@ -86,6 +90,7 @@ check_names <- function(x, function_name) {
                                              names_x))],
                       collapse = ", "), "."))
   }
+  return(invisible(x))
 }
 
 #nolint start
@@ -137,4 +142,12 @@ st_rename <- function(x, new_name) {
   names(x)[names(x) == geom_col] <- new_name
   attr(x, "sf_column") <- new_name
   x
+}
+
+drop_geometry <- function(x) {
+  if("sf" %in% class(x)) {
+    sf::st_drop_geometry(x)
+  } else {
+    x
+  }
 }

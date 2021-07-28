@@ -22,7 +22,7 @@ aggregate_catchments(
 `reconcile_catchment_divides`}
 
 \item{outlets}{data.frame with "ID" and "type" columns. "ID" must be identifiers from
-fowpath and divide data.frames. "type" should be "outlet", or "terminal".
+flowpath and divide data.frames. "type" should be "outlet", or "terminal".
 "outlet" will include the specified ID.
 "terminal" will be treated as a terminal node with nothing downstream.}
 
@@ -30,39 +30,16 @@ fowpath and divide data.frames. "type" should be "outlet", or "terminal".
 
 \item{coastal_cats}{sf data.frame with coastal catchments to be used with zero order.}
 
-\item{da_thresh}{numeric Defaults to NA. A threshold total drainage area in the
-units of the TotDASqKM
-field of the flowpath data.frame. When automatically adding confluences to make
-the network valid, tributary catchments under this threshold will be lumped with
-the larger tributaries rather than being added to the set of output catchments.}
+\item{da_thresh}{numeric See \code{\link{aggregate_network}}}
 
-\item{only_larger}{boolean Defaults to TRUE. If TRUE when adding confluences to
-make the network valid, only tributaries larger than the one with an upstream
-outlet will be added. e.g. if a tributary is required in the model this will
-add main stems that the tributary contributes to. Note that the NHDPlus treats
-divergences as part of the main stem, so the da_thresh may still be needed to
-eliminate small tributary catchments introduced by divergences near confluences.}
-
-\item{post_mortem_file}{rda file to dump environment to in case of error}
+\item{only_larger}{boolean See \code{\link{aggregate_network}}}
 }
 \description{
-Aggregates catchments according to a set of outlet catchments.
+Aggregates catchments according to a set of outlet catchments. 
+Network aggregation is completed using: See \code{\link{aggregate_network}}.
 }
 \details{
-This function operates on the catchment network as a node-edge graph.
-The outlet types are required to ensure that graph searches start from the
-appropriate nodes and includes the appropriate catchments. Outlets such as gages
-should be treated as "outlet" outlets.
-While it may be possible for the algorithm to determine terminal outlets, at this
-time, it is required that they be specified explicitely as "terminal" outlet types.
-
-The function checks supplied outlets to make sure they connect downstream. Checks
-verify that the outlet of the levelpath (main stem of a total catchment) of each
-supplied outlet is
-in the supplied outlet set. If the outlet of a levelpath is not in the supplied set, it
-is added along with other catchments that contribute to the same receiving catchment.
-These checks ensure that all output catchments have one and only one input and output
-nexus and that all catchments are well-connected.
+See \code{\link{aggregate_network}}
 }
 \examples{
 source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
