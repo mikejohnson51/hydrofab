@@ -33,6 +33,8 @@ flowpath and divide data.frames. "type" should be "outlet", or "terminal".
 \item{da_thresh}{numeric See \code{\link{aggregate_network}}}
 
 \item{only_larger}{boolean See \code{\link{aggregate_network}}}
+
+\item{post_mortem_file}{rda file to dump environment to in case of error}
 }
 \description{
 Aggregates catchments according to a set of outlet catchments. 

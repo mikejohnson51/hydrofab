@@ -12,6 +12,8 @@
 #' @param coastal_cats sf data.frame with coastal catchments to be used with zero order.
 #' @param da_thresh numeric See \code{\link{aggregate_network}}
 #' @param only_larger boolean See \code{\link{aggregate_network}}
+#' @param post_mortem_file rda file to dump environment to in case of error
+
 #' @details See \code{\link{aggregate_network}}
 #'
 #' @export

@@ -58,7 +58,7 @@ nexus and that all catchments are well-connected.
 source(system.file("extdata", "walker_data.R", package = "nhdplusTools"))
 
 fline <- dplyr::right_join(dplyr::select(walker_flowline, COMID),
-                           prepare_nhdplus(walker_flowline, 0, 0, 0, FALSE))
+                           nhdplusTools::prepare_nhdplus(walker_flowline, 0, 0, 0, FALSE))
 
 fline <- dplyr::select(fline, ID = COMID, toID = toCOMID,
                        LevelPathID = LevelPathI, Hydroseq)

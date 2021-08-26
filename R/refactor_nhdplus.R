@@ -73,7 +73,7 @@ refactor_nhdplus <- function(nhdplus_flines,
     nhdplus_flines <- dplyr::inner_join(
       select(sf::st_zm(nhdplus_flines), COMID, REACHCODE, FromMeas, ToMeas),
       sf::st_drop_geometry(nhdplus_flines) %>%
-        prepare_nhdplus(0, 0, 0, purge_non_dendritic = purge_non_dendritic,
+        nhdplusTools::prepare_nhdplus(0, 0, 0, purge_non_dendritic = purge_non_dendritic,
                         warn = warn), by = "COMID") %>%
       sf::st_as_sf()
   }
