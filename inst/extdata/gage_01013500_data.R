@@ -52,23 +52,3 @@
 # 
 # write_sf(divides_old, file.path(extdata, "gage_01013500.gpkg"), "raw-divides")
 # unlink(list("refactor.gpkg", "reconcile.gpkg"))
-
-
-
-
-# sf::write_sf(cat_rec, "walker_cat_rec.gpkg")
-# This is how the raster data was created.
-# r <- fasterize::raster("NHDPlusCA/fdr.tif")
-#
-# cropper <- catchment %>%
-#   st_transform(as.character(raster::crs(r))) %>%
-#   st_union() %>%
-#   st_buffer(1000) %>%
-#   as_Spatial()
-#
-# fac <- fasterize::raster("NHDPlusCA/fac.tif")
-# sub_fac <- raster::crop(fac, cropper)
-# sub_r <- raster::crop(r, cropper)
-# raster::writeRaster(sub_fac, "data-raw/walker_fac.tif", overwrite = TRUE)
-# raster::writeRaster(sub_r, "data-raw/walker_fdr.tif", overwrite = TRUE)
-# nolint end
