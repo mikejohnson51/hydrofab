@@ -130,6 +130,9 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 #' @param fac raster flow accumulation
 #' @param para integer numer of cores to use for parallel execution
 #' @param cache path .rda to cache incremental outputs
+#' @param fix_catchments logical. should catchment geometries be rectified?
+#' @param keep Only applicable if fix_catchments = TRUE. Defines the proportion of points to retain in geometry simplification (0-1; default 0.05). 
+#' See \code{\link[rmapshaper]{ms_simplify}}. 
 #' @inheritParams split_catchment_divide
 #' @return Catchment divides that have been split and collapsed according to
 #' input flowpaths
@@ -147,7 +150,9 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, 
                                         fdr = NULL, fac = NULL, para = 2, cache = NULL, 
                                         min_area_m = 800, snap_distance_m = 100,
-                                        simplify_tolerance_m = 40, vector_crs = NULL) {
+                                        simplify_tolerance_m = 40, vector_crs = NULL,
+                                        fix_catchments = TRUE,
+                                        keep = .9) {
 
   # This is a hack until I find time to get the geometry name dynamically.
   catchment <- rename_sf(catchment, "geom")
@@ -262,15 +267,17 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec,
     out <- filter(out, !missing) %>%
       st_cast("MULTIPOLYGON")
 
-    names(replace_cat)[which(names(replace_cat) ==
-                               attr(replace_cat,
-                                    "sf_column"))] <- attr(out,
-                                                           "sf_column")
+    names(replace_cat)[which(names(replace_cat) == attr(replace_cat, "sf_column"))] <- attr(out,"sf_column")
     attr(replace_cat, "sf_column") <- attr(out, "sf_column")
 
-    return(rbind(out, replace_cat))
+    out = rbind(out, replace_cat)
+  } 
+  
+  if(fix_catchments){
+    cat("Fixing Catchment Geometries...\n")
+    catchment_geometry_doctor(out, "ID", 0.9)
   } else {
-    return(out)
+    out
   }
 }
 
@@ -299,8 +306,8 @@ par_split_cat <- function(fid, to_split_ids, fline_ref, catchment, fdr, fac,
     out <- sf::st_sf(FEATUREID = to_split_flines$COMID,
                      geom = sf::st_cast(split_cats, "MULTIPOLYGON"), 
                                         stringsAsFactors = FALSE)
-  }
-  , silent = FALSE)
+  }, silent = FALSE)
+  
   return(out)
 }
 

@@ -15,7 +15,9 @@ reconcile_catchment_divides(
   min_area_m = 800,
   snap_distance_m = 100,
   simplify_tolerance_m = 40,
-  vector_crs = NULL
+  vector_crs = NULL,
+  fix_catchments = TRUE,
+  keep = 0.9
 )
 }
 \arguments{
@@ -44,6 +46,11 @@ included COMIDs}
 
 \item{vector_crs}{any object compatible with sf::st_crs. Used for vector-based calculations in case that 
 raster projection is not suitable (e.g. lon/lat) -- must result in units of meters.}
+
+\item{fix_catchments}{logical. should catchment geometries be rectified?}
+
+\item{keep}{Only applicable if fix_catchments = TRUE. Defines the proportion of points to retain in geometry simplification (0-1; default 0.05). 
+See \code{\link[rmapshaper]{ms_simplify}}.}
 }
 \value{
 Catchment divides that have been split and collapsed according to
