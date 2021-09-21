@@ -45,7 +45,7 @@ expect_true(all(aggregated_cat$toID[!is.na(aggregated_cat$toID)] %in% aggregated
        "All not NA toIDs should be in IDs")
 
 ### Make sure we can run split_catchment_divide on aggregate output.
-crs <- raster::crs(walker_fdr)
+crs <- st_crs(walker_fdr)
 aggregated_cat <- st_transform(aggregated_cat, crs)
 aggregated_fline <- st_transform(aggregated_fline, crs)
 

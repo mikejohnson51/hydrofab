@@ -1,24 +1,3 @@
-#' Rename a sf geometry column
-#' @description Rename an `sf` geometry column without prior knowledge of current name. See \href{https://gis.stackexchange.com/questions/386584/sf-geometry-column-naming-differences-r}{here}
-#' @param g sf object
-#' @param name desried name of geometry column
-#' @return
-#' @export
-#' @examples
-#' library(sf)
-#' nc = st_read(system.file("shape/nc.shp", package="sf"))
-#' names(nc) # shows "geom"
-#' nc = rename_geometry(nc, "gyom")
-#' names(nc) # shows "gyom"
-#' @importFrom sf st_geometry
-
-rename_geometry <- function(g, name){
-  current = attr(g, "sf_column")
-  names(g)[names(g)==current] = name
-  st_geometry(g)=name
-  g
-}
-
 #' Compute km2 area
 #' Short hand for safely computing area in sqkm and returning as numeric vector.
 #' @param x sf object
@@ -27,10 +6,10 @@ rename_geometry <- function(g, name){
 #' @examples
 #' library(sf)
 #' nc = st_read(system.file("shape/nc.shp", package="sf"))
-#' add_area(nc[1,])
+#' add_areasqkm(nc[1,])
 #' @importFrom units set_units drop_units
 
-add_area = function(x){
+add_areasqkm = function(x){
   drop_units(set_units(st_area(x), "km2"))
 }  
 
@@ -44,7 +23,8 @@ add_area = function(x){
 #' @importFrom dplyr mutate 
 #' @importFrom rgeos gUnaryUnion
 
-spCatMerge = function(poly, ID){
+union_polygons_geos = function(poly, ID){
+  
   SPDF =  as_Spatial(poly)
   
   rownames(SPDF@data) <- sapply(slot(SPDF, "polygons"), function(x) slot(x, "ID"))
@@ -56,7 +36,7 @@ spCatMerge = function(poly, ID){
   suppressWarnings({
     st_as_sf(tmp) %>%
       mutate("{ID}" := ids) %>%
-      mutate(areasqkm = add_area(.)) %>% 
+      mutate(areasqkm = add_areasqkm(.)) %>% 
       st_cast("POLYGON") %>% 
       st_make_valid()
   })
@@ -79,12 +59,13 @@ spCatMerge = function(poly, ID){
 #' If NULL, then no simplification will be executed.
 #' @return sf object
 #' @export
-#' @importFrom dplyr select mutate filter group_by ungroup slice_max bind_rows n right_join rename 
-#' @importFrom sf st_crs st_transform st_area st_make_valid st_intersection st_collection_extract st_cast st_intersects st_length
+#' @importFrom dplyr select mutate filter group_by ungroup slice_max bind_rows n right_join rename slice_min
+#' @importFrom sf st_crs st_transform st_area st_make_valid st_intersection st_collection_extract st_cast st_intersects st_length st_filter
 #' @importFrom rmapshaper ms_explode ms_dissolve ms_simplify
+#' @importFrom nhdplusTools rename_geometry
 
 
-catchment_geometry_doctor = function(catchments,
+clean_geometry = function(catchments,
                                      ID = "ID",
                                      keep = .9) {
   in_crs = st_crs(catchments)
@@ -93,10 +74,10 @@ catchment_geometry_doctor = function(catchments,
     catchments %>%
     dplyr::select(ID = !!ID) %>%
     st_transform(5070) %>%
-    mutate(areasqkm = add_area(.)) %>% 
+    mutate(areasqkm = add_areasqkm(.)) %>% 
     ms_explode() %>%
     filter(!duplicated(.)) %>%
-    mutate(area = add_area(.))
+    mutate(area = add_areasqkm(.))
   })
   
   ids <- filter(in_cat, duplicated(ID))$ID
@@ -150,11 +131,11 @@ catchment_geometry_doctor = function(catchments,
         group_by(ID) %>%
         mutate(n = n()) %>%
         ungroup() %>% 
-        rename_geometry('geometry') %>%
+        nhdplusTools::rename_geometry('geometry') %>%
         ungroup()
       
       in_cat = suppressWarnings({
-        spCatMerge(filter(tj, n > 1) , 'ID') %>%
+        union_polygons_geos(filter(tj, n > 1) , 'ID') %>%
           bind_rows(dplyr::select(filter(tj, n == 1), ID)) %>%
           mutate(tmpID = 1:n())
       })
@@ -196,7 +177,7 @@ catchment_geometry_doctor = function(catchments,
   }
   
   in_cat %>%
-    mutate(areasqkm = add_area(.), tmpID = NULL) %>%
+    mutate(areasqkm = add_areasqkm(.), tmpID = NULL) %>%
     st_transform(in_crs) %>%
     select("{ID}" := ID, areasqkm)  %>% 
     left_join(st_drop_geometry(catchments))

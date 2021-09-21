@@ -137,13 +137,6 @@ get_ds_joined_fromcomid <- function(flines) {
   flines[["ds_joined_fromCOMID"]][match(flines$toCOMID, flines$COMID)]
 }
 
-st_rename <- function(x, new_name) {
-  geom_col <- attr(x, "sf_column")
-  names(x)[names(x) == geom_col] <- new_name
-  attr(x, "sf_column") <- new_name
-  x
-}
-
 drop_geometry <- function(x) {
   if("sf" %in% class(x)) {
     sf::st_drop_geometry(x)

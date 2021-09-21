@@ -1,12 +1,13 @@
 context("Geometry Fixes")
 
 test_that("Reconciled catchmetns can be fixed...", {
-  div = read_sf(file.path(extdata, "gage_01013500.gpkg"), "raw-divides") 
   
-  expect_false(length(st_cast(div$geom, "POLYGON")) == nrow(div))
+  source(system.file("extdata", "geometry_data.R", package = "hyRefactor"))
   
-  divides_new = catchment_geometry_doctor(div, "ID", keep = .9)
+  expect_false(nrow(st_cast(test_divides, "POLYGON")) == nrow(test_divides))
   
-  expect_true(length(st_cast(divides_new$geom, "POLYGON")) == nrow(div))
+  divides_new = clean_geometry(test_divides, "ID", keep = .9)
+
+  expect_true(nrow(st_cast(divides_new, "POLYGON")) == nrow(test_divides))
   
 })

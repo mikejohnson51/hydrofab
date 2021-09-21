@@ -146,6 +146,7 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 #' @importFrom dplyr select filter mutate left_join
 #' @importFrom data.table rbindlist
 #' @importFrom methods is
+#' @importFrom nhdplusTools rename_geometry
 #'
 reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, 
                                         fdr = NULL, fac = NULL, para = 2, cache = NULL, 
@@ -155,9 +156,9 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec,
                                         keep = .9) {
 
   # This is a hack until I find time to get the geometry name dynamically.
-  catchment <- rename_sf(catchment, "geom")
-  fline_ref <- rename_sf(fline_ref, "geom")
-  fline_rec <- rename_sf(fline_rec, "geom")
+  catchment <- rename_geometry(catchment, "geom")
+  fline_ref <- rename_geometry(fline_ref, "geom")
+  fline_rec <- rename_geometry(fline_rec, "geom")
   
   check_proj(catchment, fline_ref, fdr)
 
@@ -258,24 +259,22 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec,
   missing <- is.na(st_dimension(out$geom))
 
   if (any(missing)) {
-    replace_cat <- select(catchment, member_COMID = FEATUREID) %>%
+    
+    out_mp <- filter(out, !missing) %>%
+      st_cast("MULTIPOLYGON")
+    
+    out <- select(catchment, member_COMID = FEATUREID) %>%
       filter(member_COMID %in% unique(as.integer(out$member_COMID[missing]))) %>%
       mutate(member_COMID = paste0(member_COMID, ".1")) %>%
       mutate(ID = out$ID[match(member_COMID, out$member_COMID)]) %>%
-      select(ID, member_COMID)
-
-    out <- filter(out, !missing) %>%
-      st_cast("MULTIPOLYGON")
-
-    names(replace_cat)[which(names(replace_cat) == attr(replace_cat, "sf_column"))] <- attr(out,"sf_column")
-    attr(replace_cat, "sf_column") <- attr(out, "sf_column")
-
-    out = rbind(out, replace_cat)
+      select(ID, member_COMID) %>% 
+      nhdplusTools::rename_geometry(attr(out_mp, "sf_column")) %>% 
+      bind_rows(out_mp)
   } 
   
   if(fix_catchments){
     cat("Fixing Catchment Geometries...\n")
-    catchment_geometry_doctor(out, "ID", 0.9)
+    clean_geometry(out, "ID", 0.9)
   } else {
     out
   }
@@ -345,14 +344,6 @@ get_split_cats <- function(cats, split_cats, cache = NULL) {
   
 }
 
-rename_sf <- function(sf_df, geom_name) {
-  old_geom_name <- attr(sf_df, "sf_column")
-  names(sf_df)[names(sf_df) == old_geom_name] <- geom_name
-  
-  attr(sf_df, "sf_column") <- geom_name
-  
-  sf_df
-}
 
 get_cat_unsplit <- function(catchment, fline_ref, to_split_featureids) {
   cat <- select(catchment, FEATUREID)
