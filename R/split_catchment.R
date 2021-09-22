@@ -358,7 +358,7 @@ check_proj <- function(catchment, fline, fdr = NULL) {
   
   if(!is.null(fdr)) {
     
-    proj <- as.character(raster::crs(fdr))
+    proj <- st_crs(fdr)
     if (st_crs(catchment) != st_crs(proj) |
         st_crs(fline) != st_crs(proj)) {
       stop(er)

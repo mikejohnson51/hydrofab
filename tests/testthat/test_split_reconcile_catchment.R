@@ -21,6 +21,7 @@ test_that("split_catchment_divide works", {
 
   fline_ref <- sf::read_sf(tf) %>%
     dplyr::arrange(COMID)
+  
   fline_rec <- sf::read_sf(tr)
 
   test_flines <- dplyr::filter(fline_ref, as.integer(COMID) == 5329435)
@@ -28,6 +29,9 @@ test_that("split_catchment_divide works", {
   test_cat <- dplyr::filter(walker_catchment, FEATUREID == 5329435)
 
   expect_true(nrow(test_flines) == 5, "got wrong number of test_flines")
+  
+  test_cat = st_transform(test_cat, st_crs(walker_fdr))
+  test_flines = st_transform(test_flines, st_crs(walker_fdr))
 
   suppressWarnings(split_cat <- split_catchment_divide(test_cat, test_flines, 
                                       walker_fdr, walker_fac))
@@ -52,6 +56,10 @@ test_that("split_catchment_divide works", {
   test_cat <- dplyr::filter(walker_catchment,
                   FEATUREID %in% unique(as.integer(test_fline_ref$COMID)))
 
+  test_cat = st_transform(test_cat, st_crs(walker_fdr))
+  test_fline_ref = st_transform(test_fline_ref, st_crs(walker_fdr))
+  test_fline_rec = st_transform(test_fline_rec, st_crs(walker_fdr))
+  
   suppressWarnings(reconciled_cats <- reconcile_catchment_divides(test_cat, test_fline_ref, test_fline_rec,
                                           walker_fdr, walker_fac, para = 1))
 
@@ -63,8 +71,11 @@ test_that("split_catchment_divide works", {
 test_that("split catchment divide left right", {
   source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
   
-  cat <- dplyr::filter(walker_catchment, FEATUREID == 5329357)
+  cat   <- dplyr::filter(walker_catchment, FEATUREID == 5329357)
   fline <- dplyr::filter(walker_flowline, COMID == 5329357)
+  
+  cat = st_transform(cat, st_crs(walker_fdr))
+  fline = st_transform(fline, st_crs(walker_fdr))
   
   sc <- split_catchment_divide(cat, fline, walker_fdr, walker_fac, lr = TRUE)
   
@@ -74,6 +85,9 @@ test_that("split catchment divide left right", {
   
   cat <- dplyr::filter(walker_catchment, FEATUREID == 5329435)
   fline <- dplyr::filter(walker_flowline, COMID == 5329435)
+  
+  cat = st_transform(cat, st_crs(walker_fdr))
+  fline = st_transform(fline, st_crs(walker_fdr))
   
   sc <- split_catchment_divide(cat, fline, walker_fdr, walker_fac, lr = TRUE)
   
@@ -124,6 +138,9 @@ test_that("split and reconcile works", {
   test_fline_rec <- dplyr::filter(fline_rec, member_COMID %in%
                                      c(test_cat_1, test_cat_2))
 
+  test_cat = st_transform(test_cat, st_crs(walker_fdr))
+  test_fline_ref = st_transform(test_fline_ref, st_crs(walker_fdr))
+  
   reconciled_cats <- reconcile_catchment_divides(test_cat, test_fline_ref,
                                           test_fline_rec, walker_fdr, walker_fac, 
                                           para = 1)
@@ -141,7 +158,7 @@ test_that("reconcile catchments works with reconciled flowline from split", {
   fdr <- suppressWarnings(raster::raster("data/reconcile_test_fdr.tif"))
   fac <- suppressWarnings(raster::raster("data/reconcile_test_fac.tif"))
   
-  raster_proj <- st_crs(as.character(raster::crs(fdr)))
+  raster_proj <- st_crs(fdr)
   
   test_fline_ref <- st_transform(
     sf::read_sf("data/reconcile_test.gpkg", "fline_ref"), raster_proj)
