@@ -273,7 +273,7 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec,
   } 
   
   if(fix_catchments){
-    cat("Fixing Catchment Geometries...\n")
+    # cat("Fixing Catchment Geometries...\n")
     clean_geometry(out, "ID", 0.9)
   } else {
     out

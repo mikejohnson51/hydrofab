@@ -2,6 +2,7 @@
 title: "Coastal Units with hyRefactor"
 author: "dblodgett@usgs.gov"
 output: rmarkdown::html_vignette
+always_allow_html: true
 vignette: >
   %\VignetteIndexEntry{coastal_units}
   %\VignetteEngine{knitr::rmarkdown}
@@ -50,11 +51,11 @@ coastal <- dplyr::filter(nhd_data$flowline, FTYPE == "Coastline")
 flowline <- dplyr::bind_rows(
   lapply(terminals$COMID, function(x) {
     nhdplusTools::navigate_nldi(list(featureSource = "comid", featureID = x), 
-                                mode = "UT")
+                                mode = "UT", distance_km = 999)$UT_flowlines
 }))
 
 sub <- lapply(nhdplusTools::subset_nhdplus(c(flowline$nhdplus_comid, coastal$COMID), 
-                                    nhdplus_data = "download"),
+                                    nhdplus_data = "download", flowline_only = FALSE),
               nhdplusTools::align_nhdplus_names)
 
 

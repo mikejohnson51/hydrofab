@@ -2,6 +2,7 @@
 title: "Split Flowlines"
 author: "dblodgett@usgs.gov"
 output: rmarkdown::html_vignette
+always_allow_html: true
 vignette: >
   %\VignetteIndexEntry{split_refactor}
   %\VignetteEngine{knitr::rmarkdown}
