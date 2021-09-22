@@ -1,6 +1,6 @@
 # hyRefactor
 
-[![Build Status](https://travis-ci.org/dblodgett-usgs/hyRefactor.svg?branch=master)](https://travis-ci.org/dblodgett-usgs/hyRefactor) [![Coverage Status](https://coveralls.io/repos/github/dblodgett-usgs/hyRefactor/badge.svg?branch=master)](https://coveralls.io/github/dblodgett-usgs/hyRefactor?branch=master)
+[![R-CMD-check](https://github.com/dblodgett-usgs/hyRefactor/actions/workflows/R-CMD-check.yml/badge.svg)](https://github.com/dblodgett-usgs/hyRefactor/actions/workflows/R-CMD-check.yml) [![codecov](https://codecov.io/gh/dblodgett-usgs/hyRefactor/branch/master/graph/badge.svg?token=GSJGAVH1T4)](https://codecov.io/gh/dblodgett-usgs/hyRefactor)
 
 ## Tools for Manipulating the NHDPlus Network in Preparation for Hydrologic Modeling
 
@@ -21,7 +21,7 @@ The concept of refactoring as intended here includes:
 1) **Splitting** large or long catchments to create a more uniform catchment size
 distribution,  
 2) **collapsing** catchment topology to eliminate small catchments,  
-2) **aggregating** catchments into groups based on existing network topology.  
+3) **aggregating** catchments into groups based on existing network topology.  
 
 This type of functionality is especially relevant to modeling applications that
 need specific modeling unit characteristics but wish to preserve the network as

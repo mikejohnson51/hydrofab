@@ -114,7 +114,7 @@ clean_geometry = function(catchments,
       mutate(area = as.numeric(st_area(.))) %>%
       st_make_valid()
     
-    message(prettyNum(nrow(frags), big.mark = ",", scientific = FALSE), " fragments to clean...")
+    # message(prettyNum(nrow(frags), big.mark = ",", scientific = FALSE), " fragments to clean...")
     
     out = tryCatch({
       suppressWarnings({
@@ -181,7 +181,7 @@ clean_geometry = function(catchments,
   }
   
   if (!is.null(keep)) {
-    message("Simplifying catchment boundaries: keep = ", keep)
+    # message("Simplifying catchment boundaries: keep = ", keep)
     in_cat = ms_simplify(in_cat, keep = keep, keep_shapes = TRUE)
   }
   
@@ -189,7 +189,7 @@ clean_geometry = function(catchments,
     mutate(areasqkm = add_areasqkm(.), tmpID = NULL) %>%
     st_transform(in_crs) %>%
     select("{ID}" := ID, areasqkm)  %>% 
-    left_join(st_drop_geometry(catchments))
+    left_join(st_drop_geometry(catchments), by = "ID")
 }
 
 
@@ -204,8 +204,8 @@ clean_geometry = function(catchments,
 #' @export
 #' @examples
 #' path <- system.file("extdata/walker_reconcile.gpkg", package = "hyRefactor")
-#' fps  = read_sf(path) %>% 
-#'   add_lengthmap()
+#' fps  = add_lengthmap(read_sf(path))
+#' 
 #'@importFrom dplyr select mutate filter left_join right_join arrange group_by summarize
 #'@importFrom tidyr unnest
 #'@importFrom sf st_drop_geometry st_length st_as_sf
