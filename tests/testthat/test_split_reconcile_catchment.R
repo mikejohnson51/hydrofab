@@ -156,25 +156,28 @@ test_that("reconcile catchments works with reconciled flowline from split", {
   # "8833300.1", "8833300.2"
 
   fdr <- suppressWarnings(raster::raster(
-    list.files(pattern = "reconcile_test_fdr.tif", 
+    list.files(pattern = "reconcile_test_fdr.tif$", 
                recursive = TRUE, full.names = TRUE)))
   fac <- suppressWarnings(raster::raster(
-    list.files(pattern = "reconcile_test_fac.tif",
+    list.files(pattern = "reconcile_test_fac.tif$",
                recursive = TRUE, full.names = TRUE)))
   
-  raster_proj <- st_crs(fdr)
+  raster_proj <- sf::st_crs(fdr)
   
  rec_gpkg <- list.files(pattern = "reconcile_test.gpkg",
              recursive = TRUE, full.names = TRUE)
   
   test_fline_ref <- st_transform(
-    sf::read_sf(rec_gpkg, "fline_ref"), raster_proj)
+    sf::read_sf(rec_gpkg, "fline_ref"), raster_proj) %>%
+    dplyr::filter(!grepl("8833300", COMID))
   
   test_fline_rec <- st_transform(
-    sf::read_sf(rec_gpkg, "fline_rec"), raster_proj)
+    sf::read_sf(rec_gpkg, "fline_rec"), raster_proj) %>%
+    dplyr::filter(!ID %in% c(7912, 7913))
   
   test_cat <- st_transform(
-    sf::read_sf(rec_gpkg, "catchment"), raster_proj)
+    sf::read_sf(rec_gpkg, "catchment"), raster_proj) %>%
+    dplyr::filter(FEATUREID != 8833300)
 
   suppressWarnings(reconciled_cats <- reconcile_catchment_divides(test_cat, test_fline_ref,
                                           test_fline_rec, fdr, fac, para = 1))

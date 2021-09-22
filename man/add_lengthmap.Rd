@@ -21,6 +21,6 @@ Equally 101.05 would indicate 50% of COMID 101 is present in the new ID
 }
 \examples{
 path <- system.file("extdata/walker_reconcile.gpkg", package = "hyRefactor")
-fps  = read_sf(path) \%>\% 
-  add_lengthmap()
+fps  = add_lengthmap(read_sf(path))
+
 }
