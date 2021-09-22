@@ -22,6 +22,8 @@ add_areasqkm = function(x){
 #' @importFrom sf as_Spatial st_as_sf st_cast st_make_valid
 #' @importFrom dplyr mutate 
 #' @importFrom rgeos gUnaryUnion
+#' @importFrom methods slot
+#' @importFrom rlang :=
 
 union_polygons_geos = function(poly, ID){
   
@@ -60,7 +62,7 @@ union_polygons_geos = function(poly, ID){
 #' @return sf object
 #' @export
 #' @importFrom dplyr select mutate filter group_by ungroup slice_max bind_rows n right_join rename slice_min
-#' @importFrom sf st_crs st_transform st_area st_make_valid st_intersection st_collection_extract st_cast st_intersects st_length st_filter
+#' @importFrom sf st_crs st_touches st_transform st_area st_make_valid st_intersection st_collection_extract st_cast st_intersects st_length st_filter
 #' @importFrom rmapshaper ms_explode ms_dissolve ms_simplify
 #' @importFrom nhdplusTools rename_geometry
 
@@ -68,6 +70,13 @@ union_polygons_geos = function(poly, ID){
 clean_geometry = function(catchments,
                                      ID = "ID",
                                      keep = .9) {
+  
+  tmpID <- 
+  rmapshaperid <- 
+  l <- 
+  areasqkm <- 
+  NULL
+  
   in_crs = st_crs(catchments)
   
   in_cat <- suppressWarnings({
@@ -203,6 +212,12 @@ clean_geometry = function(catchments,
 #'@importFrom nhdplusTools get_vaa
 
 add_lengthmap = function(flowpaths){
+  
+  comid <- 
+  lengthkm <- 
+  perLength <- 
+  new <- 
+  NULL
   
   unnested = dplyr::select(st_drop_geometry(flowpaths), 
                            ID, 

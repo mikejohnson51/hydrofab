@@ -25,6 +25,7 @@ Imports:
   httr, 
   stringr, 
   methods,
+  rlang,
   rgeos,
   rmapshaper
 Suggests: testthat, knitr, rmarkdown, mapview, rgdal, snow
