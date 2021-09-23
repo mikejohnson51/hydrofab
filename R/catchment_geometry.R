@@ -195,7 +195,7 @@ clean_geometry = function(catchments,
 #' @export
 #' @examples
 #' path <- system.file("extdata/walker_reconcile.gpkg", package = "hyRefactor")
-#' fps  = add_lengthmap(read_sf(path))
+#' fps  <- add_lengthmap(sf::read_sf(path))
 #' 
 #'@importFrom dplyr select mutate filter left_join right_join arrange group_by summarize
 #'@importFrom tidyr unnest
