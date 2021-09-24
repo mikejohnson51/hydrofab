@@ -11,3 +11,5 @@ data-raw
 .*.log
 .*.cache
 .github
+^\.ccache$
+^\.github$
