@@ -29,7 +29,7 @@ union_polygons_geos = function(poly, ID){
   
   rownames(SPDF@data) <- sapply(slot(SPDF, "polygons"), function(x) slot(x, "ID"))
   
-  tmp <- gUnaryUnion(spgeom = SPDF, id = poly[[ID]], checkValidity = 0) 
+  tmp <- gUnaryUnion(spgeom = SPDF, id = poly[[ID]], checkValidity = 2) 
   
   ids <- as.numeric(sapply(slot(tmp, "polygons"), function(x) slot(x, "ID")))
   
