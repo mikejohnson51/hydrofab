@@ -26,7 +26,8 @@ Imports:
   stringr, 
   methods,
   rgeos,
-  rmapshaper
+  rmapshaper,
+  rlang
 Suggests: testthat, knitr, rmarkdown, mapview, rgdal, snow
 Remotes: dblodgett-usgs/nhdplusTools
 License: CC0

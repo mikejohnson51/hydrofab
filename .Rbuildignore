@@ -13,3 +13,4 @@ data-raw
 .github
 ^\.ccache$
 ^\.github$
+^tic\.R$
