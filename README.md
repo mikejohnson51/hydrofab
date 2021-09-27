@@ -28,6 +28,15 @@ need specific modeling unit characteristics but wish to preserve the network as
 much as possible for interoperability with other applications that use the
 NHDPlus network.
 
+### Check notes:
+In addition to typical R package checking, a Dockerfile is included in this repository. Once built, it can be run with the following command.
+
+```
+docker build -t hyrefactor_test .
+
+docker run --rm -it -v %cd%:/src hyrefactor_test /bin/bash -c "cp -r /src/* /check/ && cp /src/.Rbuildignore /check/ && cd /check && Rscript -e 'devtools::build()' && R CMD check --as-cran ../hyRefacto_*"
+```
+
 ### Contributing:
 
 First, thanks for considering a contribution! I hope to make this package a community created resource

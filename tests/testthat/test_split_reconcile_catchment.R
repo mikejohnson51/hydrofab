@@ -33,8 +33,10 @@ test_that("split_catchment_divide works", {
   test_cat = st_transform(test_cat, st_crs(walker_fdr))
   test_flines = st_transform(test_flines, st_crs(walker_fdr))
 
-  suppressWarnings(split_cat <- split_catchment_divide(test_cat, test_flines, 
-                                      walker_fdr, walker_fac))
+  suppressWarnings(split_cat <- split_catchment_divide(test_cat, 
+                                                       test_flines, 
+                                                       walker_fdr, 
+                                                       walker_fac))
   
   expect_true(length(split_cat) == 5, "Got the wrong number of cathment split polygons")
   expect_true(all(c("XY", "MULTIPOLYGON", "sfg") %in% class(split_cat[[5]])),
@@ -50,8 +52,7 @@ test_that("split_catchment_divide works", {
   expect_true(all(lengths(st_geometry(split_cat)) == 2))
   
   test_fline_ref <- fline_ref[1:9, ] # this sucks, but works.
-  test_fline_rec <- dplyr::filter(fline_rec,
-                              member_COMID %in% as.character(test_fline_ref$COMID))
+  test_fline_rec <- dplyr::filter(fline_rec, member_COMID %in% as.character(test_fline_ref$COMID))
 
   test_cat <- dplyr::filter(walker_catchment,
                   FEATUREID %in% unique(as.integer(test_fline_ref$COMID)))
@@ -179,15 +180,19 @@ test_that("reconcile catchments works with reconciled flowline from split", {
     sf::read_sf(rec_gpkg, "catchment"), raster_proj) %>%
     dplyr::filter(FEATUREID != 8833300)
 
-  suppressWarnings(reconciled_cats <- reconcile_catchment_divides(test_cat, test_fline_ref,
-                                          test_fline_rec, fdr, fac, para = 1))
+  suppressWarnings(reconciled_cats <- reconcile_catchment_divides(catchment = test_cat, 
+                                                                  fline_ref = test_fline_ref,
+                                                                  fline_rec = test_fline_rec, 
+                                                                  fdr, 
+                                                                  fac, 
+                                                                  para = 1))
 
-  expect_true(nrow(reconciled_cats) == nrow(test_fline_rec) - 1,
+  expect_true(nrow(reconciled_cats) == nrow(test_fline_rec),
          "Got the wrong number of reconciled catchments")
 
   expect_true(all(reconciled_cats$member_COMID %in% test_fline_rec$member_COMID))
 
-  expect_true("8833300.1" %in% reconciled_cats$member_COMID)
+  expect_false("8833300.1" %in% reconciled_cats$member_COMID)
   expect_true("166755072,8866562.2" %in% reconciled_cats$member_COMID)
 })
 

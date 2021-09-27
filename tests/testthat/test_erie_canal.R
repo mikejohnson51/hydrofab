@@ -41,6 +41,8 @@ flowline <- sf::read_sf(gpkg, "NHDFlowline_Network") %>%
 catchment <- sf::read_sf(gpkg, "CatchmentSP") %>%
   sf::st_transform(proj)
 
+catchment <- sf::st_make_valid(catchment)
+
 out_refactor <- tempfile(fileext = ".gpkg")
 out_rec <- tempfile(fileext = ".gpkg")
 
