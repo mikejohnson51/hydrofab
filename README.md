@@ -14,6 +14,8 @@ devtools::install_github("dblodgett-usgs/hyRefactor")
 
 This package is based around the same concepts as [nhdplusTools](https://usgs-r.github.io/nhdplusTools/) and uses its utilities extensively.
 
+Rendered documentation can be [found here.](https://github.com/dblodgett-usgs/hyRefactor/blob/master/docs/Reference_Manual_hyRefactor.md)
+
 ### What is Refactoring in the context of hydrographic data?
 
 The concept of refactoring as intended here includes:
