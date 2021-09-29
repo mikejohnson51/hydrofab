@@ -4,23 +4,27 @@
 \alias{add_lengthmap}
 \title{Add Length Map to Refactored Network}
 \usage{
-add_lengthmap(flowpaths)
+add_lengthmap(flowpaths, length_table)
 }
 \arguments{
 \item{flowpaths}{a refactored flowpath network containing an member_COMID column}
+
+\item{length_table}{a table of NHDPlus COMIDs and LENGTH to use as weights. 
+Can be found with \code{nhdplusTools::get_vaa("lengthkm")}}
 }
 \value{
 sf object
 }
 \description{
-This function replicated the member_COMID column of a refactored 
-network but adds a new notion. Following each COMID is '.' which is proceeded 
+This function replicates the member_COMID column of a refactored 
+network but adds a new notation Following each COMID is '.' which is proceeded 
 by the fraction of that COMID making up the new flowpath. For example 101.1 
 would indicate 100% of COMID 101 is in the new ID. 
-Equally 101.05 would indicate 50% of COMID 101 is present in the new ID
+Equally 101.05 would indicate 50% of COMID 101 is present in the new ID'd flowpath
 }
 \examples{
+\dontrun{
 path <- system.file("extdata/walker_reconcile.gpkg", package = "hyRefactor")
 fps  <- add_lengthmap(sf::read_sf(path))
-
+}
 }

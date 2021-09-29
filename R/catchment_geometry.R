@@ -23,6 +23,7 @@ add_areasqkm = function(x){
 #' @importFrom dplyr mutate 
 #' @importFrom rgeos gUnaryUnion
 #' @importFrom methods slot
+#' @importFrom rlang :=
 
 union_polygons_geos = function(poly, ID){
   
@@ -30,7 +31,12 @@ union_polygons_geos = function(poly, ID){
   
   rownames(SPDF@data) <- sapply(slot(SPDF, "polygons"), function(x) slot(x, "ID"))
   
-  tmp <- gUnaryUnion(spgeom = SPDF, id = poly[[ID]], checkValidity = 2) 
+  tmp <- tryCatch({
+    gUnaryUnion(spgeom = SPDF, id = poly[[ID]], checkValidity = 0) 
+  }, error = function(x){
+    gUnaryUnion(spgeom = SPDF, id = poly[[ID]], checkValidity = 2) 
+  })
+    
   
   ids <- as.numeric(sapply(slot(tmp, "polygons"), function(x) slot(x, "ID")))
   
@@ -41,6 +47,7 @@ union_polygons_geos = function(poly, ID){
       st_cast("POLYGON") %>% 
       st_make_valid()
   })
+  
 }
 
 #' Catchment Geometry Doctor
@@ -61,7 +68,7 @@ union_polygons_geos = function(poly, ID){
 #' @return sf object
 #' @export
 #' @importFrom dplyr select mutate filter group_by ungroup slice_max bind_rows n right_join rename slice_min
-#' @importFrom sf st_touches st_crs st_transform st_area st_make_valid st_intersection st_collection_extract st_cast st_intersects st_length st_filter
+#' @importFrom sf st_crs st_touches st_transform st_area st_make_valid st_intersection st_collection_extract st_cast st_intersects st_length st_filter
 #' @importFrom rmapshaper ms_explode ms_dissolve ms_simplify
 #' @importFrom nhdplusTools rename_geometry
 #' @importFrom rlang :=
@@ -70,6 +77,7 @@ union_polygons_geos = function(poly, ID){
 clean_geometry = function(catchments,
                                      ID = "ID",
                                      keep = .9) {
+
   in_crs = st_crs(catchments)
   
   in_cat <- suppressWarnings({
@@ -117,7 +125,7 @@ clean_geometry = function(catchments,
     }, error = function(e) { NULL })
     
     
-    if(!is.null(out)){
+    if(!is.null(out) & nrow(out) != 0){
       # ints are the LINSTRINGS of intersection between base_cats and frags
       ints = out %>%
         mutate(l = st_length(.)) %>%
@@ -137,11 +145,15 @@ clean_geometry = function(catchments,
         nhdplusTools::rename_geometry('geometry') %>%
         ungroup()
       
-      in_cat = suppressWarnings({
-        union_polygons_geos(filter(tj, .data$n > 1) , 'ID') %>%
-          bind_rows(dplyr::select(filter(tj, .data$n == 1), .data$ID)) %>%
-          mutate(tmpID = 1:n())
-      })
+      if(nrow(tj) == 0){
+        in_cat = base_cats
+      } else {
+        in_cat = suppressWarnings({
+          union_polygons_geos(filter(tj, .data$n > 1) , 'ID') %>%
+            bind_rows(dplyr::select(filter(tj, .data$n == 1), .data$ID)) %>%
+            mutate(tmpID = 1:n())
+        })
+      }
       
     } else {
       in_cat = base_cats
@@ -182,31 +194,34 @@ clean_geometry = function(catchments,
   in_cat %>%
     mutate(areasqkm = add_areasqkm(.), tmpID = NULL) %>%
     st_transform(in_crs) %>%
-    select("{ID}" := ID, .data$areasqkm)  %>% 
+    dplyr::select("{ID}" := ID, .data$areasqkm)  %>% 
     left_join(st_drop_geometry(catchments), by = "ID")
 }
 
 
 #' Add Length Map to Refactored Network
-#' @description This function replicated the member_COMID column of a refactored 
-#' network but adds a new notion. Following each COMID is '.' which is proceeded 
+#' @description This function replicates the member_COMID column of a refactored 
+#' network but adds a new notation Following each COMID is '.' which is proceeded 
 #' by the fraction of that COMID making up the new flowpath. For example 101.1 
 #' would indicate 100% of COMID 101 is in the new ID. 
-#' Equally 101.05 would indicate 50% of COMID 101 is present in the new ID
+#' Equally 101.05 would indicate 50% of COMID 101 is present in the new ID'd flowpath
 #' @param flowpaths a refactored flowpath network containing an member_COMID column
+#' @param length_table a table of NHDPlus COMIDs and LENGTH to use as weights. 
+#' Can be found with \code{nhdplusTools::get_vaa("lengthkm")}
 #' @return sf object
 #' @export
 #' @examples
+#' \dontrun{
 #' path <- system.file("extdata/walker_reconcile.gpkg", package = "hyRefactor")
 #' fps  <- add_lengthmap(sf::read_sf(path))
-#' 
+#' }
 #'@importFrom dplyr select mutate filter left_join right_join arrange group_by summarize
 #'@importFrom tidyr unnest
 #'@importFrom sf st_drop_geometry st_length st_as_sf
 #'@importFrom nhdplusTools get_vaa
 
-add_lengthmap = function(flowpaths){
-  
+add_lengthmap = function(flowpaths, length_table){
+
   unnested = dplyr::select(st_drop_geometry(flowpaths), 
                            .data$ID, 
                            COMID = .data$member_COMID) %>%
@@ -216,7 +231,7 @@ add_lengthmap = function(flowpaths){
   unnested2 = filter(unnested, grepl("\\.", COMID)) %>% 
     mutate(baseCOMID = floor(as.numeric(COMID)))
   
-  lengthm_fp = nhdplusTools::get_vaa(atts = "lengthkm") %>% 
+  lengthm_fp = length_table %>% 
     select(baseCOMID = .data$comid, .data$lengthkm) %>% 
     mutate(lengthm_fp = .data$lengthkm * 1000, lengthkm = NULL) 
   

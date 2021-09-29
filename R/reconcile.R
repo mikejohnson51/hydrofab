@@ -163,7 +163,7 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec,
   check_proj(catchment, fline_ref, fdr)
 
   reconciled <- st_drop_geometry(fline_rec) %>%
-    select(ID, member_COMID)
+    dplyr::select(ID, member_COMID)
 
   rm(fline_rec)
 
@@ -190,11 +190,13 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec,
   to_split_featureids <- unique(as.integer(to_split_ids))
 
   cl <- NULL
+  
   if(para > 1) {
     log_file <- ""
     if(!is.null(cache)) log_file <- paste0(cache, "_par.log")  
     cl <- parallel::makeCluster(para, outfile = log_file)
   }
+  
   if(!is.null(cache)) {
     try(load(cache), silent = TRUE)
   }
@@ -253,7 +255,7 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec,
       unioned_cats)))
   }
 
-  out <- st_sf(right_join(select(split_cats, member_COMID = FEATUREID), reconciled,
+  out <- st_sf(right_join(dplyr::select(split_cats, member_COMID = FEATUREID), reconciled,
                          by = "member_COMID"))
 
   missing <- is.na(st_dimension(out$geom))
@@ -274,7 +276,7 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec,
   
   if(fix_catchments){
     # cat("Fixing Catchment Geometries...\n")
-    clean_geometry(out, "ID", 0.9)
+    clean_geometry(catchments = out, "ID", 0.9)
   } else {
     out
   }
