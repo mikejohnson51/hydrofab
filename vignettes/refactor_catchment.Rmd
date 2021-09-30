@@ -182,16 +182,16 @@ Given these caveats, we can build a complete lookup table from source catchment 
 
 refactor_lookup <- dplyr::select(st_drop_geometry(flowline_rec), ID, member_COMID) %>%
   dplyr::mutate(member_COMID = strsplit(member_COMID, ",")) %>%
-  tidyr::unnest(cols = member_COMID) %>%
+  tidyr::unnest_longer(col = member_COMID) %>%
   dplyr::mutate(NHDPlusV2_COMID = as.integer(member_COMID)) %>% # note as.integer truncates
   dplyr::rename(reconciled_ID = ID)
 
 aggregate_lookup_fline <- dplyr::select(st_drop_geometry(aggregated$fline_sets), ID, set) %>%
-  tidyr::unnest(cols = set) %>%
+  tidyr::unnest_longer(col = set) %>%
   dplyr::rename(aggregated_flowline_ID = ID, reconciled_ID = set)
 
 aggregate_lookup_catchment <- dplyr::select(st_drop_geometry(aggregated$cat_sets), ID, set) %>%
-  tidyr::unnest(cols = set) %>%
+  tidyr::unnest_longer(col = set) %>%
   dplyr::rename(aggregated_catchment_ID = ID, reconciled_ID = set)
 
 (lookup_table <- tibble::tibble(NHDPlusV2_COMID = input_ids) %>%

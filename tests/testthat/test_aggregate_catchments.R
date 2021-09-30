@@ -27,14 +27,14 @@ expect_true(!5 %in% aggregated_cat$set[[2]], "an upstream outlet should not be i
 expect_true(length(aggregated_fline$set[[2]]) == 2, "got the wrong number of flowpaths")
 
 aggregate_lookup_fline <- dplyr::select(sf::st_drop_geometry(aggregated$fline_sets), ID, set) %>%
-  tidyr::unnest(cols = set) %>%
+  tidyr::unnest_longer(col = set) %>%
   dplyr::rename(aggregated_ID = ID, reconciled_ID = set)
 
 expect_true(!all(walker_fline_rec$ID %in% aggregate_lookup_fline$reconciled_ID), 
             "all input ids should not be in flowline output")
 
 aggregate_lookup_cat <- dplyr::select(sf::st_drop_geometry(aggregated$cat_sets), ID, set) %>%
-  tidyr::unnest(cols = set) %>%
+  tidyr::unnest_longer(col = set) %>%
   dplyr::rename(aggregated_ID = ID, reconciled_ID = set)
 
 expect_true(all(walker_fline_rec$ID %in% aggregate_lookup_cat$reconciled_ID), 

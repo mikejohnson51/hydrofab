@@ -42,7 +42,7 @@
 #' @importFrom igraph graph_from_data_frame topo_sort incident_edges V bfs head_of shortest_paths
 #' @importFrom sf st_transform st_cast st_union st_geometry st_sfc st_sf st_crs st_line_merge st_geometry_type
 #' @importFrom dplyr filter mutate left_join select distinct case_when bind_rows
-#' @importFrom tidyr unnest
+#' @importFrom tidyr unnest_longer
 #' @examples
 #' source(system.file("extdata", "walker_data.R", package = "nhdplusTools"))
 #'
@@ -267,7 +267,8 @@ aggregate_network <- function(flowpath, outlets,
 
 
   # create long form ID to set member list
-  sets <- tidyr::unnest(drop_geometry(fline_sets), cols = c("set"))
+  sets <- tidyr::unnest_longer(drop_geometry(fline_sets), 
+                        col = "set")
 
   # Figure out what the ID of the downstream catchment is.
   next_id <- sets %>%
