@@ -70,6 +70,11 @@ raster::plot( walker_fac)
 Now we can run the `split_catchment_divide()` function which is designed to take one catchment and its associated (split) flowlines. The split flowlines are the "refactored" but not "reconciled" output of the `nhdplus_refactor()` function we ran above. Here we run the `split_catchment()` function and plot up the resulting data to show what it did.
 
 ```{r single_split}
+sample_catchment <- sf::st_transform(sample_catchment, 
+                                     sf::st_crs(walker_fdr))
+sample_flowline <- sf::st_transform(sample_flowline, 
+                                     sf::st_crs(walker_fdr))
+
 split_cat <- split_catchment_divide(sample_catchment, sample_flowline, walker_fdr,  walker_fac)
 
 plot(st_geometry(split_cat), col = NA, border = "red")
@@ -82,6 +87,10 @@ As you can see, the flowline in question was split into five pieces by `nhdplus_
 The `split_catchment_divide()` function can be run against a set of catchments using the `reconcile_catchment_divides()` function. This functiona can call `split_catchment()` in parallel, unions catchments according to the output of `nhdplus_refactor()`, and assembles the results back into an `sf` `data.frame`.
 
 ```{r cat_set}
+walker_catchment <- sf::st_transform(walker_catchment, sf::st_crs(walker_fdr))
+flowline_ref <- sf::st_transform(flowline_ref, sf::st_crs(walker_fdr))
+flowline_rec <- sf::st_transform(flowline_rec, sf::st_crs(walker_fdr))
+
 split_cats <- reconcile_catchment_divides(catchment = walker_catchment, 
                                           fline_ref = flowline_ref, 
                                           fline_rec = flowline_rec, 
