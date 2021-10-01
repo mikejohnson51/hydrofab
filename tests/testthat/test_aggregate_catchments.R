@@ -21,11 +21,11 @@ aggregated       <- aggregate_catchments(flowpath = walker_fline_rec,
 aggregated_fline <- aggregated$fline_sets
 aggregated_cat   <- aggregated$cat_sets
 
-expect_equal(aggregated_cat$ID, get_id(c("5329385", "5329843", "5329339.1", "5329303")))
+expect_true(all(aggregated_cat$ID %in% get_id(c("5329385", "5329843", "5329339.1", "5329303"))))
 expect_equal(aggregated_fline$ID, get_id(c("5329385", "5329843", "5329339.1", "5329303")))
 expect_true(aggregated_cat$ID[1] %in% aggregated_cat$set[[1]], "outlet ids should be in the result")
-expect_true(length(aggregated_cat$set[[2]]) == 5, "got the wrong number in catchment set")
-expect_true(!5 %in% aggregated_cat$set[[2]], "an upstream outlet should not be in another set")
+expect_true(length(aggregated_cat$set[[3]]) == 5, "got the wrong number in catchment set")
+expect_true(!5 %in% aggregated_cat$set[[3]], "an upstream outlet should not be in another set")
 
 expect_true(length(aggregated_fline$set[[2]]) == 2, "got the wrong number of flowpaths")
 
@@ -43,7 +43,7 @@ aggregate_lookup_cat <- dplyr::select(sf::st_drop_geometry(aggregated$cat_sets),
 expect_true(all(walker_fline_rec$ID %in% aggregate_lookup_cat$reconciled_ID), 
             "all input ids should be in catchment output")
 
-expect_equal(aggregated_cat$toID, get_id(c("5329843", "5329339.1", "5329303", NA)), info = "Expect these toIDs")
+expect_equal(aggregated_cat$toID, get_id(c(NA, "5329843", "5329339.1", "5329303")), info = "Expect these toIDs")
 expect_true(all(aggregated_cat$toID[!is.na(aggregated_cat$toID)] %in% aggregated_cat$ID),
        "All not NA toIDs should be in IDs")
 
@@ -51,6 +51,8 @@ expect_true(all(aggregated_cat$toID[!is.na(aggregated_cat$toID)] %in% aggregated
 crs <- st_crs(walker_fdr)
 aggregated_cat <- st_transform(aggregated_cat, crs)
 aggregated_fline <- st_transform(aggregated_fline, crs)
+
+aggregated_cat <- aggregated_cat[match(aggregated_fline$ID, aggregated_cat$ID), ]
 
 new_geom <- do.call(c, lapply(c(1:nrow(aggregated_cat)), function(g, ac, af, fdr, fac) {
   split_catchment_divide(ac[g, ], af[g, ], fdr, fac, lr = TRUE)
@@ -92,7 +94,7 @@ aggregated <- aggregate_catchments(walker_fline_rec, walker_catchment_rec, outle
 aggregated_fline <- aggregated$fline_sets
 aggregated_cat <- aggregated$cat_sets
 
-expect_true(length(aggregated_cat$set[[1]]) == 101, "got the wrong number in catchment set")
+expect_true(length(aggregated_cat$set[[2]]) == 101, "got the wrong number in catchment set")
 
 # nolint start
 # sf::write_sf(aggregated$cat_sets, "walker_collapse.gpkg", "boundary")
