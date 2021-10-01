@@ -13,8 +13,8 @@ add_areasqkm = function(x){
   drop_units(set_units(st_area(x), "km2"))
 }  
 
-#' Fast Polygon Union
-#' This is significantly faster then sf::st_union or summarize
+#' Fast POLYGON Union
+#' @description This is significantly faster then sf::st_union or summarize
 #' @param poly sf POLYGON object
 #' @param ID the column name over which to union geometries
 #' @return sf object
@@ -41,16 +41,66 @@ union_polygons_geos = function(poly, ID){
   ids <- as.numeric(sapply(slot(tmp, "polygons"), function(x) slot(x, "ID")))
   
   suppressWarnings({
-    st_as_sf(tmp) %>%
+   tt = st_as_sf(tmp) %>%
       mutate("{ID}" := ids) %>%
       mutate(areasqkm = add_areasqkm(.)) %>% 
       st_cast("POLYGON") %>% 
       st_make_valid()
   })
   
+  if(any(grepl("COLLECTION", st_geometry_type(tt)))){
+    tt = st_collection_extract(tt, "POLYGON")
+  }
+  
+  return(tt)
+  
 }
 
-#' Catchment Geometry Doctor
+#' Fast LINESTRING union
+#' @description Wayyyy faster then either data.table, or sf based line merging
+#' @param lines lines to merge
+#' @param ID ID to merge over
+#' @return an sf object
+#' @importFrom sf as_Spatial st_as_sf
+#' @importFrom rgeos gLineMerge
+#' @importFrom dplyr mutate
+#' @importFrom methods slot
+#' @export
+
+union_linestrings_geos = function(lines, ID){
+  SPDF =  as_Spatial(lines)
+  
+  rownames(SPDF@data) <- sapply(slot(SPDF, "lines"), function(x) slot(x, "ID"))
+  
+  tmp <- rgeos::gLineMerge(SPDF, byid = TRUE, id = lines[[ID]])
+  
+  ids <- as.numeric(sapply(slot(tmp, "lines"), function(x) slot(x, "ID")))
+  
+  st_as_sf(tmp) %>% 
+    mutate("{ID}" := ids) %>% 
+    flowpaths_to_linestrings() 
+}
+
+#' Convert MULITLINESTINGS to LINESTRINGS
+#' @param flowpaths a flowpath `sf` object
+#' @return a `sf` object
+#' @export
+#' @importFrom sf st_geometry_type st_geometry st_line_merge
+#' @importFrom dplyr bind_rows
+
+flowpaths_to_linestrings = function(flowpaths){
+  bool = (st_geometry_type(sf::st_geometry(flowpaths)) == "MULTILINESTRING")
+  multis = flowpaths[bool, ]
+  if(nrow(multis) > 0){
+    sf::st_geometry(multis) = st_line_merge(sf::st_geometry(multis))
+  }
+  singles = flowpaths[!bool, ]
+  
+  bind_rows(multis, singles)
+}
+
+
+#' Clean Catchment Geometry
 #' @description Fixes geometry issues present in catchments that originate in the 
 #' CatchmentSP layers, or from the reconcile_catchments hyRefactor preocess. 
 #' These include, but are not limited to disjoint polygon fragments, artifacts 
@@ -68,7 +118,7 @@ union_polygons_geos = function(poly, ID){
 #' @return sf object
 #' @export
 #' @importFrom dplyr select mutate filter group_by ungroup slice_max bind_rows n right_join rename slice_min
-#' @importFrom sf st_crs st_touches st_transform st_area st_make_valid st_intersection st_collection_extract st_cast st_intersects st_length st_filter
+#' @importFrom sf st_crs st_touches st_transform st_area st_make_valid st_intersection st_collection_extract st_cast st_intersects st_length st_filter st_union
 #' @importFrom rmapshaper ms_explode ms_dissolve ms_simplify
 #' @importFrom nhdplusTools rename_geometry
 #' @importFrom rlang :=
@@ -195,9 +245,9 @@ clean_geometry = function(catchments,
     mutate(areasqkm = add_areasqkm(.), tmpID = NULL) %>%
     st_transform(in_crs) %>%
     dplyr::select("{ID}" := ID, .data$areasqkm)  %>% 
-    left_join(st_drop_geometry(catchments), by = "ID")
+    left_join(st_drop_geometry(catchments), by = ID) %>% 
+    filter(!duplicated(.))
 }
-
 
 #' Add Length Map to Refactored Network
 #' @description This function replicates the member_COMID column of a refactored 

@@ -14,9 +14,12 @@ outlets <- data.frame(ID = get_id(c("5329843", "5329339.1", "5329385", "5329303"
                       type = c("outlet", "outlet", "outlet", "terminal"),
                       stringsAsFactors = FALSE)
 
-aggregated <- aggregate_catchments(walker_fline_rec, walker_catchment_rec, outlets)
+
+aggregated       <- aggregate_catchments(flowpath = walker_fline_rec, 
+                                         divide = walker_catchment_rec,
+                                         outlets)
 aggregated_fline <- aggregated$fline_sets
-aggregated_cat <- aggregated$cat_sets
+aggregated_cat   <- aggregated$cat_sets
 
 expect_equal(aggregated_cat$ID, get_id(c("5329385", "5329843", "5329339.1", "5329303")))
 expect_equal(aggregated_fline$ID, get_id(c("5329385", "5329843", "5329339.1", "5329303")))
@@ -59,13 +62,17 @@ outlets <- data.frame(ID = get_id(c("5329843", "5329339.1", "5329385", "5329303"
                       type = c("outlet", "outlet", "outlet", "terminal", "outlet"),
                       stringsAsFactors = FALSE)
 
-aggregated <- aggregate_catchments(walker_fline_rec, walker_catchment_rec, outlets)
+aggregated <- aggregate_catchments(flowpath = walker_fline_rec, 
+                                   divide = walker_catchment_rec, 
+                                   outlets)
+
 aggregated_fline <- aggregated$fline_sets
 aggregated_cat <- aggregated$cat_sets
 
-expect_equal(aggregated_cat$ID, get_id(c("5329321", "5329385", "5329313", "5329843", "5329339.1", "5329339.3",
-                                         "5329303")))
-expect_true(length(aggregated_cat$set[[1]]) == 5, "got the wrong number in catchment set")
+expect_equal(sort(aggregated_cat$ID), sort(get_id(c("5329321", "5329385", "5329313", "5329843", "5329339.1", "5329339.3",
+                                         "5329303"))))
+
+expect_true(length(filter(aggregated_cat, ID == 23)$set[[1]]) == 5, "got the wrong number in catchment set")
 
 outlets <- data.frame(ID = get_id(c("5329363", "5329303")),
                       type = c("outlet", "terminal"),
@@ -140,10 +147,10 @@ test_that("new_hope aggregate", {
   new_hope_catchment_rec$area_sqkm <- as.numeric(st_area(
     st_transform(new_hope_catchment_rec, 5070))) / (1000^2)
   new_hope_fline_rec <- dplyr::inner_join(new_hope_fline_rec,
-                                   select(st_set_geometry(new_hope_catchment_rec, NULL),
+                                  dplyr::select(sf::st_set_geometry(new_hope_catchment_rec, NULL),
                                           ID, area_sqkm), by = "ID")
   new_hope_fline_rec$TotDASqKM <-
-    nhdplusTools::calculate_total_drainage_area(rename(st_set_geometry(new_hope_fline_rec, NULL),
+    nhdplusTools::calculate_total_drainage_area(rename(sf::st_set_geometry(new_hope_fline_rec, NULL),
                                          area = area_sqkm))
 
   aggregated <- aggregate_catchments(new_hope_fline_rec, new_hope_catchment_rec, outlets,
@@ -172,10 +179,10 @@ test_that("new_hope aggregate", {
   new_hope_catchment_rec$area_sqkm <- as.numeric(st_area(
     st_transform(new_hope_catchment_rec, 5070))) / (1000^2)
   new_hope_fline_rec <- dplyr::inner_join(new_hope_fline_rec,
-                                          select(st_set_geometry(new_hope_catchment_rec, NULL),
+                                          dplyr::select(sf::st_set_geometry(new_hope_catchment_rec, NULL),
                                                  ID, area_sqkm), by = "ID")
   new_hope_fline_rec[["TotDASqKM"]] <-
-    nhdplusTools::calculate_total_drainage_area(rename(st_set_geometry(new_hope_fline_rec, NULL),
+    nhdplusTools::calculate_total_drainage_area(rename(sf::st_set_geometry(new_hope_fline_rec, NULL),
                                          area = area_sqkm))
 
   # HU12 FPP st_joined to get these

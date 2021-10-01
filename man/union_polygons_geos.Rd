@@ -2,8 +2,7 @@
 % Please edit documentation in R/catchment_geometry.R
 \name{union_polygons_geos}
 \alias{union_polygons_geos}
-\title{Fast Polygon Union
-This is significantly faster then sf::st_union or summarize}
+\title{Fast POLYGON Union}
 \usage{
 union_polygons_geos(poly, ID)
 }
@@ -16,6 +15,5 @@ union_polygons_geos(poly, ID)
 sf object
 }
 \description{
-Fast Polygon Union
 This is significantly faster then sf::st_union or summarize
 }
