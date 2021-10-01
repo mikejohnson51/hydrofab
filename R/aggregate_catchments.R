@@ -74,22 +74,20 @@ aggregate_catchments <- function(flowpath, divide, outlets, zero_order = NULL,
 
   agg_network <- aggregate_network(flowpath, outlets, da_thresh, only_larger, post_mortem_file)
   
-  df_cat = data.frame(
-    setID = unlist(agg_network$cat_sets$set),
-    ind = rep(1:length(agg_network$cat_sets$set), times = lengths(agg_network$cat_sets$set)),
-    ID = rep(agg_network$cat_sets$ID, times = lengths(agg_network$cat_sets$set))) %>% 
-    left_join(dplyr::select(divide, ID), by = c("setID" = "ID")) %>% 
+  agg_network$cat_sets <- 
+               # setID defines which catchments go in which aggregate catchments.
+    data.frame(setID = unlist(agg_network$cat_sets$set),
+               # ID is the ID of the set brought in from aggregate network.
+               ID = rep(agg_network$cat_sets$ID, 
+                        times = lengths(agg_network$cat_sets$set))) %>% 
+    left_join(select(divide, ID), 
+              by = c("setID" = "ID")) %>% 
     st_as_sf() %>% 
-    filter(!sf::st_is_empty(.))
-  
-  mapping =  distinct(st_drop_geometry(df_cat), .data$ind, .data$ID)
-  
-  geom =  union_polygons_geos(df_cat, ID = "ind") %>% 
-    clean_geometry(ID = "ind") %>% 
-    dplyr::select(.data$ind)
-  
-  agg_network$cat_sets =  left_join(left_join(geom, mapping, by = "ind"), agg_network$cat_sets, by = "ID") %>% 
-    dplyr::select(-.data$ind)
+    filter(!sf::st_is_empty(.)) %>%
+    union_polygons_geos(ID = "ID") %>% 
+    clean_geometry(ID = "ID") %>% 
+    select(.data$ID) %>% 
+    left_join(agg_network$cat_sets, by = "ID")
   
   return(c(agg_network, list(coastal_sets = coastal)))
 }
