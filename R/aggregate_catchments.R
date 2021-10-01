@@ -17,23 +17,21 @@
 #' @details See \code{\link{aggregate_network}}
 #'
 #' @export
-#' @importFrom sf st_transform st_cast st_union st_geometry st_crs st_multipolygon
-#' @importFrom dplyr filter left_join bind_rows
+#' @importFrom sf st_is_empty st_drop_geometry st_as_sf
+#' @importFrom dplyr filter left_join bind_rows select distinct
 #' @examples
 #' source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
 #' outlets <- data.frame(ID = c(31, 3, 5, 1, 45, 92),
-#'                       type = c("outlet", "outlet", "outlet", "terminal", "outlet", "outlet"),
-#'                       stringsAsFactors = FALSE)
+#'  type = c("outlet", "outlet", "outlet", "terminal", "outlet", "outlet"),
+#'  stringsAsFactors = FALSE)
 #' aggregated <- aggregate_catchments(walker_fline_rec, walker_catchment_rec, outlets)
 #' plot(aggregated$cat_sets$geom, lwd = 3, border = "red")
 #' plot(walker_catchment_rec$geom, lwd = 1.5, border = "green", col = NA, add = TRUE)
 #' plot(walker_catchment$geom, lwd = 1, add = TRUE)
 #' plot(walker_flowline$geom, lwd = .7, col = "blue", add = TRUE)
-#'
 #' plot(aggregated$cat_sets$geom, lwd = 3, border = "black")
 #' plot(aggregated$fline_sets$geom, lwd = 3, col = "red", add = TRUE)
 #' plot(walker_flowline$geom, lwd = .7, col = "blue", add = TRUE)
-#'
 
 aggregate_catchments <- function(flowpath, divide, outlets, zero_order = NULL,
                                  coastal_cats = NULL,
@@ -75,45 +73,23 @@ aggregate_catchments <- function(flowpath, divide, outlets, zero_order = NULL,
   }
 
   agg_network <- aggregate_network(flowpath, outlets, da_thresh, only_larger, post_mortem_file)
-
-  for (cat in seq_len(nrow(agg_network$cat_sets))) {
-    
-    abort_code <- tryCatch(
-      {
-        
-        sub <- filter(divide, ID %in% unlist(agg_network$cat_sets$set[cat]))
-        
-        geom <- try(st_union(st_geometry(sub)), 
-                    silent = TRUE)
-        
-        if(inherits(geom, "try-error")) {
-          geom <- try(st_union(st_make_valid(st_geometry(sub))))
-        }
-        
-        if(length(geom) > 0) {
-          agg_network$cat_sets$geom[[cat]] <- geom[[1]]
-        } else {
-          agg_network$cat_sets$geom[[cat]] <- st_multipolygon()
-        }
-        
-        abort_code <- ""
-      }, error = function(e) e
-    )
-    
-    if(abort_code != "")  {
-      if(!is.na(post_mortem_file)) {
-        save(list = ls(), file = post_mortem_file)
-        stop(paste("error getting geometry type or with union, post mortem file:", post_mortem_file))
-      } else {
-        stop(paste("error getting geometry type or with union for line merge:", abort_code))
-      }
-    }
-
-  }
-
-  agg_network$cat_sets$geom <- st_cast(st_sfc(agg_network$cat_sets$geom, crs = st_crs(divide)), "MULTIPOLYGON")
-
-  agg_network$cat_sets <- st_sf(agg_network$cat_sets)
-
+  
+  df_cat = data.frame(
+    setID = unlist(agg_network$cat_sets$set),
+    ind = rep(1:length(agg_network$cat_sets$set), times = lengths(agg_network$cat_sets$set)),
+    ID = rep(agg_network$cat_sets$ID, times = lengths(agg_network$cat_sets$set))) %>% 
+    left_join(dplyr::select(divide, ID), by = c("setID" = "ID")) %>% 
+    st_as_sf() %>% 
+    filter(!sf::st_is_empty(.))
+  
+  mapping =  distinct(st_drop_geometry(df_cat), .data$ind, .data$ID)
+  
+  geom =  union_polygons_geos(df_cat, ID = "ind") %>% 
+    clean_geometry(ID = "ind") %>% 
+    dplyr::select(.data$ind)
+  
+  agg_network$cat_sets =  left_join(left_join(geom, mapping, by = "ind"), agg_network$cat_sets, by = "ID") %>% 
+    dplyr::select(-.data$ind)
+  
   return(c(agg_network, list(coastal_sets = coastal)))
 }

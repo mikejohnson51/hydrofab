@@ -40,7 +40,7 @@
 #'
 #' @export
 #' @importFrom igraph graph_from_data_frame topo_sort incident_edges V bfs head_of shortest_paths
-#' @importFrom sf st_transform st_cast st_union st_geometry st_sfc st_sf st_crs st_line_merge st_geometry_type
+#' @importFrom sf st_is_empty st_drop_geometry
 #' @importFrom dplyr filter mutate left_join select distinct case_when bind_rows
 #' @importFrom tidyr unnest_longer
 #' @examples
@@ -67,39 +67,39 @@
 #' plot(outlets$geometry, add = TRUE)
 #'
 aggregate_network <- function(flowpath, outlets,
-                              da_thresh = NA, only_larger = FALSE,
-                              post_mortem_file = NA) {
-
+                                 da_thresh = NA, only_larger = FALSE,
+                                 post_mortem_file = NA) {
+  
   flowpath <- check_names(flowpath, "aggregate_network")
-
+  
   geo <- inherits(flowpath, "sf")
-
+  
+  if(geo){flowpath_geo = flowpath; flowpath = sf::st_drop_geometry(flowpath)}
+  
   if (any(!outlets$ID %in% flowpath$ID)) stop("Outlet IDs must all be in flowpaths.")
-
+  
   flowpath$toID[flowpath$toID == 0] <- NA
-
+  
   term <- flowpath$toID[flowpath$ID %in% outlets[outlets$type == "terminal", ]$ID]
-
+  
   if (any(!is.na(term))) {
     if(!is.na(post_mortem_file)) save(list = ls(), file = post_mortem_file)
     stop("Terminal paths must have an NA or 0 toID")
   }
-
+  
   lps <- get_lps(flowpath)
-
-  outlets <- make_outlets_valid(outlets, flowpath, lps,
-                                da_thresh = da_thresh,
-                                only_larger = only_larger) %>%
+  
+  outlets <- make_outlets_valid(outlets, flowpath, lps,da_thresh = da_thresh, only_larger = only_larger) %>%
     distinct()
-
+  
   lps <- get_lps(flowpath)
-
+  
   outlets <- mutate(outlets, ID = paste0("cat-", .data$ID))
-
+  
   # Build catchment and nexus data.frames to preserve sanity in graph traversal.
   catchment <- flowpath %>%
     mutate(toID = ifelse(is.na(.data$toID), -.data$ID, .data$toID))
-
+  
   # Join id to toID use ID as from nexus ID since we are assuming dendritic.
   nexus <- left_join(select(drop_geometry(catchment), toID = .data$ID),
                      select(drop_geometry(catchment), fromID = .data$ID, .data$toID),
@@ -108,18 +108,18 @@ aggregate_network <- function(flowpath, outlets,
            fromID = paste0("cat-", .data$fromID),
            toID = paste0("cat-", .data$toID)) %>%
     select(.data$nexID, .data$fromID, .data$toID)
-
+  
   # get fromID and toID straight with "nex-" prefix
   catchment <- mutate(drop_geometry(catchment),
                       fromID = paste0("nex-", .data$ID),
                       toID = paste0("nex-", .data$toID),
                       ID = paste0("cat-", .data$ID)) %>%
     select(.data$fromID, .data$toID, cat_ID = .data$ID)
-
+  
   # Convert the catchment network to a directed graph
   cat_graph <- graph_from_data_frame(d = catchment,
                                      directed = TRUE)
-
+  
   outlets <- outlets %>%
     left_join(select(catchment, nexID_stem = .data$fromID, ID = .data$cat_ID), by = "ID") %>%
     left_join(select(catchment, nexID_terminal = .data$toID, ID = .data$cat_ID), by = "ID") %>%
@@ -131,46 +131,42 @@ aggregate_network <- function(flowpath, outlets,
     ) %>%
     select(.data$ID, .data$type, .data$nexID) %>%
     distinct()
-
+  
   # sorted version of the graph to re-order outlets in upstream-downstream order.
   cat_graph_sort_verts <- topo_sort(cat_graph)
   outlet_verts <- cat_graph_sort_verts[names(cat_graph_sort_verts) %in% outlets$nexID]
   outlets <- outlets[match(names(outlet_verts), outlets$nexID), ]
-
+  
   cat_sets <- data.frame(ID = outlets$ID,
                          nexID = outlets$nexID,
-                         set = I(rep(list(list()), nrow(outlets))),
-                         geom = I(rep(list(list()), nrow(outlets))),
-                         stringsAsFactors = FALSE)
-
+                         set = I(rep(list(list()), nrow(outlets))))
+  
   fline_sets <- data.frame(ID = outlets$nexID,
-                           set = I(rep(list(list()), nrow(outlets))),
-                           geom = I(rep(list(list()), nrow(outlets))),
-                           stringsAsFactors = FALSE)
-
+                           set = I(rep(list(list()), nrow(outlets))))
+  
   verts <- V(cat_graph)
-
+  
   us_verts <- c()
-
+  
   for (cat in seq_len(nrow(cat_sets))) {
-
+    
     if(cat %% 10 == 0) message(paste(cat, "of", nrow(cat_sets)))
-
+    
     outlet <- filter(outlets, .data$ID == cat_sets$ID[cat])
-
+    
     ut <- bfs(graph = cat_graph,
               root = cat_sets$nexID[cat],
               neimode = "in",
               order = TRUE,
               unreachable = FALSE,
               restricted = verts)
-
+    
     outlet_id <- as.integer(gsub("^cat-", "", outlets$ID[cat]))
     head_id <- lps$head_ID[which(lps$ID == outlet_id)]
     head_id <- head_id[head_id != outlet_id]
-
+    
     if (length(head_id) == 0) head_id <- outlet_id # Then the outlet is a headwater.
-
+    
     abort_code <- tryCatch(
       {
         um <- find_um(us_verts, cat_graph,
@@ -180,7 +176,7 @@ aggregate_network <- function(flowpath, outlets,
         abort_code <- ""
       }, error = function(e) e
     )
-
+    
     if(abort_code != "")  {
       if(!is.na(post_mortem_file)) {
         save(list = ls(), file = post_mortem_file)
@@ -189,56 +185,40 @@ aggregate_network <- function(flowpath, outlets,
         stop(paste("Upstream Main error:", abort_code))
       }
     }
-
+    
     if (length(us_verts) > 0) {
       vert <- us_verts[which(um %in% us_verts)]
-
+      
       if (length(vert) == 1) {
         # Since longest path is used in find_um if multiple paths are found
         # there is a chance that multiple us verts get consumed in a single step?
         us_verts <- us_verts[!us_verts %in% vert]
       }
     }
-
+    
     um <- as.numeric(gsub("^nex-", "", um))
-
+    
     if(0 %in% um) um[um == 0] <- as.numeric(gsub("^cat-", "", outlets[outlets$nexID == "nex-0", ]$ID))
-
-    if(geo) {
-      fline_sets$geom[[cat]] <- filter(flowpath, .data$ID %in% um) %>%
-        st_geometry() %>%
-        st_cast("LINESTRING") %>%
-        st_union()
-    }
-
+    
     abort_code <- tryCatch(
       {
-        if (geo) {
-          if(length(cat) > 0 && length(st_geometry_type(fline_sets$geom[[cat]])) > 0 &&
-             st_geometry_type(fline_sets$geom[[cat]]) == "MULTILINESTRING") {
-            fline_sets$geom[[cat]] <- st_line_merge(fline_sets$geom[[cat]])
-          }
-
-          fline_sets$geom[[cat]] <- fline_sets$geom[[cat]][[1]]
-        }
-
         fline_sets$set[[cat]] <- um
-
+        
         # Excludes the search node to avoid grabbing the downstream catchment.
         ut_verts <- ut$order[!is.na(ut$order) & names(ut$order) != cat_sets$nexID[cat]]
         cat_sets$set[[cat]] <- filter(catchment, .data$fromID %in% names(ut_verts))$cat_ID
         remove <- head_of(cat_graph, unlist(incident_edges(cat_graph, ut_verts, "in")))
         verts <- verts[!verts %in% remove]
-
+        
         if (outlet$type == "outlet") {
           cat_sets$set[[cat]] <- c(cat_sets$set[[cat]], outlet$ID)
           verts <- verts[!names(verts) == outlet$nexID]
         }
-
+        
         abort_code <- ""
       }, error = function(e) e
     )
-
+    
     if(abort_code != "")  {
       if(!is.na(post_mortem_file)) {
         save(list = ls(), file = post_mortem_file)
@@ -247,32 +227,25 @@ aggregate_network <- function(flowpath, outlets,
         stop(paste("error getting geometry type or with union for line merge:", abort_code))
       }
     }
-
+    
     cat_sets$set[[cat]] <- as.numeric(gsub("^cat-", "", cat_sets$set[[cat]]))
-
+    
     # us_verts are where we need to stop while stepping upstream.
     us_verts <- c(us_verts, cat_sets$nexID[cat])
   }
-
+  
   cat_sets <- select(cat_sets, -.data$nexID)
-
+  
   cat_sets[["ID"]] <- as.numeric(gsub("^cat-", "", outlets$ID))
-
-  if(geo) {
-    fline_sets$geom <- st_sfc(fline_sets$geom, crs = st_crs(flowpath))
-    fline_sets <- st_sf(fline_sets)
-  }
-
+  
   fline_sets[["ID"]] <- as.numeric(gsub("^cat-", "", outlets$ID))
-
-
+  
   # create long form ID to set member list
-  sets <- tidyr::unnest_longer(drop_geometry(fline_sets), 
-                        col = "set")
-
+  sets <- tidyr::unnest_longer(drop_geometry(fline_sets), col = "set")
+  
   # Figure out what the ID of the downstream catchment is.
-  next_id <- sets %>%
-    left_join(select(drop_geometry(flowpath), .data$ID, .data$toID),
+  next_id <- left_join(sets, 
+              select(drop_geometry(flowpath), .data$ID, .data$toID),
               by = c("set" = "ID")) %>%
     # first find the ID downstream of the outlet of each catchment.
     group_by(.data$ID) %>%
@@ -284,10 +257,27 @@ aggregate_network <- function(flowpath, outlets,
     left_join(select(sets, set_toID = .data$ID, .data$set),
               by = c("toID" = "set")) %>%
     select(.data$ID, toID = .data$set_toID)
-
+  
+  if(geo){
+    df_fl = data.frame(
+      setID = unlist(fline_sets$set),
+      ind = rep(1:length(fline_sets$set), times = lengths(fline_sets$set)),
+      ID = rep(fline_sets$ID, times = lengths(fline_sets$set))) %>% 
+      left_join(dplyr::select(flowpath_geo, ID), by = c("setID" = "ID")) %>% 
+      st_as_sf() %>% 
+      filter(!sf::st_is_empty(.)) 
+    
+    mapping =  distinct(st_drop_geometry(df_fl), .data$ind, .data$ID)
+    
+    fline_sets =  left_join(
+      left_join(union_linestrings_geos(df_fl, "ind"), mapping, by = "ind"), 
+      fline_sets, by = "ID") %>% 
+      select(-.data$ind)
+  }
+  
   fline_sets <- left_join(fline_sets, next_id, by = "ID")
-  cat_sets <- left_join(cat_sets, next_id, by = "ID")
-
+  cat_sets   <- left_join(cat_sets, next_id, by = "ID")
+  
   return(list(cat_sets = cat_sets, fline_sets = fline_sets))
 }
 
@@ -295,13 +285,13 @@ get_lps <- function(flowpath) {
   flowpath <- drop_geometry(flowpath) %>%
     select(.data$ID, .data$LevelPathID, .data$Hydroseq) %>%
     group_by(.data$LevelPathID)
-
+  
   headwaters <- filter(flowpath, .data$Hydroseq == max(.data$Hydroseq)) %>%
     ungroup()
-
+  
   outlets <- filter(flowpath, .data$Hydroseq == min(.data$Hydroseq)) %>%
     ungroup()
-
+  
   left_join(ungroup(flowpath), select(headwaters, head_ID = .data$ID, .data$LevelPathID),
             by = "LevelPathID") %>%
     left_join(select(outlets, tail_ID = .data$ID, .data$LevelPathID),
@@ -318,19 +308,19 @@ get_outlets <- function(outlets, lps) {
 # Adds everything that contributes the same recieving catchment as a given tail id.
 fix_nexus <- function(flowpath, tail_id, da_thresh = NA, only_larger = FALSE) {
   tail <- filter(flowpath, .data$ID == tail_id)
-
+  
   add <- filter(flowpath, .data$toID == tail$toID)
-
+  
   if (only_larger) {
     add <- filter(add, .data$LevelPathID <= tail$LevelPathID)
   }
-
+  
   if (!is.na(da_thresh)) {
     add <- filter(add, .data$TotDASqKM > da_thresh)
   }
   # Can add functionality here to filter which Add IDs to include.
   add_ids <- add$ID
-
+  
   data.frame(ID = add_ids,
              type = rep("outlet",
                         length(add_ids)),
@@ -353,22 +343,22 @@ fix_tail <- function(flowpath, outlets, toid_tail_id, da_thresh = NA, only_large
 #' @noRd
 make_outlets_valid <- function(outlets, flowpath, lps,
                                da_thresh = NA, only_larger = FALSE) {
-
+  
   outlets <- distinct(outlets) %>%
     group_by(.data$ID) %>%
     filter(!(n() > 1 & .data$type == "outlet")) %>%
     ungroup()
-
+  
   otl <- get_outlets(outlets, lps)
-
+  
   count_while <- 0
-
+  
   while (!all(otl$tail_ID %in% otl$ID)) {
-
+    
     bad_tail <- otl$tail_ID[which(!otl$tail_ID %in% otl$ID)]
-
+    
     message(paste("Fixing", length(bad_tail), "missing outlets."))
-
+    
     outlets <- dplyr::bind_rows(
       outlets,
       dplyr::bind_rows(lapply(
@@ -376,16 +366,16 @@ make_outlets_valid <- function(outlets, flowpath, lps,
           fix_nexus(flowpath, bad_tail_id, da_thresh, only_larger)
         }, flowpath = flowpath, da_thresh = da_thresh, only_larger = only_larger))
     )
-
+    
     otl <- get_outlets(outlets, lps)
-
+    
     count_while <- count_while + 1
-
+    
     if (count_while > 20) {
       stop("Stuck in a while loop trying to fix disconnected outlets. Reduce drainage area threshold?")
     }
   }
-
+  
   # Need to check that a "next down tributary" in the outlet set has a break along the
   # main stem that each outlet contributes to.
   otl <- left_join(otl, select(drop_geometry(flowpath),
@@ -395,7 +385,7 @@ make_outlets_valid <- function(outlets, flowpath, lps,
                      toID_tail_ID = .data$tail_ID,
                      toID_LevelpathID = .data$LevelPathID),
               by = c("toID" = "ID"))
-
+  
   # this grabs the most downstream if duplicates were generated.
   otl <- group_by(otl, .data$ID) %>%
     filter(.data$toID_hydroseq == min(.data$toID_hydroseq)) %>%
@@ -404,52 +394,52 @@ make_outlets_valid <- function(outlets, flowpath, lps,
     group_by(.data$toID_tail_ID) %>%
     filter(n() > 1) %>%
     ungroup()
-
+  
   # This grabs all the inflows to the nexus that each of these outlets is at.
   otl <- left_join(otl, select(drop_geometry(flowpath),
                                toID_fromID = .data$ID, .data$toID),
                    by = "toID") %>%
     mutate(type = "add_outlet")
-
+  
   if (!is.na(da_thresh)) {
     otl <- left_join(otl, select(drop_geometry(flowpath),
                                  .data$ID, toID_fromID_TotDASqKM = .data$TotDASqKM),
                      by = c("toID_fromID" = "ID")) %>%
       filter(.data$toID_fromID_TotDASqKM > da_thresh)
   }
-
+  
   if (only_larger) {
     otl <- left_join(otl, select(drop_geometry(flowpath),
                                  .data$ID, toID_fromID_lp = .data$LevelPathID),
                      by = c("toID_fromID" = "ID")) %>%
       filter(.data$toID_fromID_lp <= .data$toID_LevelpathID)
   }
-
+  
   otl <- otl %>%
     select(ID = .data$toID_fromID, .data$type,
            LevelPathID = .data$toID_LevelpathID, .data$tail_ID) %>%
     distinct()
-
+  
   # Need to verify that all ID == tail_ID instances are connected.
   # They might have been missed above.
   if (any(grepl("add_outlet", otl$type))) {
     otl$type <- "outlet"
     outlets <- distinct(rbind(outlets, otl[, c("ID", "type")]))
   }
-
+  
   otl <- get_outlets(outlets, lps)
   tail_outlets <- which(otl$ID == otl$tail_ID & otl$type != "terminal")
-
+  
   for (check in seq_along(tail_outlets)) {
     outlets <- rbind(outlets,
                      fix_tail(flowpath, outlets, otl$ID[check],
                               da_thresh = da_thresh, only_larger = only_larger))
-
+    
     connected <- FALSE
     while (!connected) {
       toid <- filter(flowpath, .data$ID == otl[["ID"]][check])$toID
       toid_tail_id <- filter(lps, .data$ID == toid)[["tail_ID"]]
-
+      
       if (!all(toid_tail_id %in% otl$tail_ID)) {
         outlets <- rbind(outlets,
                          fix_tail(flowpath, outlets, unique(toid_tail_id),
@@ -460,7 +450,7 @@ make_outlets_valid <- function(outlets, flowpath, lps,
       otl <- get_outlets(outlets, lps)
     }
   }
-
+  
   return(outlets)
 }
 
@@ -474,26 +464,26 @@ make_outlets_valid <- function(outlets, flowpath, lps,
 #' @noRd
 find_um <- function(us_verts, cat_graph, cat_id, head_id, outlet_type) {
   um <- c()
-
+  
   if (length(us_verts) > 0) {
     suppressWarnings(paths <- shortest_paths(cat_graph,
                                              from = cat_id,
                                              to = us_verts,
                                              mode = "in"))
-
+    
     if (length(paths$vpath) > 1) {
       path_lengths <- lengths(sapply(paths$vpath, names))
     } else {
       path_lengths <- length(names(paths$vpath[[1]]))
     }
-
+    
     if (any(path_lengths > 0)) {
       path_lengths[path_lengths == 0] <- NA
       um <- names(paths$vpath[which(path_lengths == min(path_lengths, na.rm = TRUE))][[1]])
       um <- um[!um %in% us_verts] # Path includes the "to" but don't want to include it!
     }
   }
-
+  
   # then look for headwater.
   if (length(um) == 0) {
     um <- names(shortest_paths(cat_graph,
@@ -501,6 +491,7 @@ find_um <- function(us_verts, cat_graph, cat_id, head_id, outlet_type) {
                                to = paste0("nex-", head_id),
                                mode = "in")$vpath[[1]])
   }
-
+  
   return(um)
 }
+

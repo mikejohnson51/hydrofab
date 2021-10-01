@@ -2,7 +2,7 @@
 % Please edit documentation in R/catchment_geometry.R
 \name{clean_geometry}
 \alias{clean_geometry}
-\title{Catchment Geometry Doctor}
+\title{Clean Catchment Geometry}
 \usage{
 clean_geometry(catchments, ID = "ID", keep = 0.9)
 }
