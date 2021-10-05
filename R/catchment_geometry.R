@@ -27,6 +27,10 @@ add_areasqkm = function(x){
 
 union_polygons_geos = function(poly, ID){
   
+  if(any((types <- sf::st_geometry_type(poly, by_geometry = TRUE) == "GEOMETRYCOLLECTION"))) {
+    poly <- sf::st_cast(poly, "POLYGON")
+  }
+  
   SPDF =  as_Spatial(poly)
   
   rownames(SPDF@data) <- sapply(slot(SPDF, "polygons"), function(x) slot(x, "ID"))
