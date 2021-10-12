@@ -142,7 +142,8 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 #' @details Note that all inputs must be passed in the same projection.
 #' @export
 #' @importFrom magrittr "%>%"
-#' @importFrom sf st_drop_geometry st_dimension st_as_sf st_cast
+#' @importFrom sf st_drop_geometry st_dimension st_as_sf st_cast st_transform st_precision st_crs
+#' @importClassesFrom raster res
 #' @importFrom dplyr select filter mutate left_join
 #' @importFrom data.table rbindlist
 #' @importFrom methods is
@@ -155,10 +156,17 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec,
                                         fix_catchments = TRUE,
                                         keep = .9) {
 
-  # This is a hack until I find time to get the geometry name dynamically.
+  in_crs    <- st_crs(catchment)
   catchment <- rename_geometry(catchment, "geom")
   fline_ref <- rename_geometry(fline_ref, "geom")
   fline_rec <- rename_geometry(fline_rec, "geom")
+  
+  # if(!is.null(fdr)){
+  #   catchment <-  st_transform(catchment, st_crs(fdr)) 
+  #   st_precision(catchment) <- raster::res(fdr)[1]
+  #   fline_ref <-  st_transform(fline_ref, st_crs(fdr)) 
+  #   fline_rec <- st_transform(fline_rec, st_crs(fdr)) 
+  # }
   
   check_proj(catchment, fline_ref, fdr)
 
@@ -276,9 +284,10 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec,
   
   if(fix_catchments){
     # cat("Fixing Catchment Geometries...\n")
-    clean_geometry(catchments = out, "ID", 0.9)
+    clean_geometry(catchments = out, "ID", 0.9) %>% 
+      st_transform(in_crs)
   } else {
-    out
+    st_transform(out, in_crs)
   }
 }
 

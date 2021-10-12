@@ -259,20 +259,14 @@ aggregate_network <- function(flowpath, outlets,
     select(.data$ID, toID = .data$set_toID)
   
   if(geo){
-    df_fl = data.frame(
+    fline_sets = data.frame(
       setID = unlist(fline_sets$set),
-      ind = rep(1:length(fline_sets$set), times = lengths(fline_sets$set)),
       ID = rep(fline_sets$ID, times = lengths(fline_sets$set))) %>% 
       left_join(dplyr::select(flowpath_geo, ID), by = c("setID" = "ID")) %>% 
       st_as_sf() %>% 
-      filter(!sf::st_is_empty(.)) 
-    
-    mapping =  distinct(st_drop_geometry(df_fl), .data$ind, .data$ID)
-    
-    fline_sets =  left_join(
-      left_join(union_linestrings_geos(df_fl, "ind"), mapping, by = "ind"), 
-      fline_sets, by = "ID") %>% 
-      select(-.data$ind)
+      filter(!sf::st_is_empty(.)) %>% 
+      union_linestrings_geos(ID = "ID") %>% 
+      left_join(fline_sets, by = "ID")
   }
   
   fline_sets <- left_join(fline_sets, next_id, by = "ID")

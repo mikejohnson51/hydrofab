@@ -22,12 +22,12 @@ aggregated_fline <- aggregated$fline_sets
 aggregated_cat   <- aggregated$cat_sets
 
 expect_true(all(aggregated_cat$ID %in% get_id(c("5329385", "5329843", "5329339.1", "5329303"))))
-expect_equal(aggregated_fline$ID, get_id(c("5329385", "5329843", "5329339.1", "5329303")))
+expect_equal(sort(aggregated_fline$ID), sort(get_id(c("5329385", "5329843", "5329339.1", "5329303"))))
 expect_true(aggregated_cat$ID[1] %in% aggregated_cat$set[[1]], "outlet ids should be in the result")
 expect_true(length(aggregated_cat$set[[3]]) == 5, "got the wrong number in catchment set")
 expect_true(!5 %in% aggregated_cat$set[[3]], "an upstream outlet should not be in another set")
 
-expect_true(length(aggregated_fline$set[[2]]) == 2, "got the wrong number of flowpaths")
+expect_true(length(filter(aggregated_fline, ID == 31)$set[[1]]) == 2, "got the wrong number of flowpaths")
 
 aggregate_lookup_fline <- dplyr::select(sf::st_drop_geometry(aggregated$fline_sets), ID, set) %>%
   tidyr::unnest_longer(col = set) %>%
