@@ -271,7 +271,9 @@ test_that("no fdr", {
   
   cat <- sf::st_transform(walker_catchment, sf::st_crs(fline_rec))
   
-  reconcile <- reconcile_catchment_divides(walker_catchment, fline_ref, fline_rec)
+  reconcile <- reconcile_catchment_divides(catchment = walker_catchment, 
+                                           fline_ref, 
+                                           fline_rec)
   
   expect_equal(nrow(reconcile), 42)
   
@@ -284,7 +286,12 @@ test_that("merrit dem", {
   ref <- sf::read_sf("data/ak_vector.gpkg", "fline_ref")
   rec <- sf::read_sf("data/ak_vector.gpkg", "fline_rec")
   
-  rec_cat <- suppressWarnings(reconcile_catchment_divides(cat, ref, rec, fdr, fac,
+  rec_cat <- suppressWarnings(reconcile_catchment_divides(
+    catchment = cat, 
+    fline_ref =     ref,
+    fline_rec =     rec, 
+                              fdr, 
+                              fac,
                               para = 1, min_area_m = 10000, 
                               snap_distance_m = 5, 
                               simplify_tolerance_m = 5, 
