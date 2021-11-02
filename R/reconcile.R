@@ -143,7 +143,6 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 #' @export
 #' @importFrom magrittr "%>%"
 #' @importFrom sf st_drop_geometry st_dimension st_as_sf st_cast st_transform st_precision st_crs
-#' @importClassesFrom raster res
 #' @importFrom dplyr select filter mutate left_join
 #' @importFrom data.table rbindlist
 #' @importFrom methods is
