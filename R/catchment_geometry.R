@@ -225,11 +225,22 @@ clean_geometry = function(catchments,
         
         tmap = st_filter(in_cat, dissolve, .predicate = st_touches)
         
-        opt = suppressWarnings({ 
-          st_intersection(dissolve, filter(tmap, !.data$tmpID %in% dissolve$tmpID)) %>%
+        suppressWarnings({ 
+          opt <- st_intersection(dissolve, filter(tmap, !.data$tmpID %in% dissolve$tmpID))
+          
+          # If the intersection is only multipoint geometry
+          # Note that geometry_type will be longer than one if more than one feature
+          # was returned from the st_intersection above.
+          gt <- sf::st_geometry_type(opt)
+          if(length(gt) == 1 && gt == "MULTIPOINT") {
+            opt <- sf::st_cast(opt, "LINESTRING")
+          } 
+          
+          opt <- opt %>%
             st_collection_extract("LINESTRING") %>%
             mutate(l = st_length(.)) %>%
             slice_max(.data$l, with_ties = FALSE)
+          
         })
         
         ind = which(in_cat$tmpID == opt$tmpID.1)
