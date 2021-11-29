@@ -127,7 +127,6 @@ flowpaths_to_linestrings = function(flowpaths){
 #' @importFrom nhdplusTools rename_geometry
 #' @importFrom rlang :=
 
-
 clean_geometry = function(catchments,
                                      ID = "ID",
                                      keep = .9) {
@@ -278,7 +277,7 @@ clean_geometry = function(catchments,
 #' @examples
 #' \dontrun{
 #' path <- system.file("extdata/walker_reconcile.gpkg", package = "hyRefactor")
-#' fps  <- add_lengthmap(sf::read_sf(path))
+#' fps  <- add_lengthmap(flowpaths = sf::read_sf(path), length_table = nhdplusTools::get_vaa("lengthkm"))
 #' }
 #'@importFrom dplyr select mutate filter left_join right_join arrange group_by summarize
 #'@importFrom tidyr unnest
@@ -305,10 +304,10 @@ add_lengthmap = function(flowpaths, length_table){
     select(.data$ID, .data$lengthm_id) %>% 
     st_drop_geometry()
   
-  map = left_join(left_join(unnested2, lengthm_fp), lengthm_id) %>% 
+  map = left_join(left_join(unnested2, lengthm_fp, "baseCOMID"), lengthm_id, by = "ID") %>% 
     mutate(perLength = round(.data$lengthm_id/.data$lengthm_fp, 3)/10) %>% 
     select(.data$ID, .data$COMID, .data$perLength) %>% 
-    right_join(unnested) %>% 
+    right_join(unnested, by = c("ID", "COMID")) %>% 
     mutate(perLength = ifelse(is.na(.data$perLength), 1, 
                               as.character(.data$perLength))) %>% 
     arrange(.data$ID) %>% 
