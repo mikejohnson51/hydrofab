@@ -54,9 +54,7 @@ map_outlet_ids <- function(source_outlets, reconciled) {
       mutate(COMID = strsplit(COMID, split = ",")) %>%
       mutate(COMID = sapply(COMID, utils::tail, n = 1), type = "terminal")
     
-    source_outlets$COMID <- as.character(source_outlets$COMID)
-    
-    outlets <- bind_rows(source_outlets, missing_terminals)
+    outlets <- rbind(source_outlets, missing_terminals)
   } else {
     outlets <- source_outlets
   }
