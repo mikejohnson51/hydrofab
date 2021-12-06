@@ -122,14 +122,14 @@ flowpaths_to_linestrings = function(flowpaths){
 #' @return sf object
 #' @export
 #' @importFrom dplyr select mutate filter group_by ungroup slice_max bind_rows n right_join rename slice_min
-#' @importFrom sf st_crs st_touches st_transform st_area st_make_valid st_intersection st_collection_extract st_cast st_intersects st_length st_filter st_union
+#' @importFrom sf st_crs st_touches st_transform st_area st_make_valid st_intersection st_collection_extract st_cast st_intersects st_length st_filter st_union st_is_empty
 #' @importFrom rmapshaper ms_explode ms_dissolve ms_simplify
 #' @importFrom nhdplusTools rename_geometry
 #' @importFrom rlang :=
 
 clean_geometry = function(catchments,
-                                     ID = "ID",
-                                     keep = .9) {
+                          ID = "ID",
+                          keep = .9) {
 
   in_crs = st_crs(catchments)
   
@@ -147,12 +147,13 @@ clean_geometry = function(catchments,
   
   if (length(ids) != 0) {
     
-    # single geometry  catchments
+    # single geometry catchments
     cat_no_problem <- filter(in_cat, !.data$ID %in% ids)
     
     # multi geometry catchments
     challenges = filter(in_cat, .data$ID %in% ids) %>%
-      mutate(tmpID = 1:n())
+      mutate(tmpID = 1:n()) %>% 
+      filter(!st_is_empty(.))
     
     # base cats: combo of biggest multi geom and single geom catchments
     base_cats = challenges %>%
@@ -162,22 +163,29 @@ clean_geometry = function(catchments,
       bind_rows(cat_no_problem) 
     
     # Frags are polygon slivers not in the base catchments
-    frags = filter(challenges, !.data$tmpID %in% base_cats$tmpID) %>%
-      ms_dissolve() %>%
-      ms_explode() %>%
-      mutate(area = as.numeric(st_area(.))) %>%
-      st_make_valid()
+    frags = filter(challenges, !.data$tmpID %in% base_cats$tmpID) 
+    
+    # If fragments exist, then fix, else return empty data.frame
+    if(nrow(frags) > 0){
+      frags = frags %>%
+        ms_dissolve() %>%
+        ms_explode() %>%
+        mutate(area = as.numeric(st_area(.))) %>%
+        st_make_valid()
+      
+      out = tryCatch({
+        suppressWarnings({
+          st_intersection(frags, st_make_valid(base_cats)) %>%
+            st_collection_extract("LINESTRING") 
+        })
+      }, error = function(e) { NULL })
+      
+    } else {
+      out = data.frame()
+    }
     
     # message(prettyNum(nrow(frags), big.mark = ",", scientific = FALSE), " fragments to clean...")
-    
-    out = tryCatch({
-      suppressWarnings({
-        st_intersection(frags, st_make_valid(base_cats)) %>%
-          st_collection_extract("LINESTRING") 
-      })
-    }, error = function(e) { NULL })
-    
-    
+  
     if(!is.null(out) & nrow(out) != 0){
       # ints are the LINSTRINGS of intersection between base_cats and frags
       ints = out %>%
@@ -255,12 +263,21 @@ clean_geometry = function(catchments,
     in_cat = ms_simplify(in_cat, keep = keep, keep_shapes = TRUE)
   }
   
+  # since areasqkm will be added based on the new geometries, 
+  # we need to drop that column if it exists. We want to retain
+  # any others that that came with the OG catchments
+  
+  if('areasqkm' %in% names(catchments)){
+    catchments = select(catchments, -areasqkm)
+  }
+  
   in_cat %>%
     mutate(areasqkm = add_areasqkm(.), tmpID = NULL) %>%
     st_transform(in_crs) %>%
     dplyr::select("{ID}" := ID, .data$areasqkm)  %>% 
     left_join(st_drop_geometry(catchments), by = ID) %>% 
     filter(!duplicated(.))
+  
 }
 
 #' Add Length Map to Refactored Network
