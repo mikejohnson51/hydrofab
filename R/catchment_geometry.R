@@ -165,6 +165,9 @@ clean_geometry = function(catchments,
     # Frags are polygon slivers not in the base catchments
     frags = filter(challenges, !.data$tmpID %in% base_cats$tmpID) 
     
+    # frags smaller than a square meter can be dropped.
+    frags <- filter(frags, area > 0.000001)
+    
     # If fragments exist, then fix, else return empty data.frame
     if(nrow(frags) > 0){
       frags = frags %>%
