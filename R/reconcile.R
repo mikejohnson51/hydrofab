@@ -322,6 +322,8 @@ par_split_cat <- function(fid, to_split_ids, fline_ref, catchment, fdr, fac,
 
 get_split_cats <- function(cats, split_cats, cache = NULL) {
   error_found <- TRUE
+  error_file <- paste0(gsub(".rda", "", cache), "error.rda")
+  
   tryCatch({
   cats_vec <- unlist(strsplit(cats, ","))
   
@@ -329,7 +331,7 @@ get_split_cats <- function(cats, split_cats, cache = NULL) {
   
   if (nrow(union_cats) != length(cats_vec)) {
     if(!is.null(cache)) {
-      error_file <- paste0(gsub(".rda", "", cache), "error.rda")
+      
       save(list = ls(), file = error_file)
       stop(paste("missing a split catchment for an expected flowline.", 
                  cats_vec, "environment saved to:", cache))
@@ -355,7 +357,7 @@ get_split_cats <- function(cats, split_cats, cache = NULL) {
     warning(paste0("error in get_split_cats", e))
   })
   
-  save(list = ls(), file = cache)
+  save(list = ls(), file = error_file)
   stop(paste("Something went wrong in get_split_cats. The environment was saved to", cache))
   
 }
