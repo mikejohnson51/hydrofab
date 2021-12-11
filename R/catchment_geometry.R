@@ -242,7 +242,7 @@ clean_geometry = function(catchments,
           # Note that geometry_type will be longer than one if more than one feature
           # was returned from the st_intersection above.
           gt <- sf::st_geometry_type(opt)
-          if(length(gt) == 1 && gt == "MULTIPOINT") {
+          if(length(gt) == 1 && grepl("POINT", gt)) {
             opt <- sf::st_cast(opt, "LINESTRING")
           } 
           
