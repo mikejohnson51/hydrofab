@@ -165,8 +165,10 @@ aggregate_network <- function(flowpath, outlets,
   fline_sets <- data.frame(ID = outlets$nexID,
                            set = I(rep(list(list()), nrow(outlets))))
   
-  avoid_verts <- V(cat_graph)
+  include_verts <- V(cat_graph)
   
+  # us_verts is a list of upstream vertices that need to be searched to 
+  # find the upstream mainstem.
   us_verts <- c()
   
   for (cat in seq_len(nrow(cat_sets))) {
@@ -184,10 +186,10 @@ aggregate_network <- function(flowpath, outlets,
     
     abort_code <- tryCatch(
       {
-        um <- find_um(us_verts, cat_graph,
-                      cat_id = outlet_cat$nexID,
-                      head_id = head_id,
-                      outlet_type = filter(outlets, .data$nexID == outlet_cat$nexID)$type)
+        um_verts <- find_um(us_verts, cat_graph,
+                            cat_id = outlet_cat$nexID,
+                            head_id = head_id,
+                            outlet_type = filter(outlets, .data$nexID == outlet_cat$nexID)$type)
         abort_code <- ""
       }, error = function(e) e
     )
@@ -201,8 +203,11 @@ aggregate_network <- function(flowpath, outlets,
       }
     }
     
+    # Path includes the "to" but don't want to include it!
+    um_verts <- um_verts[!um_verts %in% us_verts] 
+    
     if (length(us_verts) > 0) {
-      vert <- us_verts[which(um %in% us_verts)]
+      vert <- us_verts[which(um_verts %in% us_verts)]
       
       if (length(vert) == 1) {
         # Since longest path is used in find_um if multiple paths are found
@@ -211,7 +216,10 @@ aggregate_network <- function(flowpath, outlets,
       }
     }
     
-    um <- as.numeric(gsub("^nex-", "", um))
+    # us_verts are where we need to stop while stepping upstream.
+    us_verts <- c(us_verts, cat_sets$nexID[cat])
+
+    um <- as.numeric(gsub("^nex-", "", um_verts))
     
     if(0 %in% um) um[um == 0] <- as.numeric(gsub("^cat-", "", outlets[outlets$nexID == "nex-0", ]$ID))
     
@@ -226,19 +234,19 @@ aggregate_network <- function(flowpath, outlets,
                            neimode = "in",
                            order = TRUE,
                            unreachable = FALSE,
-                           restricted = avoid_verts)
+                           restricted = include_verts)
         
         # Excludes the search node to avoid grabbing the downstream catchment.
         ut_verts <- ag_up_tribs$order[!is.na(ag_up_tribs$order) & names(ag_up_tribs$order) != outlet_cat$nexID]
         cat_sets$set[[cat]] <- filter(hycatchment, .data$fromID %in% names(ut_verts))$cat_ID
         remove <- head_of(cat_graph, unlist(incident_edges(cat_graph, ut_verts, "in")))
-        avoid_verts <- avoid_verts[!avoid_verts %in% remove]
+        include_verts <- include_verts[!include_verts %in% remove]
         
         outlet <- outlets[outlets$ID == outlet_cat$ID, ]
         
         if (outlet$type == "outlet") {
           cat_sets$set[[cat]] <- c(cat_sets$set[[cat]], outlet$ID)
-          avoid_verts <- avoid_verts[!names(avoid_verts) == outlet$nexID]
+          include_verts <- include_verts[!names(include_verts) == outlet$nexID]
         }
         
         abort_code <- ""
@@ -257,9 +265,6 @@ aggregate_network <- function(flowpath, outlets,
     cat_sets$set[[cat]] <- as.numeric(gsub("^cat-", "", cat_sets$set[[cat]]))
     
     }
-    
-    # us_verts are where we need to stop while stepping upstream.
-    us_verts <- c(us_verts, cat_sets$nexID[cat])
     
   }
   
@@ -504,7 +509,6 @@ find_um <- function(us_verts, cat_graph, cat_id, head_id, outlet_type) {
     if (any(path_lengths > 0)) {
       path_lengths[path_lengths == 0] <- NA
       um <- names(paths$vpath[which(path_lengths == min(path_lengths, na.rm = TRUE))][[1]])
-      um <- um[!um %in% us_verts] # Path includes the "to" but don't want to include it!
     }
   }
   
