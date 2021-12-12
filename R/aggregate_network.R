@@ -67,14 +67,22 @@
 #' plot(outlets$geometry, add = TRUE)
 #'
 aggregate_network <- function(flowpath, outlets,
-                                 da_thresh = NA, only_larger = FALSE,
-                                 post_mortem_file = NA) {
+                              da_thresh = NA, only_larger = FALSE,
+                              post_mortem_file = NA) {
+  
+  ##### Validations and basic setup #####
   
   flowpath <- check_names(flowpath, "aggregate_network")
   
-  geo <- inherits(flowpath, "sf")
+  flowpath_geo <- NULL 
   
-  if(geo){flowpath_geo = flowpath; flowpath = sf::st_drop_geometry(flowpath)}
+  if(inherits(flowpath, "sf")){
+    
+    flowpath_geo <- flowpath 
+    
+    flowpath <- drop_geometry(flowpath)
+    
+  }
   
   if (any(!outlets$ID %in% flowpath$ID)) stop("Outlet IDs must all be in flowpaths.")
   
@@ -86,43 +94,43 @@ aggregate_network <- function(flowpath, outlets,
     if(!is.na(post_mortem_file)) save(list = ls(), file = post_mortem_file)
     stop("Terminal paths must have an NA or 0 toID")
   }
+
+  ##### network setup #####
   
+  # Finds levelpaths and their unique head and outlet
   lps <- get_lps(flowpath)
   
-  outlets <- make_outlets_valid(outlets, flowpath, lps,da_thresh = da_thresh, only_larger = only_larger) %>%
-    distinct()
+  # makes sure outlets connect
+  outlets <- make_outlets_valid(outlets, flowpath, lps,
+                                da_thresh = da_thresh, 
+                                only_larger = only_larger) %>%
+    distinct() %>%
+    mutate(ID = paste0("cat-", .data$ID))
   
-  lps <- get_lps(flowpath)
-  
-  outlets <- mutate(outlets, ID = paste0("cat-", .data$ID))
-  
-  # Build catchment and nexus data.frames to preserve sanity in graph traversal.
-  catchment <- flowpath %>%
-    mutate(toID = ifelse(is.na(.data$toID), -.data$ID, .data$toID))
+  # Build hycatchment and nexus data.frames to preserve sanity in graph traversal.
+  hycatchment <- flowpath %>%
+    mutate(toID = ifelse(is.na(.data$toID), -.data$ID, .data$toID)) %>%
+    # get fromID and toID straight with "nex-" prefix
+    mutate(fromID = paste0("nex-", .data$ID),
+           toID = paste0("nex-", .data$toID),
+           ID = paste0("cat-", .data$ID)) %>%
+    select(.data$fromID, .data$toID, cat_ID = .data$ID)
   
   # Join id to toID use ID as from nexus ID since we are assuming dendritic.
-  nexus <- left_join(select(drop_geometry(catchment), toID = .data$ID),
-                     select(drop_geometry(catchment), fromID = .data$ID, .data$toID),
+  nexus <- left_join(select(hycatchment, toID = .data$ID),
+                     select(hycatchment, fromID = .data$ID, .data$toID),
                      by = "toID") %>%
     mutate(nexID = paste0("nex-", .data$toID),
            fromID = paste0("cat-", .data$fromID),
            toID = paste0("cat-", .data$toID)) %>%
     select(.data$nexID, .data$fromID, .data$toID)
   
-  # get fromID and toID straight with "nex-" prefix
-  catchment <- mutate(drop_geometry(catchment),
-                      fromID = paste0("nex-", .data$ID),
-                      toID = paste0("nex-", .data$toID),
-                      ID = paste0("cat-", .data$ID)) %>%
-    select(.data$fromID, .data$toID, cat_ID = .data$ID)
-  
-  # Convert the catchment network to a directed graph
-  cat_graph <- graph_from_data_frame(d = catchment,
-                                     directed = TRUE)
-  
+  # Prepare outlets so they are just a type and a nexID
   outlets <- outlets %>%
-    left_join(select(catchment, nexID_stem = .data$fromID, ID = .data$cat_ID), by = "ID") %>%
-    left_join(select(catchment, nexID_terminal = .data$toID, ID = .data$cat_ID), by = "ID") %>%
+    left_join(select(hycatchment, 
+                     nexID_stem = .data$fromID, ID = .data$cat_ID), by = "ID") %>%
+    left_join(select(hycatchment, 
+                     nexID_terminal = .data$toID, ID = .data$cat_ID), by = "ID") %>%
     mutate(
       nexID = case_when(
         type == "outlet" ~ .data$nexID_stem,
@@ -132,10 +140,16 @@ aggregate_network <- function(flowpath, outlets,
     select(.data$ID, .data$type, .data$nexID) %>%
     distinct()
   
+  # Convert the catchment network to a directed graph
+  cat_graph <- graph_from_data_frame(d = hycatchment,
+                                     directed = TRUE)
+  
   # sorted version of the graph to re-order outlets in upstream-downstream order.
   cat_graph_sort_verts <- topo_sort(cat_graph)
   outlet_verts <- cat_graph_sort_verts[names(cat_graph_sort_verts) %in% outlets$nexID]
   outlets <- outlets[match(names(outlet_verts), outlets$nexID), ]
+  
+  ##### aggregate catchment identification #####
   
   cat_sets <- data.frame(ID = outlets$ID,
                          nexID = outlets$nexID,
@@ -206,7 +220,7 @@ aggregate_network <- function(flowpath, outlets,
         
         # Excludes the search node to avoid grabbing the downstream catchment.
         ut_verts <- ut$order[!is.na(ut$order) & names(ut$order) != cat_sets$nexID[cat]]
-        cat_sets$set[[cat]] <- filter(catchment, .data$fromID %in% names(ut_verts))$cat_ID
+        cat_sets$set[[cat]] <- filter(hycatchment, .data$fromID %in% names(ut_verts))$cat_ID
         remove <- head_of(cat_graph, unlist(incident_edges(cat_graph, ut_verts, "in")))
         verts <- verts[!verts %in% remove]
         
@@ -258,10 +272,11 @@ aggregate_network <- function(flowpath, outlets,
               by = c("toID" = "set")) %>%
     select(.data$ID, toID = .data$set_toID)
   
-  if(geo){
-    fline_sets = data.frame(
-      setID = unlist(fline_sets$set),
-      ID = rep(fline_sets$ID, times = lengths(fline_sets$set))) %>% 
+  if(!is.null(flowpath_geo)) {
+    fline_sets <- 
+      data.frame(
+        setID = unlist(fline_sets$set),
+        ID = rep(fline_sets$ID, times = lengths(fline_sets$set))) %>% 
       left_join(dplyr::select(flowpath_geo, ID), by = c("setID" = "ID")) %>% 
       st_as_sf() %>% 
       filter(!sf::st_is_empty(.)) %>% 
