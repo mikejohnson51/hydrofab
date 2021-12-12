@@ -22,6 +22,8 @@
 #' eliminate small tributary catchments introduced by divergences near confluences.
 #'
 #' @param post_mortem_file rda file to dump environment to in case of error
+#' 
+#' @param mainstem_only logical only calculate mainstem network?
 #'
 #' @details This function operates on the catchment network as a node-edge graph.
 #' The outlet types are required to ensure that graph searches start from the
@@ -57,7 +59,9 @@
 #'                       stringsAsFactors = FALSE)
 #'
 #' aggregated <- aggregate_network(fline, outlets)
-#'
+#' 
+#' aggregated <- aggregate_network(fline, outlets, mainstem_only = TRUE)
+#' 
 #' outlets <- dplyr::filter(fline, ID %in% outlets$ID)
 #'
 #' outlets <- nhdplusTools::get_node(outlets)
@@ -65,10 +69,11 @@
 #' plot(aggregated$fline_sets$geom, lwd = 3, col = "red")
 #' plot(walker_flowline$geom, lwd = .7, col = "blue", add = TRUE)
 #' plot(outlets$geometry, add = TRUE)
+#' 
 #'
 aggregate_network <- function(flowpath, outlets,
                               da_thresh = NA, only_larger = FALSE,
-                              post_mortem_file = NA) {
+                              post_mortem_file = NA, mainstem_only = FALSE) {
   
   ##### Validations and basic setup #####
   
@@ -109,13 +114,8 @@ aggregate_network <- function(flowpath, outlets,
   
   # Build hycatchment and nexus data.frames to preserve sanity in graph traversal.
   hycatchment <- flowpath %>%
-    mutate(toID = ifelse(is.na(.data$toID), -.data$ID, .data$toID)) %>%
-    # get fromID and toID straight with "nex-" prefix
-    mutate(fromID = paste0("nex-", .data$ID),
-           toID = paste0("nex-", .data$toID),
-           ID = paste0("cat-", .data$ID)) %>%
-    select(.data$fromID, .data$toID, cat_ID = .data$ID)
-  
+    mutate(toID = ifelse(is.na(.data$toID), -.data$ID, .data$toID))
+
   # Join id to toID use ID as from nexus ID since we are assuming dendritic.
   nexus <- left_join(select(hycatchment, toID = .data$ID),
                      select(hycatchment, fromID = .data$ID, .data$toID),
@@ -124,7 +124,14 @@ aggregate_network <- function(flowpath, outlets,
            fromID = paste0("cat-", .data$fromID),
            toID = paste0("cat-", .data$toID)) %>%
     select(.data$nexID, .data$fromID, .data$toID)
-  
+
+  # get fromID and toID straight with "nex-" prefix
+  hycatchment <- hycatchment %>%
+    mutate(fromID = paste0("nex-", .data$ID),
+           toID = paste0("nex-", .data$toID),
+           ID = paste0("cat-", .data$ID)) %>%
+    select(.data$fromID, .data$toID, cat_ID = .data$ID)
+    
   # Prepare outlets so they are just a type and a nexID
   outlets <- outlets %>%
     left_join(select(hycatchment, 
@@ -158,24 +165,18 @@ aggregate_network <- function(flowpath, outlets,
   fline_sets <- data.frame(ID = outlets$nexID,
                            set = I(rep(list(list()), nrow(outlets))))
   
-  verts <- V(cat_graph)
+  avoid_verts <- V(cat_graph)
   
   us_verts <- c()
   
   for (cat in seq_len(nrow(cat_sets))) {
     
-    if(cat %% 10 == 0) message(paste(cat, "of", nrow(cat_sets)))
+    if (cat %% 10 == 0) message(paste(cat, "of", nrow(cat_sets)))
     
-    outlet <- filter(outlets, .data$ID == cat_sets$ID[cat])
-    
-    ut <- bfs(graph = cat_graph,
-              root = cat_sets$nexID[cat],
-              neimode = "in",
-              order = TRUE,
-              unreachable = FALSE,
-              restricted = verts)
+    outlet_cat <- cat_sets[cat, ]
     
     outlet_id <- as.integer(gsub("^cat-", "", outlets$ID[cat]))
+    
     head_id <- lps$head_ID[which(lps$ID == outlet_id)]
     head_id <- head_id[head_id != outlet_id]
     
@@ -184,9 +185,9 @@ aggregate_network <- function(flowpath, outlets,
     abort_code <- tryCatch(
       {
         um <- find_um(us_verts, cat_graph,
-                      cat_id = cat_sets$nexID[cat],
+                      cat_id = outlet_cat$nexID,
                       head_id = head_id,
-                      outlet_type = filter(outlets, .data$nexID == cat_sets$nexID[cat])$type)
+                      outlet_type = filter(outlets, .data$nexID == outlet_cat$nexID)$type)
         abort_code <- ""
       }, error = function(e) e
     )
@@ -214,19 +215,30 @@ aggregate_network <- function(flowpath, outlets,
     
     if(0 %in% um) um[um == 0] <- as.numeric(gsub("^cat-", "", outlets[outlets$nexID == "nex-0", ]$ID))
     
+    fline_sets$set[[cat]] <- um
+    
+    if(!mainstem_only) {
+    
     abort_code <- tryCatch(
-      {
-        fline_sets$set[[cat]] <- um
+      { 
+        ag_up_tribs <- bfs(graph = cat_graph,
+                           root = outlet_cat$nexID,
+                           neimode = "in",
+                           order = TRUE,
+                           unreachable = FALSE,
+                           restricted = avoid_verts)
         
         # Excludes the search node to avoid grabbing the downstream catchment.
-        ut_verts <- ut$order[!is.na(ut$order) & names(ut$order) != cat_sets$nexID[cat]]
+        ut_verts <- ag_up_tribs$order[!is.na(ag_up_tribs$order) & names(ag_up_tribs$order) != outlet_cat$nexID]
         cat_sets$set[[cat]] <- filter(hycatchment, .data$fromID %in% names(ut_verts))$cat_ID
         remove <- head_of(cat_graph, unlist(incident_edges(cat_graph, ut_verts, "in")))
-        verts <- verts[!verts %in% remove]
+        avoid_verts <- avoid_verts[!avoid_verts %in% remove]
+        
+        outlet <- outlets[outlets$ID == outlet_cat$ID, ]
         
         if (outlet$type == "outlet") {
           cat_sets$set[[cat]] <- c(cat_sets$set[[cat]], outlet$ID)
-          verts <- verts[!names(verts) == outlet$nexID]
+          avoid_verts <- avoid_verts[!names(avoid_verts) == outlet$nexID]
         }
         
         abort_code <- ""
@@ -244,8 +256,11 @@ aggregate_network <- function(flowpath, outlets,
     
     cat_sets$set[[cat]] <- as.numeric(gsub("^cat-", "", cat_sets$set[[cat]]))
     
+    }
+    
     # us_verts are where we need to stop while stepping upstream.
     us_verts <- c(us_verts, cat_sets$nexID[cat])
+    
   }
   
   cat_sets <- select(cat_sets, -.data$nexID)

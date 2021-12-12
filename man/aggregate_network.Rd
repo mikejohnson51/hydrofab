@@ -9,7 +9,8 @@ aggregate_network(
   outlets,
   da_thresh = NA,
   only_larger = FALSE,
-  post_mortem_file = NA
+  post_mortem_file = NA,
+  mainstem_only = FALSE
 )
 }
 \arguments{
@@ -34,6 +35,8 @@ divergences as part of the main stem, so the da_thresh may still be needed to
 eliminate small tributary catchments introduced by divergences near confluences.}
 
 \item{post_mortem_file}{rda file to dump environment to in case of error}
+
+\item{mainstem_only}{logical only calculate mainstem network?}
 }
 \description{
 Aggregates a catchment network according to a set of outlet.
@@ -69,6 +72,8 @@ outlets <- data.frame(ID = c(5329357, 5329317, 5329365, 5329303, 5329435, 532981
 
 aggregated <- aggregate_network(fline, outlets)
 
+aggregated <- aggregate_network(fline, outlets, mainstem_only = TRUE)
+
 outlets <- dplyr::filter(fline, ID \%in\% outlets$ID)
 
 outlets <- nhdplusTools::get_node(outlets)
@@ -76,5 +81,6 @@ outlets <- nhdplusTools::get_node(outlets)
 plot(aggregated$fline_sets$geom, lwd = 3, col = "red")
 plot(walker_flowline$geom, lwd = .7, col = "blue", add = TRUE)
 plot(outlets$geometry, add = TRUE)
+
 
 }
