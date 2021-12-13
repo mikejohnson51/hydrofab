@@ -295,6 +295,10 @@ par_split_cat <- function(fid, to_split_ids, fline_ref, catchment, fdr, fac,
                           simplify_tolerance_m, vector_crs) {
   out <- NULL
   try({
+    
+    message(paste0(Sys.time(), " par_split_cat() on pid: ", 
+                   Sys.getpid(), " catchment: ", fid))
+    
     # nolint start
     library(hyRefactor)
     # nolint end
