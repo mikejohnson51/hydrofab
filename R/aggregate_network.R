@@ -74,46 +74,21 @@
 aggregate_network <- function(flowpath, outlets,
                               da_thresh = NA, only_larger = FALSE,
                               post_mortem_file = NA, mainstem_only = FALSE) {
-  
-  ##### Validations and basic setup #####
-  
-  flowpath <- check_names(flowpath, "aggregate_network")
-  
-  flowpath_geo <- NULL 
-  
-  if(inherits(flowpath, "sf")){
-    
-    flowpath_geo <- flowpath 
-    
-    flowpath <- drop_geometry(flowpath)
-    
-  }
-  
-  if (any(!outlets$ID %in% flowpath$ID)) stop("Outlet IDs must all be in flowpaths.")
-  
-  flowpath$toID[flowpath$toID == 0] <- NA
-  
-  term <- flowpath$toID[flowpath$ID %in% outlets[outlets$type == "terminal", ]$ID]
-  
-  if (any(!is.na(term))) {
-    if(!is.na(post_mortem_file)) save(list = ls(), file = post_mortem_file)
-    stop("Terminal paths must have an NA or 0 toID")
-  }
 
-  ##### network setup #####
-  
+  flowpath <- validate_flowpath(flowpath, outlets, post_mortem_file)
+
   # Finds levelpaths and their unique head and outlet
-  lps <- get_lps(flowpath)
+  lps <- get_lps(drop_geometry(flowpath))
   
   # makes sure outlets connect
-  outlets <- make_outlets_valid(outlets, flowpath, lps,
+  outlets <- make_outlets_valid(outlets, drop_geometry(flowpath), lps,
                                 da_thresh = da_thresh, 
                                 only_larger = only_larger) %>%
     distinct() %>%
     mutate(ID = paste0("cat-", .data$ID))
   
   # Build hycatchment and nexus data.frames to preserve sanity in graph traversal.
-  hycatchment <- flowpath %>%
+  hycatchment <- drop_geometry(flowpath) %>%
     mutate(toID = ifelse(is.na(.data$toID), -.data$ID, .data$toID))
 
   # Join id to toID use ID as from nexus ID since we are assuming dendritic.
@@ -292,12 +267,12 @@ aggregate_network <- function(flowpath, outlets,
               by = c("toID" = "set")) %>%
     select(.data$ID, toID = .data$set_toID)
   
-  if(!is.null(flowpath_geo)) {
+  if(inherits(flowpath, "sf")) {
     fline_sets <- 
       data.frame(
         setID = unlist(fline_sets$set),
         ID = rep(fline_sets$ID, times = lengths(fline_sets$set))) %>% 
-      left_join(dplyr::select(flowpath_geo, ID), by = c("setID" = "ID")) %>% 
+      left_join(select(flowpath, .data$ID), by = c("setID" = "ID")) %>% 
       st_as_sf() %>% 
       filter(!sf::st_is_empty(.)) %>% 
       union_linestrings_geos(ID = "ID") %>% 
@@ -308,6 +283,24 @@ aggregate_network <- function(flowpath, outlets,
   cat_sets   <- left_join(cat_sets, next_id, by = "ID")
   
   return(list(cat_sets = cat_sets, fline_sets = fline_sets))
+}
+
+validate_flowpath <- function(flowpath, outlets, post_mortem_file) {
+  
+  flowpath <- check_names(flowpath, "aggregate_network")
+  
+  if (any(!outlets$ID %in% flowpath$ID)) stop("Outlet IDs must all be in flowpaths.")
+  
+  flowpath$toID[flowpath$toID == 0] <- NA
+  
+  if (any(!is.na(
+    flowpath$toID[flowpath$ID %in% outlets[outlets$type == "terminal", ]$ID]
+  ))) {
+    if(!is.na(post_mortem_file)) save(list = ls(), file = post_mortem_file)
+    stop("Terminal paths must have an NA or 0 toID")
+  }
+  
+  return(flowpath)
 }
 
 get_lps <- function(flowpath) {
