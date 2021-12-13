@@ -75,6 +75,23 @@ aggregate_network <- function(flowpath, outlets,
                               da_thresh = NA, only_larger = FALSE,
                               post_mortem_file = NA, mainstem_only = FALSE) {
 
+  ############
+  # Reference Variables:
+  # > flowpath: input flowpaths contain network topology
+  # > lps: only levelpaths and their unique head and outlet from flowpaths
+  # > outlets: input outlets that get augmented to form a connected network and
+  #            get sorted in upstream downstream order.
+  # > hycatchment: a data.frame containing catchment topology only using the same
+  #                semantics as the names of the graph vertices and edges.
+  # > cat_graph: an igraph object containing the hycatchment.
+  # 
+  # Mutated Variables:
+  # > cat_sets: sets of aggregate catchments to be populated below
+  # > fline_sets: sets of aggregate flowpaths to be populated below 
+  # > include_verts: vertices that are still in scope.
+  # > us_verts: vertices that are outlets of already aggregated catchment areas
+  #             these are the valid upstream main targets for later aggregates.
+  
   flowpath <- validate_flowpath(flowpath, outlets, post_mortem_file)
 
   # Finds levelpaths and their unique head and outlet
@@ -84,56 +101,59 @@ aggregate_network <- function(flowpath, outlets,
   outlets <- make_outlets_valid(outlets, drop_geometry(flowpath), lps,
                                 da_thresh = da_thresh, 
                                 only_larger = only_larger) %>%
-    distinct() %>%
-    mutate(ID = paste0("cat-", .data$ID))
+    # cat_ID is to be used in a graph context
+    mutate(catID = paste0("cat-", .data$ID)) %>%
+    distinct()
   
   # Build hycatchment and nexus data.frames to preserve sanity in graph traversal.
   hycatchment <- drop_geometry(flowpath) %>%
+    # set toID to negative the ID for terminals that are not 0.
     mutate(toID = ifelse(is.na(.data$toID), -.data$ID, .data$toID))
 
   # Join id to toID use ID as from nexus ID since we are assuming dendritic.
-  nexus <- left_join(select(hycatchment, toID = .data$ID),
-                     select(hycatchment, fromID = .data$ID, .data$toID),
-                     by = "toID") %>%
-    mutate(nexID = paste0("nex-", .data$toID),
-           fromID = paste0("cat-", .data$fromID),
-           toID = paste0("cat-", .data$toID)) %>%
-    select(.data$nexID, .data$fromID, .data$toID)
+  # Not used but useful for debugging so commented
+  # nexus <- left_join(select(hycatchment, toID = .data$ID),
+  #                    select(hycatchment, fromID = .data$ID, .data$toID),
+  #                    by = "toID") %>%
+  #   mutate(nexID = paste0("nex-", .data$toID),
+  #          fromID = paste0("cat-", .data$fromID),
+  #          toID = paste0("cat-", .data$toID)) %>%
+  #   select(.data$nexID, .data$fromID, .data$toID)
 
   # get fromID and toID straight with "nex-" prefix
+  # This is modeled as "from" a nexus with the same numeric ID as the catchment 
+  # which means that first-order catchments have a from node with the same id.
+  # the toID is the numeric ID of the too catchment. The catchment id is the
+  # numeric id of the currect catchment.
   hycatchment <- hycatchment %>%
     mutate(fromID = paste0("nex-", .data$ID),
            toID = paste0("nex-", .data$toID),
-           ID = paste0("cat-", .data$ID)) %>%
-    select(.data$fromID, .data$toID, cat_ID = .data$ID)
+           catID = paste0("cat-", .data$ID)) %>%
+    select(.data$fromID, .data$toID, .data$catID)
     
+  # Convert the catchment network to a directed graph object
+  cat_graph <- graph_from_data_frame(d = hycatchment,
+                                     directed = TRUE)
+  
   # Prepare outlets so they are just a type and a nexID
   outlets <- outlets %>%
     left_join(select(hycatchment, 
-                     nexID_stem = .data$fromID, ID = .data$cat_ID), by = "ID") %>%
+                     nexID_stem = .data$fromID, catID = .data$catID), by = "catID") %>%
     left_join(select(hycatchment, 
-                     nexID_terminal = .data$toID, ID = .data$cat_ID), by = "ID") %>%
+                     nexID_terminal = .data$toID, catID = .data$catID), by = "catID") %>%
     mutate(
       nexID = case_when(
         type == "outlet" ~ .data$nexID_stem,
         type == "terminal" ~ .data$nexID_terminal
       )
     ) %>%
-    select(.data$ID, .data$type, .data$nexID) %>%
-    distinct()
-  
-  # Convert the catchment network to a directed graph
-  cat_graph <- graph_from_data_frame(d = hycatchment,
-                                     directed = TRUE)
-  
-  # sorted version of the graph to re-order outlets in upstream-downstream order.
-  cat_graph_sort_verts <- topo_sort(cat_graph)
-  outlet_verts <- cat_graph_sort_verts[names(cat_graph_sort_verts) %in% outlets$nexID]
-  outlets <- outlets[match(names(outlet_verts), outlets$nexID), ]
-  
+    select(.data$catID, .data$ID, .data$type, .data$nexID) %>%
+    distinct() %>%
+    sort_outlets(cat_graph)
+
   ##### aggregate catchment identification #####
   
-  cat_sets <- data.frame(ID = outlets$ID,
+  cat_sets <- data.frame(ID = outlets$catID,
                          nexID = outlets$nexID,
                          set = I(rep(list(list()), nrow(outlets))))
   
@@ -150,21 +170,15 @@ aggregate_network <- function(flowpath, outlets,
     
     if (cat %% 10 == 0) message(paste(cat, "of", nrow(cat_sets)))
     
-    outlet_cat <- cat_sets[cat, ]
-    
-    outlet_id <- as.integer(gsub("^cat-", "", outlets$ID[cat]))
-    
-    head_id <- lps$head_ID[which(lps$ID == outlet_id)]
-    head_id <- head_id[head_id != outlet_id]
-    
-    if (length(head_id) == 0) head_id <- outlet_id # Then the outlet is a headwater.
+    outlet <- outlets[cat, ]
     
     abort_code <- tryCatch(
       {
+        # Searches any us_verts and uses head_id if no us_verts are reachable.
         um_verts <- find_um(us_verts, cat_graph,
-                            cat_id = outlet_cat$nexID,
-                            head_id = head_id,
-                            outlet_type = filter(outlets, .data$nexID == outlet_cat$nexID)$type)
+                            cat_id = outlet$nexID,
+                            head_id = paste0("nex-", lps$head_ID[which(lps$ID == outlet$ID)]),
+                            outlet_type = outlet$type)
         abort_code <- ""
       }, error = function(e) e
     )
@@ -178,17 +192,19 @@ aggregate_network <- function(flowpath, outlets,
       }
     }
     
+    vert <- numeric()
+    
+    if (length(us_verts) > 0) {
+      vert <- us_verts[which(us_verts %in% um_verts)]
+    }
+    
     # Path includes the "to" but don't want to include it!
     um_verts <- um_verts[!um_verts %in% us_verts] 
     
-    if (length(us_verts) > 0) {
-      vert <- us_verts[which(um_verts %in% us_verts)]
-      
-      if (length(vert) == 1) {
-        # Since longest path is used in find_um if multiple paths are found
-        # there is a chance that multiple us verts get consumed in a single step?
-        us_verts <- us_verts[!us_verts %in% vert]
-      }
+    if (length(vert) == 1) {
+      # Since longest path is used in find_um if multiple paths are found
+      # there is a chance that multiple us verts get consumed in a single step?
+      us_verts <- us_verts[!us_verts %in% vert]
     }
     
     # us_verts are where we need to stop while stepping upstream.
@@ -205,19 +221,17 @@ aggregate_network <- function(flowpath, outlets,
     abort_code <- tryCatch(
       { 
         ag_up_tribs <- bfs(graph = cat_graph,
-                           root = outlet_cat$nexID,
+                           root = outlet$nexID,
                            neimode = "in",
                            order = TRUE,
                            unreachable = FALSE,
                            restricted = include_verts)
         
         # Excludes the search node to avoid grabbing the downstream catchment.
-        ut_verts <- ag_up_tribs$order[!is.na(ag_up_tribs$order) & names(ag_up_tribs$order) != outlet_cat$nexID]
-        cat_sets$set[[cat]] <- filter(hycatchment, .data$fromID %in% names(ut_verts))$cat_ID
+        ut_verts <- ag_up_tribs$order[!is.na(ag_up_tribs$order) & names(ag_up_tribs$order) != outlet$nexID]
+        cat_sets$set[[cat]] <- filter(hycatchment, .data$fromID %in% names(ut_verts))$catID
         remove <- head_of(cat_graph, unlist(incident_edges(cat_graph, ut_verts, "in")))
         include_verts <- include_verts[!include_verts %in% remove]
-        
-        outlet <- outlets[outlets$ID == outlet_cat$ID, ]
         
         if (outlet$type == "outlet") {
           cat_sets$set[[cat]] <- c(cat_sets$set[[cat]], outlet$ID)
@@ -318,6 +332,13 @@ get_lps <- function(flowpath) {
             by = "LevelPathID") %>%
     left_join(select(outlets, tail_ID = .data$ID, .data$LevelPathID),
               by = "LevelPathID")
+}
+
+# sorted version of the graph to re-order outlets in upstream-downstream order.
+sort_outlets <- function(outlets, cat_graph) {
+  cat_graph_sort_verts <- topo_sort(cat_graph)
+  outlet_verts <- cat_graph_sort_verts[names(cat_graph_sort_verts) %in% outlets$nexID]
+  outlets[match(names(outlet_verts), outlets$nexID), ]
 }
 
 # Get the levelpath outlet IDs for each of the input outlets.
@@ -509,7 +530,7 @@ find_um <- function(us_verts, cat_graph, cat_id, head_id, outlet_type) {
   if (length(um) == 0) {
     um <- names(shortest_paths(cat_graph,
                                from = cat_id,
-                               to = paste0("nex-", head_id),
+                               to = head_id,
                                mode = "in")$vpath[[1]])
   }
   
