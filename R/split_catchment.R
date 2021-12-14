@@ -95,8 +95,11 @@ collect_upstream <- function(row_col, fdr_matrix, fac_matrix = NULL, flowpath_mo
     
     row_col <- out_cells[check_cell_counter, ]
     
+    if(check_cell_counter > 2000000) {
+      stop("runaway loop in collect upstream")
+    }
   }
-  
+
   return(out_cells[1:check_cell_counter, ])
 }
 
@@ -120,7 +123,15 @@ trace_upstream <- function(start_point, cat, fdr, fac_matrix, fdr_matrix) {
   
   suppressWarnings(row_col <- get_row_col(fdr, c(s_p[1], s_p[2]), fac_matrix))
   
-  us_flowpath <- collect_upstream(row_col, fdr_matrix, fac_matrix, flowpath_mode = TRUE)
+  tryCatch({
+    us_flowpath <- collect_upstream(row_col, fdr_matrix, fac_matrix, flowpath_mode = TRUE)
+  }, error = function(e) {
+    stop(paste0("Error with: ", 
+                paste(capture.output(str(start_point, 
+                                         give.attr = FALSE, 
+                                         drop.deparse.attr = TRUE)), 
+                      collapse = "\n"), " original error was: \n", e))
+  })
   
   us_flowpath <- us_flowpath[!is.na(us_flowpath[, 1]), ]
   
@@ -192,7 +203,15 @@ split_catchment_divide <- function(catchment, fline, fdr, fac, lr = FALSE,
     if (length(in_out) > 0 && in_out == 1) {
       suppressWarnings(row_col <- get_row_col(fdr, c(outlets$X[cat], outlets$Y[cat]), fac_matrix))
       
-      us_cells <- collect_upstream(row_col, fdr_matrix)
+      tryCatch({
+        us_cells <- collect_upstream(row_col, fdr_matrix)
+      }, error = function(e) {
+        stop(paste0("Error with: ", 
+                    paste(capture.output(str(catchment, 
+                                             give.attr = FALSE, 
+                                             drop.deparse.attr = TRUE)), 
+                          collapse = "\n"), " original error was: \n", e))
+      })
       
       out <- matrix(0, nrow = nrow(fdr_matrix), ncol = ncol(fdr_matrix))
 
