@@ -75,20 +75,6 @@ aggregate_network <- function(flowpath, outlets,
                               da_thresh = NA, only_larger = FALSE,
                               post_mortem_file = NA, mainstem_only = FALSE) {
 
-  ############
-  # Reference Variables:
-  # > flowpath: input flowpaths contain network topology
-  # > outlets: input outlets that get augmented to form a connected network and
-  #            get sorted in upstream downstream order.
-  # > hycatchment: a data.frame containing catchment topology only using the same
-  #                semantics as the names of the graph vertices and edges.
-  # > cat_graph: an igraph object containing the hycatchment.
-  # 
-  # Mutated Variables:
-  # > cat_sets: sets of aggregate catchments to be populated below
-  # > fline_sets: sets of aggregate flowpaths to be populated below 
-  # > include_verts: vertices that are still in scope.
-  
   flowpath <- validate_flowpath(flowpath, outlets, post_mortem_file)
 
   # makes sure outlets connect
@@ -102,17 +88,9 @@ aggregate_network <- function(flowpath, outlets,
   # Build hycatchment and nexus data.frames to preserve sanity in graph traversal.
   hycatchment <- drop_geometry(flowpath) %>%
     # set toID to negative the ID for terminals that are not 0.
+    # This is important to make sure that all outlet nexues have a unique ID
+    # as opposed to 0 or na.
     mutate(toID = ifelse(is.na(.data$toID), -.data$ID, .data$toID))
-
-  # Join id to toID use ID as from nexus ID since we are assuming dendritic.
-  # Not used but useful for debugging so commented
-  # nexus <- left_join(select(hycatchment, toID = .data$ID),
-  #                    select(hycatchment, fromID = .data$ID, .data$toID),
-  #                    by = "toID") %>%
-  #   mutate(nexID = paste0("nex-", .data$toID),
-  #          fromID = paste0("cat-", .data$fromID),
-  #          toID = paste0("cat-", .data$toID)) %>%
-  #   select(.data$nexID, .data$fromID, .data$toID)
 
   # get fromID and toID straight with "nex-" prefix
   # This is modeled as "from" a nexus with the same numeric ID as the catchment 
