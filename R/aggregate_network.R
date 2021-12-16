@@ -461,7 +461,7 @@ get_catchment_sets <- function(flowpath, outlets) {
   o_c <- 1
   h_c <- 1
   
-  while(o_c < outlet_count & h_c < headwater_count) {
+  while(h_c <= headwater_count) {
     head <- heads[h_c]
     
     path <- get_dwn(head, flowpath$toid)
