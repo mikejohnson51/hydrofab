@@ -81,61 +81,13 @@ aggregate_network <- function(flowpath, outlets,
   outlets <- make_outlets_valid(outlets, drop_geometry(flowpath), 
                                 da_thresh = da_thresh, 
                                 only_larger = only_larger) %>%
-    # cat_ID is to be used in a graph context
-    mutate(catID = paste0("cat-", .data$ID)) %>%
-    distinct()
-  
-  # Build hycatchment and nexus data.frames to preserve sanity in graph traversal.
-  hycatchment <- drop_geometry(flowpath) %>%
-    # set toID to negative the ID for terminals that are not 0.
-    # This is important to make sure that all outlet nexues have a unique ID
-    # as opposed to 0 or na.
-    mutate(toID = ifelse(is.na(.data$toID), -.data$ID, .data$toID))
-
-  # get fromID and toID straight with "nex-" prefix
-  # This is modeled as "from" a nexus with the same numeric ID as the catchment 
-  # which means that first-order catchments have a from node with the same id.
-  # the toID is the numeric ID of the too catchment. The catchment id is the
-  # numeric id of the currect catchment.
-  hycatchment <- hycatchment %>%
-    mutate(fromID = paste0("nex-", .data$ID),
-           toID = paste0("nex-", .data$toID),
-           catID = paste0("cat-", .data$ID)) %>%
-    select(.data$fromID, .data$toID, .data$catID)
-    
-  # Convert the catchment network to a directed graph object
-  cat_graph <- graph_from_data_frame(d = hycatchment,
-                                     directed = TRUE)
-  
-  # Prepare outlets so they are just a type and a nexID
-  outlets <- outlets %>%
-    left_join(select(hycatchment, 
-                     nexID_stem = .data$fromID, catID = .data$catID), by = "catID") %>%
-    left_join(select(hycatchment, 
-                     nexID_terminal = .data$toID, catID = .data$catID), by = "catID") %>%
-    mutate(
-      nexID = case_when(
-        type == "outlet" ~ .data$nexID_stem,
-        type == "terminal" ~ .data$nexID_terminal
-      )
-    ) %>%
-    select(.data$catID, .data$ID, .data$type, .data$nexID) %>%
-    distinct() %>%
-    sort_outlets(cat_graph)
-
-  ##### aggregate catchment identification #####
+    sort_outlets(flowpath)
 
   fline_sets <- get_catchment_sets(flowpath, outlets)
   
   cat_sets <- fline_sets[[2]]
   
   fline_sets <- fline_sets[[1]]
-  
-  cat_sets <- select(cat_sets, -.data$nexID)
-  
-  cat_sets[["ID"]] <- as.numeric(gsub("^cat-", "", outlets$ID))
-  
-  fline_sets[["ID"]] <- as.numeric(gsub("^nex-", "", outlets$ID))
   
   # create long form ID to set member list
   sets <- tidyr::unnest_longer(drop_geometry(fline_sets), col = "set")
@@ -179,14 +131,14 @@ validate_flowpath <- function(flowpath, outlets, post_mortem_file) {
   
   if (any(!outlets$ID %in% flowpath$ID)) stop("Outlet IDs must all be in flowpaths.")
   
-  flowpath$toID[flowpath$toID == 0] <- NA
+  flowpath$toID[is.na(flowpath$toID)] <- 0
   
-  if (any(!is.na(
-    flowpath$toID[flowpath$ID %in% outlets[outlets$type == "terminal", ]$ID]
-  ))) {
+  if (any(flowpath$toID[flowpath$ID %in% outlets[outlets$type == "terminal", ]$ID] != 0)) {
     if(!is.na(post_mortem_file)) save(list = ls(), file = post_mortem_file)
     stop("Terminal paths must have an NA or 0 toID")
   }
+  
+  flowpath$toID <- as(flowpath$toID, class(flowpath$ID))
   
   return(flowpath)
 }
@@ -206,13 +158,6 @@ get_lps <- function(flowpath) {
             by = "LevelPathID") %>%
     left_join(select(outlets, tail_ID = .data$ID, .data$LevelPathID),
               by = "LevelPathID")
-}
-
-# sorted version of the graph to re-order outlets in upstream-downstream order.
-sort_outlets <- function(outlets, cat_graph) {
-  cat_graph_sort_verts <- topo_sort(cat_graph)
-  outlet_verts <- cat_graph_sort_verts[names(cat_graph_sort_verts) %in% outlets$nexID]
-  outlets[match(names(outlet_verts), outlets$nexID), ]
 }
 
 # Get the levelpath outlet IDs for each of the input outlets.
@@ -259,6 +204,8 @@ fix_tail <- function(flowpath, outlets, toid_tail_id, da_thresh = NA, only_large
 #' @noRd
 make_outlets_valid <- function(outlets, flowpath,
                                da_thresh = NA, only_larger = FALSE) {
+  
+  outlets$ID <- as(outlets$ID, class(flowpath$ID))
   
   # Finds levelpaths and their unique head and outlet
   lps <- get_lps(drop_geometry(flowpath))
@@ -373,6 +320,47 @@ make_outlets_valid <- function(outlets, flowpath,
   return(outlets)
 }
 
+sort_outlets <- function(outlets, flowpath) {
+  # set toID to negative the ID for terminals that are not 0.
+  # This is important to make sure that all outlet nexues have a unique ID
+  # as opposed to 0 or na. This is meangful when sorting the graph
+  flowpath$toNexID <- ifelse(flowpath$toID == 0, -flowpath$ID, flowpath$toID)
+  
+  # this is a little awkward and nuanced -- read comments carefully.
+  outlets <- outlets %>%
+    # the nexID_stem is just the catchment identifier. Conceptually,
+    # this is the identifier for the nearest upstream nexus from an outlet.
+    # We have to use this identifier for an outlet along the flowpath 
+    # of a catchment. It can be the same as the catchment because we are 
+    # working with a dendritic assumption so each nexus has one and only
+    # one downstream catchment. Otherwise, we would have to treat things a 
+    # bit differently.
+    mutate(nexID_stem = .data$ID) %>%
+    # the nexID_terminal is the  to nexus of the terminal flowpath.
+    # We need to treat this differently because an outlet of type 
+    # "terminal" must be downstream of all other outlets. Without a 
+    # unique nexus ID like this, we can not be gaurunteed a sort
+    # order that will work correctly.
+    left_join(select(drop_geometry(flowpath), .data$ID, 
+                     nexID_terminal = .data$toNexID), by = "ID") %>%
+    # Now we can set the nexID (which is used to sort the outlets) appropriately.
+    mutate(
+      nexID = case_when(
+        type == "outlet" ~ .data$nexID_stem,
+        type == "terminal" ~ .data$nexID_terminal
+      )
+    ) %>%
+    select(.data$ID, .data$type, .data$nexID) %>%
+    distinct()
+  
+  fp_sort <- nhdplusTools:::get_sorted(drop_geometry(select(flowpath, .data$ID, .data$toNexID)))
+  
+  fp_sort <- fp_sort[fp_sort %in% outlets$nexID]
+  
+  left_join(data.frame(nexID = as.numeric(fp_sort)), outlets, by = "nexID") %>%
+    select(-.data$nexID)
+}
+
 prep_flowpath <- function(flowpath) {
   # flowpath <- drop_geometry(flowpath)
   
@@ -417,11 +405,10 @@ my_combine <- function(old, new) {
 
 get_catchment_sets <- function(flowpath, outlets) {
   
-  fline_sets <- data.frame(ID = outlets$nexID,
+  fline_sets <- data.frame(ID = outlets$ID,
                            set = I(rep(list(list()), nrow(outlets))))
   
-  cat_sets <- data.frame(ID = outlets$catID,
-                         nexID = outlets$nexID,
+  cat_sets <- data.frame(ID = outlets$ID,
                          set = I(rep(list(list()), nrow(outlets))))
   
   flowpath <- prep_flowpath(flowpath)
