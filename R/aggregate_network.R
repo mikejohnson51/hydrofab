@@ -146,61 +146,12 @@ aggregate_network <- function(flowpath, outlets,
     sort_outlets(cat_graph)
 
   ##### aggregate catchment identification #####
+
+  fline_sets <- get_catchment_sets(flowpath, outlets)
   
-  cat_sets <- data.frame(ID = outlets$catID,
-                         nexID = outlets$nexID,
-                         set = I(rep(list(list()), nrow(outlets))))
+  cat_sets <- fline_sets[[2]]
   
-  fline_sets <- get_flowpath_sets(flowpath, outlets)
-  
-  include_verts <- V(cat_graph)
-  
-  for (cat in seq_len(nrow(cat_sets))) {
-    
-    if (cat %% 10 == 0) message(paste(cat, "of", nrow(cat_sets)))
-    
-    outlet <- outlets[cat, ]
-    
-    if(!mainstem_only) {
-    
-    abort_code <- tryCatch(
-      { 
-        ag_up_tribs <- bfs(graph = cat_graph,
-                           root = outlet$nexID,
-                           neimode = "in",
-                           order = TRUE,
-                           unreachable = FALSE,
-                           restricted = include_verts)
-        
-        # Excludes the search node to avoid grabbing the downstream catchment.
-        ut_verts <- ag_up_tribs$order[!is.na(ag_up_tribs$order) & names(ag_up_tribs$order) != outlet$nexID]
-        cat_sets$set[[cat]] <- filter(hycatchment, .data$fromID %in% names(ut_verts))$catID
-        remove <- head_of(cat_graph, unlist(incident_edges(cat_graph, ut_verts, "in")))
-        include_verts <- include_verts[!include_verts %in% remove]
-        
-        if (outlet$type == "outlet") {
-          cat_sets$set[[cat]] <- c(cat_sets$set[[cat]], outlet$ID)
-          include_verts <- include_verts[!names(include_verts) == outlet$nexID]
-        }
-        
-        abort_code <- ""
-      }, error = function(e) e
-    )
-    
-    if(abort_code != "")  {
-      if(!is.na(post_mortem_file)) {
-        save(list = ls(), file = post_mortem_file)
-        stop(paste("error getting geometry type or with union, post mortem file:", post_mortem_file))
-      } else {
-        stop(paste("error getting geometry type or with union for line merge:", abort_code))
-      }
-    }
-    
-    cat_sets$set[[cat]] <- as.numeric(gsub("^cat-", "", cat_sets$set[[cat]]))
-    
-    }
-    
-  }
+  fline_sets <- fline_sets[[1]]
   
   cat_sets <- select(cat_sets, -.data$nexID)
   
@@ -444,42 +395,67 @@ make_outlets_valid <- function(outlets, flowpath,
   return(outlets)
 }
 
-get_flowpath_sets <- function(flowpath, outlets) {
-  
-  fline_sets <- data.frame(ID = outlets$nexID,
-                           set = I(rep(list(list()), nrow(outlets))))
-  
-  flowpath <- drop_geometry(flowpath)
+prep_flowpath <- function(flowpath) {
+  # flowpath <- drop_geometry(flowpath)
   
   # Make sure flowpath is sorted correctly
   flowpath <- arrange(flowpath, desc(Hydroseq))
   
-  # Do some id redirection for performance.
-  orig_ids <- select(flowpath, ID, toID)
-  orig_ids["id"] <- seq(1, nrow(flowpath))
-  
+  # do a little indirection with index ids
   flowpath$toid <- match(flowpath$toID, flowpath$ID)
   flowpath$id <- seq(1, nrow(flowpath))
   
-  outlets <- left_join(outlets, select(orig_ids, -toID), by = "ID")
+  flowpath
+}
+
+prep_outlets <- function(outlets, flowpath) {
+  outlets <- left_join(outlets, select(flowpath, ID, id), by = "ID")
   outlets$set <- 1:nrow(outlets)
+  outlets
+}
+
+get_heads <- function(flowpath) {
+  flowpath$id[!flowpath$id %in% flowpath$toid]
+}
+
+# need a little network walker function.
+get_dwn <- function(ID, toid) {
+  next_dn <- toid[ID]
+  if(is.na(next_dn)) {
+    return(ID)
+  } else {
+    return(c(ID, get_dwn(next_dn, toid)))
+  }
+}
+
+my_combine <- function(old, new) {
+  # can optimize later
+  if(identical(old, list())) {
+    new
+  } else {
+    c(old, new)
+  }
+}
+
+get_catchment_sets <- function(flowpath, outlets) {
+  
+  fline_sets <- data.frame(ID = outlets$nexID,
+                           set = I(rep(list(list()), nrow(outlets))))
+  
+  cat_sets <- data.frame(ID = outlets$catID,
+                         nexID = outlets$nexID,
+                         set = I(rep(list(list()), nrow(outlets))))
+  
+  flowpath <- prep_flowpath(flowpath)
+  
+  outlets <- prep_outlets(outlets, flowpath)
   
   # We'll start at all these
-  heads <- flowpath$id[!flowpath$id %in% flowpath$toid]
+  heads <- get_heads(flowpath)
   
   # We can stop once these conditions have been met.
   outlet_count <- nrow(outlets)
   headwater_count <- length(heads)
-  
-  # need a little network walker function.
-  get_dwn <- function(ID, toid) {
-    next_dn <- toid[ID]
-    if(is.na(next_dn)) {
-      return(ID)
-    } else {
-      return(c(ID, get_dwn(next_dn, toid)))
-    }
-  }
   
   # Set up counters for the while loop
   o_c <- 1
@@ -503,16 +479,32 @@ get_flowpath_sets <- function(flowpath, outlets) {
                      cut(path,
                          breaks = c(0, breaks$id),
                          labels = c(breaks$set)))
+
+      cat_sets$set[as.integer(names(paths))] <- 
+        lapply(names(paths), function(x) {
+          my_combine(cat_sets$set[as.integer(x)][[1]], 
+                     flowpath$ID[paths[x][[1]]])
+        })
       
-      # the top one isn't useful.
+      path_outlets <- sapply(paths, function(x) x[length(x)])
+      
+      flowpath$toid[path_outlets] <- NA
+      
+      # the top one isn't useful for mainstems.
       paths <- paths[2:length(paths)]
       
       fline_sets$set[as.integer(names(paths))] <-
         lapply(paths, function(x) flowpath$ID[x])
       
-      flowpath$toid[unlist(paths)] <- NA
-      
       o_c <- o_c + (nr_breaks - 1)
+      
+    } else {
+      
+      outlet <- outlets[outlets$id == path[length(path)], ]
+      
+      # I think this can be added tothe flowpath finding for free
+      cat_sets$set[outlet$set][[1]] <- my_combine(cat_sets$set[outlet$set][[1]], 
+                                                  flowpath$ID[path])
       
     }
     
@@ -535,6 +527,8 @@ get_flowpath_sets <- function(flowpath, outlets) {
   
   fline_sets$set[head_paths$set] <- head_paths$ID
   
-  fline_sets
+  cat_sets$set <- lapply(cat_sets$set, function(x) unique(x))
+  
+  list(fline_sets, cat_sets)
 }
 
