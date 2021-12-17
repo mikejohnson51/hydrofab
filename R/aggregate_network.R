@@ -23,8 +23,6 @@
 #'
 #' @param post_mortem_file rda file to dump environment to in case of error
 #' 
-#' @param mainstem_only logical only calculate mainstem network?
-#'
 #' @details This function operates on the catchment network as a node-edge graph.
 #' The outlet types are required to ensure that graph searches start from the
 #' appropriate nodes and includes the appropriate catchments. Outlets such as gages
@@ -41,7 +39,7 @@
 #' nexus and that all catchments are well-connected.
 #'
 #' @export
-#' @importFrom igraph graph_from_data_frame topo_sort incident_edges V bfs head_of shortest_paths
+#' @importFrom igraph graph_from_data_frame topo_sort
 #' @importFrom sf st_is_empty st_drop_geometry
 #' @importFrom dplyr filter mutate left_join select distinct case_when bind_rows
 #' @importFrom tidyr unnest_longer
@@ -73,7 +71,7 @@
 #'
 aggregate_network <- function(flowpath, outlets,
                               da_thresh = NA, only_larger = FALSE,
-                              post_mortem_file = NA, mainstem_only = FALSE) {
+                              post_mortem_file = NA) {
 
   flowpath <- validate_flowpath(flowpath, outlets, post_mortem_file)
 
