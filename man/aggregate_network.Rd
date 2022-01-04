@@ -69,7 +69,7 @@ outlets <- data.frame(ID = c(5329357, 5329317, 5329365, 5329303, 5329435, 532981
 
 aggregated <- aggregate_network(fline, outlets)
 
-aggregated <- aggregate_network(fline, outlets, mainstem_only = TRUE)
+aggregated <- aggregate_network(fline, outlets)
 
 outlets <- dplyr::filter(fline, ID \%in\% outlets$ID)
 

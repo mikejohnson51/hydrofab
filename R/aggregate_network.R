@@ -39,7 +39,6 @@
 #' nexus and that all catchments are well-connected.
 #'
 #' @export
-#' @importFrom igraph graph_from_data_frame topo_sort
 #' @importFrom sf st_is_empty st_drop_geometry
 #' @importFrom dplyr filter mutate left_join select distinct case_when bind_rows
 #' @importFrom tidyr unnest_longer
@@ -58,7 +57,7 @@
 #'
 #' aggregated <- aggregate_network(fline, outlets)
 #' 
-#' aggregated <- aggregate_network(fline, outlets, mainstem_only = TRUE)
+#' aggregated <- aggregate_network(fline, outlets)
 #' 
 #' outlets <- dplyr::filter(fline, ID %in% outlets$ID)
 #'
@@ -351,7 +350,9 @@ sort_outlets <- function(outlets, flowpath) {
     select(.data$ID, .data$type, .data$nexID) %>%
     distinct()
   
-  fp_sort <- nhdplusTools:::get_sorted(drop_geometry(select(flowpath, .data$ID, .data$toNexID)))
+  fp_sort <- nhdplusTools:::get_sorted(drop_geometry(select(flowpath, .data$ID, .data$toNexID)))$ID
+  
+  fp_sort <- c(fp_sort, flowpath$toNexID[flowpath$toNexID < 0])
   
   fp_sort <- fp_sort[fp_sort %in% outlets$nexID]
   
