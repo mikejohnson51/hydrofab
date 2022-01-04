@@ -9,7 +9,7 @@ test_that("refactor_nhdplus works as expected with three pass mode", {
   nhdplus_flines <- sf::st_zm(readRDS("data/north_network.rds"))
 
   split_flines_meters <- 2000
-  split_flines_cores <- 3
+  split_flines_cores <- 2
   collapse_flines_meters <- collapse_flines_main_meters <- 1000
   out_refactored <- "nhdplus_collapsed.gpkg"
   out_reconciled <- "nhdplus_reconciled.gpkg"
@@ -73,7 +73,7 @@ test_that("The refactor_nhdplus function runs as expected", {
     m <- suppressWarnings(# Known warnings -- don't want.
       capture_messages(refactor_nhdplus(nhdplus_flines = nhdplus_flowlines,
                    split_flines_meters = 2000,
-                   split_flines_cores = 3,
+                   split_flines_cores = 2,
                    collapse_flines_meters = 500,
                    collapse_flines_main_meters = 500,
                    out_refactored = "temp.gpkg",
@@ -93,7 +93,7 @@ test_that("The refactor_nhdplus function runs as expected", {
 
   refactor_nhdplus(nhdplus_flines = nhdplus_flowlines,
                    split_flines_meters = 2000,
-                   split_flines_cores = 3,
+                   split_flines_cores = 2,
                    collapse_flines_meters = 500,
                    collapse_flines_main_meters = 500,
                    out_refactored = "temp.gpkg",

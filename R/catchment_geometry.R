@@ -127,7 +127,7 @@ flowpaths_to_linestrings = function(flowpaths){
 #' @importFrom nhdplusTools rename_geometry
 #' @importFrom rlang :=
 
-clean_geometry = function(catchments,
+clean_geometry <- function(catchments,
                           ID = "ID",
                           keep = .9) {
 
@@ -271,7 +271,7 @@ clean_geometry = function(catchments,
   # any others that that came with the OG catchments
   
   if('areasqkm' %in% names(catchments)){
-    catchments = select(catchments, -areasqkm)
+    catchments = select(catchments, -.data$areasqkm)
   }
   
   in_cat %>%
@@ -296,8 +296,10 @@ clean_geometry = function(catchments,
 #' @export
 #' @examples
 #' \dontrun{
-#' path <- system.file("extdata/walker_reconcile.gpkg", package = "hyRefactor")
-#' fps  <- add_lengthmap(flowpaths = sf::read_sf(path), length_table = nhdplusTools::get_vaa("lengthkm"))
+#' path <- system.file("extdata/walker_reconcile.gpkg", 
+#'                     package = "hyRefactor")
+#' fps  <- add_lengthmap(flowpaths = sf::read_sf(path), 
+#'                       length_table = nhdplusTools::get_vaa("lengthkm"))
 #' }
 #'@importFrom dplyr select mutate filter left_join right_join arrange group_by summarize
 #'@importFrom tidyr unnest

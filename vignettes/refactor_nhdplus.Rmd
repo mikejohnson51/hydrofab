@@ -88,7 +88,7 @@ The complete refactor workflow has been packaged into a single function that can
 ## Not Run ##
 refactor_nhdplus(nhdplus_flines = nhdplus_flines,
                  split_flines_meters = 2000, 
-                 split_flines_cores = 3,
+                 split_flines_cores = 2,
                  collapse_flines_meters = 500, 
                  collapse_flines_main_meters = 500,
                  out_refactored = "nhdplus_collapsed.gpkg",

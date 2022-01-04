@@ -100,9 +100,12 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 
     if (is.null(geom_column)) stop("geom must contain an sf geometry column")
 
-    new_flines <- right_join(select(geom, member_COMID = id, geom_column), new_flines,
-                            by = "member_COMID") %>%
-      sf::st_as_sf() %>%
+    new_flines <- right_join(select(geom, member_COMID = id, geom_column), 
+                             new_flines,
+                             by = "member_COMID")
+    
+    new_flines <- new_flines %>%
+      drop_geometry() %>%
       group_by(ID) %>%
       summarise(toID = toID[1],
                 LENGTHKM = LENGTHKM[1],
@@ -110,9 +113,9 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
                 LevelPathID = LevelPathID[1],
                 Hydroseq = Hydroseq[1],
                 member_COMID = list(unique(member_COMID))) %>%
-      sf::st_cast("MULTILINESTRING") %>%
       ungroup() %>%
-      sf::st_line_merge()
+      cbind(union_linestrings_geos(select(new_flines, .data$ID), "ID")) %>%
+      sf::st_as_sf()
   }
   return(new_flines)
 }

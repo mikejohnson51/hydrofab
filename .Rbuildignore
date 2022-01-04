@@ -14,3 +14,4 @@ data-raw
 ^\.ccache$
 ^\.github$
 ^tic\.R$
+Dockerfile

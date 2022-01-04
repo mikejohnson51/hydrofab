@@ -46,8 +46,8 @@ catchment <- sf::st_make_valid(catchment)
 out_refactor <- tempfile(fileext = ".gpkg")
 out_rec <- tempfile(fileext = ".gpkg")
 
-flowline <- right_join(dplyr::select(flowline, COMID), 
-                       prepare_nhdplus(flowline, 0, 0, 0, FALSE, warn = FALSE),
+flowline <- dplyr::right_join(dplyr::select(flowline, COMID), 
+                       nhdplusTools::prepare_nhdplus(flowline, 0, 0, 0, FALSE, warn = FALSE),
                        by = "COMID")
 
 # library(RSQLite)

@@ -50,7 +50,7 @@ test_that("collapse works on a double pass", {
 
   nhdplus_flines <- readRDS("data/oswego_network.rds")
   split_flines_meters <- 2000
-  split_flines_cores <- 3
+  split_flines_cores <- 2
   collapse_flines_meters <- 500
   collapse_flines_main_meters <- 500
 

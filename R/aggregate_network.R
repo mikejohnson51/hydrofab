@@ -135,7 +135,7 @@ validate_flowpath <- function(flowpath, outlets, post_mortem_file) {
     stop("Terminal paths must have an NA or 0 toID")
   }
   
-  flowpath$toID <- as(flowpath$toID, class(flowpath$ID))
+  flowpath$toID <- methods::as(flowpath$toID, class(flowpath$ID))
   
   return(flowpath)
 }
@@ -202,7 +202,7 @@ fix_tail <- function(flowpath, outlets, toid_tail_id, da_thresh = NA, only_large
 make_outlets_valid <- function(outlets, flowpath,
                                da_thresh = NA, only_larger = FALSE) {
   
-  outlets$ID <- as(outlets$ID, class(flowpath$ID))
+  outlets$ID <- methods::as(outlets$ID, class(flowpath$ID))
   
   # Finds levelpaths and their unique head and outlet
   lps <- get_lps(drop_geometry(flowpath))
@@ -374,7 +374,7 @@ prep_flowpath <- function(flowpath) {
 }
 
 prep_outlets <- function(outlets, flowpath) {
-  outlets <- left_join(outlets, select(flowpath, ID, id), by = "ID")
+  outlets <- left_join(outlets, select(flowpath, .data$ID, .data$id), by = "ID")
   outlets$set <- 1:nrow(outlets)
   outlets
 }
@@ -484,7 +484,7 @@ get_catchment_sets <- function(flowpath, outlets) {
   
   head_paths <- filter(flowpath, LevelPathID %in% head_outlets$LevelPathID) %>%
     left_join(head_outlets, by = "LevelPathID") %>%
-    filter(Hydroseq >= head_out_Hydroseq) %>%
+    filter(Hydroseq >= .data$head_out_Hydroseq) %>%
     select(ID, set) %>%
     group_by(set) %>%
     summarise(ID = list(ID))
