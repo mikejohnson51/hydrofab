@@ -127,7 +127,7 @@ trace_upstream <- function(start_point, cat, fdr, fac_matrix, fdr_matrix) {
     us_flowpath <- collect_upstream(row_col, fdr_matrix, fac_matrix, flowpath_mode = TRUE)
   }, error = function(e) {
     stop(paste0("Error with: ", 
-                paste(utils::capture.output(utils::str(start_point, 
+                paste(capture.output(str(start_point, 
                                          give.attr = FALSE, 
                                          drop.deparse.attr = TRUE)), 
                       collapse = "\n"), " original error was: \n", e))
@@ -207,7 +207,7 @@ split_catchment_divide <- function(catchment, fline, fdr, fac, lr = FALSE,
         us_cells <- collect_upstream(row_col, fdr_matrix)
       }, error = function(e) {
         stop(paste0("Error with: ", 
-                    paste(utils::capture.output(utils::str(catchment, 
+                    paste(capture.output(str(catchment, 
                                              give.attr = FALSE, 
                                              drop.deparse.attr = TRUE)), 
                           collapse = "\n"), " original error was: \n", e))
