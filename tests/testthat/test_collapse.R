@@ -1,7 +1,8 @@
 context("collapse_flowlines")
 
 test_that("collapse flowlines works as expected", {
-  flines <- readRDS("data/petapsco_network.rds")
+  flines <- readRDS(list.files(pattern = "petapsco_network.rds", 
+                               full.names = TRUE, recursive = TRUE))
   flines <- sf::st_set_geometry(flines, NULL)
   flines <- suppressWarnings(nhdplusTools::prepare_nhdplus(flines, 20, 1))
   flines_out <- collapse_flowlines(flines, 1)
