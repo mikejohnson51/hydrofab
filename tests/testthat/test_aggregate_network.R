@@ -28,3 +28,30 @@ test_that("example runs", {
 
   expect_error(aggregate_network(fline, outlets), "Terminal paths must have an NA or 0 toID")
 })
+
+test_that("minimal network", {
+  source(system.file("extdata", "walker_data.R", package = "nhdplusTools"))
+  fline <- walker_flowline
+
+  outlets <- data.frame(ID = c(5329357, 5329317, 5329365, 5329435, 5329817),
+                        type = c("outlet", "outlet", "outlet", "outlet", "outlet"))
+
+  #' Add toCOMID
+  fline[["toCOMID"]] <- nhdplusTools::get_tocomid(fline)
+
+  fline <- dplyr::select(fline, ID = COMID, toID = toCOMID,
+                         levelpathid = LevelPathI, hydroseq = Hydroseq,
+                         areasqkm = AreaSqKM, lengthkm = LENGTHKM)
+
+  min_net <- get_minimal_network(fline, outlets)
+  
+  expect_equal(nrow(min_net), 8)
+  
+  expect_s3_class(min_net, "sf")  
+  
+  min_net <- get_minimal_network(sf::st_drop_geometry(fline), outlets)
+  
+  expect_s3_class(min_net, c("tbl_df","tbl","data.frame"), exact = TRUE) 
+  
+  expect_true(all(outlets$ID %in% min_net$ID))
+})
