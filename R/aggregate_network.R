@@ -571,13 +571,9 @@ add_terminals <- function(flowpath, outlets) {
     nhdplusTools::get_sorted(flowpath[, c("ID", "toID"), drop = TRUE], 
                              split = TRUE), by = "ID")
   
-  # Grab terminal paths that matter and combine with outlets..
-  terminal_paths <- unique(flowpath_sort$terminalID[flowpath_sort$ID %in% outlets$ID])
-  flowpath <- flowpath[flowpath_sort$terminalID %in% terminal_paths, ]
-  terminal_paths <- flowpath$ID[flowpath_sort$ID %in% terminal_paths]
-  
+  # Grab terminal paths that matter and combine with outlets.
   rbind(outlets,
-        data.frame(ID = terminal_paths,
+        data.frame(ID = unique(flowpath_sort$terminalID[flowpath_sort$ID %in% outlets$ID]),
                    type = "terminal"))
 }
 
