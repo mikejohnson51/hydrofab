@@ -421,6 +421,9 @@ get_catchment_sets <- function(flowpath, outlets) {
   outlet_count <- nrow(outlets)
   headwater_count <- length(heads)
   
+  message(paste("Running", headwater_count, "headwaters for", 
+                outlet_count, "outlets."))
+  
   # Set up counters for the while loop
   o_c <- 1
   h_c <- 1
@@ -473,6 +476,8 @@ get_catchment_sets <- function(flowpath, outlets) {
     }
     
     h_c <- h_c + 1
+    
+    if(h_c %% 1000 == 0) message(paste(h_c, "of", headwater_count))
     
   }
   
@@ -531,7 +536,19 @@ get_catchment_sets <- function(flowpath, outlets) {
 #' 
 get_minimal_network <- function(flowpath, outlets) {
   
-  outlets <- add_terminals(flowpath, outlets)
+  flowpath_sort <- left_join(
+    data.frame(ID = flowpath$ID),
+    nhdplusTools::get_sorted(flowpath[, c("ID", "toID"), drop = TRUE], 
+                             split = TRUE), by = "ID")
+  
+  terminal_paths <- unique(flowpath_sort$terminalID[flowpath_sort$ID %in% outlets$ID])
+  
+  # Grab terminal paths that matter and combine with outlets.
+  outlets <- rbind(outlets,
+                   data.frame(ID = terminal_paths,
+                              type = "terminal"))
+  
+  flowpath <- flowpath[flowpath_sort$terminalID %in% terminal_paths, ]
 
   minimal <- hyRefactor::aggregate_network(
     flowpath, dplyr::filter(outlets, .data$ID %in% flowpath$ID), 
@@ -564,16 +581,3 @@ get_minimal_network <- function(flowpath, outlets) {
     min_net
   }
 }
-
-add_terminals <- function(flowpath, outlets) {
-  flowpath_sort <- left_join(
-    data.frame(ID = flowpath$ID),
-    nhdplusTools::get_sorted(flowpath[, c("ID", "toID"), drop = TRUE], 
-                             split = TRUE), by = "ID")
-  
-  # Grab terminal paths that matter and combine with outlets.
-  rbind(outlets,
-        data.frame(ID = unique(flowpath_sort$terminalID[flowpath_sort$ID %in% outlets$ID]),
-                   type = "terminal"))
-}
-
