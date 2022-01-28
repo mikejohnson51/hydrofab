@@ -17,7 +17,8 @@ reconcile_catchment_divides(
   simplify_tolerance_m = 40,
   vector_crs = NULL,
   fix_catchments = TRUE,
-  keep = 0.9
+  keep = 0.9,
+  crs = 5070
 )
 }
 \arguments{
@@ -49,8 +50,13 @@ raster projection is not suitable (e.g. lon/lat) -- must result in units of mete
 
 \item{fix_catchments}{logical. should catchment geometries be rectified?}
 
-\item{keep}{Only applicable if fix_catchments = TRUE. Defines the proportion of points to retain in geometry simplification (0-1; default 0.05). 
-See \code{\link[rmapshaper]{ms_simplify}}.}
+\item{keep}{Only applicable if fix_catchments = TRUE. Defines the proportion 
+of points to retain in geometry simplification (0-1; default 0.05). 
+See \code{\link[rmapshaper]{ms_simplify}}. Set to NULL to skip
+simplification.}
+
+\item{crs}{integer or object compatible with sf::st_crs coordinate reference.
+Should be a projection that supports area-calculations.}
 }
 \value{
 Catchment divides that have been split and collapsed according to

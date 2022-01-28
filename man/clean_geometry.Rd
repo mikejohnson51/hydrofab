@@ -4,7 +4,7 @@
 \alias{clean_geometry}
 \title{Clean Catchment Geometry}
 \usage{
-clean_geometry(catchments, ID = "ID", keep = 0.9)
+clean_geometry(catchments, ID = "ID", keep = 0.9, crs = 5070)
 }
 \arguments{
 \item{catchments}{catchments geometries to fix}
@@ -14,6 +14,9 @@ clean_geometry(catchments, ID = "ID", keep = 0.9)
 \item{keep}{proportion of points to retain in geometry simplification 
 (0-1; default 0.05). See \code{\link[rmapshaper]{ms_simplify}}. 
 If NULL, then no simplification will be executed.}
+
+\item{crs}{integer or object compatible with sf::st_crs coordinate reference.
+Should be a projection that supports area-calculations.}
 }
 \value{
 sf object
