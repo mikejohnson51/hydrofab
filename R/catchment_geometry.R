@@ -119,6 +119,8 @@ flowpaths_to_linestrings = function(flowpaths){
 #' @param keep proportion of points to retain in geometry simplification 
 #' (0-1; default 0.05). See \code{\link[rmapshaper]{ms_simplify}}. 
 #' If NULL, then no simplification will be executed.
+#' @param crs integer or object compatible with sf::st_crs coordinate reference.
+#' Should be a projection that supports area-calculations.
 #' @return sf object
 #' @export
 #' @importFrom dplyr select mutate filter group_by ungroup slice_max bind_rows n right_join rename slice_min
@@ -129,14 +131,15 @@ flowpaths_to_linestrings = function(flowpaths){
 
 clean_geometry = function(catchments,
                           ID = "ID",
-                          keep = .9) {
+                          keep = .9,
+                          crs = 5070) {
 
   in_crs = st_crs(catchments)
   
   in_cat <- suppressWarnings({
     catchments %>%
     dplyr::select(ID = !!ID) %>%
-    st_transform(5070) %>%
+    st_transform(crs) %>%
     mutate(areasqkm = add_areasqkm(.)) %>% 
     ms_explode() %>%
     filter(!duplicated(.)) %>%

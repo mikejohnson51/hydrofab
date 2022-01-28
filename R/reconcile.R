@@ -131,8 +131,12 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 #' @param para integer numer of cores to use for parallel execution
 #' @param cache path .rda to cache incremental outputs
 #' @param fix_catchments logical. should catchment geometries be rectified?
-#' @param keep Only applicable if fix_catchments = TRUE. Defines the proportion of points to retain in geometry simplification (0-1; default 0.05). 
-#' See \code{\link[rmapshaper]{ms_simplify}}. 
+#' @param keep Only applicable if fix_catchments = TRUE. Defines the proportion 
+#' of points to retain in geometry simplification (0-1; default 0.05). 
+#' See \code{\link[rmapshaper]{ms_simplify}}. Set to NULL to skip
+#' simplification.
+#' @param crs integer or object compatible with sf::st_crs coordinate reference.
+#' Should be a projection that supports area-calculations.
 #' @inheritParams split_catchment_divide
 #' @return Catchment divides that have been split and collapsed according to
 #' input flowpaths
@@ -153,7 +157,7 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec,
                                         min_area_m = 800, snap_distance_m = 100,
                                         simplify_tolerance_m = 40, vector_crs = NULL,
                                         fix_catchments = TRUE,
-                                        keep = .9) {
+                                        keep = .9, crs = 5070) {
 
   in_crs    <- st_crs(catchment)
   catchment <- rename_geometry(catchment, "geom")
