@@ -1,20 +1,17 @@
 # nolint start
-# options("rgdal_show_exportToProj4_warnings"="none")
-library(rgdal)
-library(raster)
+library(terra)
 extdata <- system.file("extdata", package = "hyRefactor")
-walker_fac <- suppressWarnings(raster::raster(file.path(extdata, "walker_fac.tif")))
-walker_fdr <- suppressWarnings(raster::raster(file.path(extdata, "walker_fdr.tif")))
-proj <- as.character(raster::crs(walker_fdr))
+walker_fac <- suppressWarnings(terra::rast(file.path(extdata, "walker_fac.tif")))
+walker_fdr <- suppressWarnings(terra::rast(file.path(extdata, "walker_fdr.tif")))
 
 wgpkg <- tempfile(fileext = ".gpkg")
 
 file.copy(file.path(extdata, "walker.gpkg"), wgpkg)
 
 walker_catchment <- sf::read_sf(wgpkg, "CatchmentSP")
-walker_catchment <- sf::st_transform(walker_catchment, proj)
-walker_flowline <- sf::read_sf(wgpkg, "NHDFlowline_Network")
-walker_flowline <- sf::st_transform(walker_flowline, proj)
+walker_catchment <- sf::st_transform(walker_catchment, terra::crs(walker_fdr))
+walker_flowline  <- sf::read_sf(wgpkg, "NHDFlowline_Network")
+walker_flowline  <- sf::st_transform(walker_flowline, terra::crs(walker_fdr))
 
 # walker.gpkg turned into pre-processed sample data.
 # run the above then:
@@ -37,17 +34,17 @@ walker_flowline <- sf::st_transform(walker_flowline, proj)
 # r <- fasterize::raster("NHDPlusCA/fdr.tif")
 #
 # cropper <- catchment %>%
-#   st_transform(as.character(raster::crs(r))) %>%
+#   st_transform(terra::crs(r)) %>%
 #   st_union() %>%
 #   st_buffer(1000) %>%
 #   as_Spatial()
 #
 # fac <- fasterize::raster("NHDPlusCA/fac.tif")
-# sub_fac <- raster::crop(fac, cropper)
-# sub_r <- raster::crop(r, cropper)
-# raster::writeRaster(sub_fac, "data-raw/walker_fac.tif", overwrite = TRUE)
-# raster::writeRaster(sub_r, "data-raw/walker_fdr.tif", overwrite = TRUE)
+# sub_fac <- terra::crop(fac, cropper)
+# sub_r <- terra::crop(r, cropper)
+# terra::writeRaster(sub_fac, "data-raw/walker_fac.tif", overwrite = TRUE)
+# terra::writeRaster(sub_r, "data-raw/walker_fdr.tif", overwrite = TRUE)
 # nolint end
-walker_fline_ref <- sf::read_sf(file.path(extdata, "walker_refactor.gpkg"))
-walker_fline_rec <- sf::read_sf(file.path(extdata, "walker_reconcile.gpkg"))
+walker_fline_ref     <- sf::read_sf(file.path(extdata, "walker_refactor.gpkg"))
+walker_fline_rec     <- sf::read_sf(file.path(extdata, "walker_reconcile.gpkg"))
 walker_catchment_rec <- sf::read_sf(file.path(extdata, "walker_cat_rec.gpkg"))

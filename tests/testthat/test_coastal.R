@@ -36,15 +36,15 @@ source_fdr <- list.files(pattern = "coastal_fdr.tif$", recursive = TRUE, full.na
 source_fac <- list.files(pattern = "coastal_fac.tif$", recursive = TRUE, full.names = TRUE)
 min_da_km <- 10
 
-# fdr <- raster::raster("~/Documents/active_code/gfv2/workspace/data/fdrfac/NHDPlusCA/NHDPlus18/NHDPlusFdrFac18c/fdr/")
-# fac <- raster::raster("~/Documents/active_code/gfv2/workspace/data/fdrfac/NHDPlusCA/NHDPlus18/NHDPlusFdrFac18c/fac/")
-# crs <- raster::crs(fac)
+# fdr <- terra::rast("~/Documents/active_code/gfv2/workspace/data/fdrfac/NHDPlusCA/NHDPlus18/NHDPlusFdrFac18c/fdr/")
+# fac <- terra::rast("~/Documents/active_code/gfv2/workspace/data/fdrfac/NHDPlusCA/NHDPlus18/NHDPlusFdrFac18c/fac/")
+# crs <- terra::crs(fac)
 # 
-# fdr <- raster::crop(fdr, as_Spatial(st_transform(cats, crs)))
-# fac <- raster::crop(fac, as_Spatial(st_transform(cats, crs)))
+# fdr <- terra::crop(fdr, vect(st_transform(cats, crs)))
+# fac <- terra::crop(fac, vect(st_transform(cats, crs)))
 # 
-# raster::writeRaster(fdr, "tests/testthat/data/coastal_fdr.tif")
-# raster::writeRaster(fac, "tests/testthat/data/coastal_fac.tif")
+# terra::writeRaster(fdr, "tests/testthat/data/coastal_fdr.tif")
+# terra::writeRaster(fac, "tests/testthat/data/coastal_fac.tif")
 
 test_that("basic coastal aggregation", {
   nhd <- sf::read_sf(source_gpkg, "NHDFlowline_Network") %>%
@@ -101,9 +101,9 @@ test_that("basic coastal aggregation", {
                    exclude_cats = unique(c(avoid$COMID, outlets$COMID, little_terminal$COMID)),
                    warn = FALSE)
   
-  fdr <- suppressWarnings(raster::raster(source_fdr))
-  fac <- suppressWarnings(raster::raster(source_fac))
-  crs <- raster::crs(fac)
+  fdr <- suppressWarnings(terra::rast(source_fdr))
+  fac <- suppressWarnings(terra::rast(source_fac))
+  crs <- terra::crs(fac)
   
   refactored <- sf::st_transform(sf::read_sf(tf), crs)
   reconciled <- sf::st_transform(sf::read_sf(tr), crs)

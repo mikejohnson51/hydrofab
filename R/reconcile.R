@@ -126,8 +126,8 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 #' \code{\link{reconcile_collapsed_flowlines}}
 #' @param catchment sf data.frame NHDPlus Catchment or CatchmentSP layers for
 #' included COMIDs
-#' @param fdr raster D8 flow direction
-#' @param fac raster flow accumulation
+#' @param fdr SpatRast D8 flow direction
+#' @param fac SpatRast flow accumulation
 #' @param para integer numer of cores to use for parallel execution
 #' @param cache path .rda to cache incremental outputs
 #' @param fix_catchments logical. should catchment geometries be rectified?
@@ -145,61 +145,76 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 #' for this function.
 #' @details Note that all inputs must be passed in the same projection.
 #' @export
-#' @importFrom magrittr "%>%"
-#' @importFrom sf st_drop_geometry st_dimension st_as_sf st_cast st_transform st_precision st_crs
-#' @importFrom dplyr select filter mutate left_join
-#' @importFrom data.table rbindlist
-#' @importFrom methods is
+#' @importFrom sf st_crs st_transform st_precision st_drop_geometry st_sf st_multipolygon st_as_sf st_cast st_dimension
 #' @importFrom nhdplusTools rename_geometry
-#'
-reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec, 
-                                        fdr = NULL, fac = NULL, para = 2, cache = NULL, 
-                                        min_area_m = 800, snap_distance_m = 100,
-                                        simplify_tolerance_m = 40, vector_crs = NULL,
-                                        fix_catchments = TRUE,
-                                        keep = .9, crs = 5070) {
+#' @importFrom terra crs res
+#' @importFrom dplyr select distinct filter group_by summarise ungroup row_number mutate bind_rows
+#' @importFrom tidyr separate_rows
+#' @importFrom parallel makeCluster stopCluster
+#' @importFrom pbapply pblapply
+#' @importFrom data.table rbindlist
 
+reconcile_catchment_divides <- function(catchment, 
+                                              fline_ref, 
+                                              fline_rec, 
+                                              fdr = NULL, fac = NULL,
+                                              para = 2, cache = NULL, 
+                                              min_area_m = 800, 
+                                              snap_distance_m = 100,
+                                              simplify_tolerance_m = 40, 
+                                              vector_crs = NULL,
+                                              fix_catchments = TRUE,
+                                              keep = .9, crs = 5070) {
+  
   in_crs    <- st_crs(catchment)
   catchment <- rename_geometry(catchment, "geom")
   fline_ref <- rename_geometry(fline_ref, "geom")
   fline_rec <- rename_geometry(fline_rec, "geom")
   
-  # if(!is.null(fdr)){
-  #   catchment <-  st_transform(catchment, st_crs(fdr)) 
-  #   st_precision(catchment) <- raster::res(fdr)[1]
-  #   fline_ref <-  st_transform(fline_ref, st_crs(fdr)) 
-  #   fline_rec <- st_transform(fline_rec, st_crs(fdr)) 
-  # }
+  if(!is.null(fdr) & !is.null(fac)){
+    
+    if(class(fdr) != "SpatRaster"){
+      fdr = terra::rast(fdr)
+    }
+    
+    if(class(fac) != "SpatRaster"){
+      fac = terra::rast(fac)
+    }
+    
+    catchment <-  st_transform(catchment, terra::crs(fdr)) 
+    #st_precision(catchment) <- terra::res(fdr)[1]
+    fline_ref <-  st_transform(fline_ref,  terra::crs(fdr))
+    fline_rec <-  st_transform(fline_rec,  terra::crs(fdr))
+  }
   
-  check_proj(catchment, fline_ref, fdr)
-
   reconciled <- st_drop_geometry(fline_rec) %>%
     dplyr::select(ID, member_COMID)
-
+  
   rm(fline_rec)
-
+  
   # Not all catchments have flowlines. Remove the flowlines without.  
   comid <- fline_ref$COMID # Just being explicit here.
   featureid <- catchment$FEATUREID # type conversion below is annoying.
   # as.integer removes the .1, .2, semantic part but the response retains 
   # the semantic component. If you don't know what this means, stop hacking.
   comid_with_catchment <- comid[as.integer(comid) %in% featureid]
-
+  
   reconciled <- distinct(reconciled) %>% # had dups from prior steps.
     tidyr::separate_rows(member_COMID, sep = ",") %>% # Make long form
     dplyr::filter(member_COMID %in% comid_with_catchment) %>% # 
     dplyr::group_by(ID) %>%
-    dplyr::summarise(member_COMID = stringr::str_c(member_COMID, collapse = ","))
+    dplyr::summarise(member_COMID = paste(member_COMID, collapse = ",")) %>%
+    dplyr::ungroup()
 
   fline_ref <- fline_ref[as.integer(fline_ref$COMID) %in% catchment$FEATUREID, ]
-
+  
   to_split_bool <- as.numeric(fline_ref$COMID) !=
     as.integer(fline_ref$COMID)
-
+  
   to_split_ids <- fline_ref$COMID[which(to_split_bool)]
-
+  
   to_split_featureids <- unique(as.integer(to_split_ids))
-
+  
   cl <- NULL
   
   if(para > 1) {
@@ -213,11 +228,13 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec,
   }
   
   if(!exists("split_cats")) {
-    split_cats <- pbapply::pblapply(to_split_featureids, par_split_cat,
+    split_cats <- pbapply::pblapply(to_split_featureids, 
+                                    par_split_cat,
                                     to_split_ids = to_split_ids,
                                     fline_ref = fline_ref,
                                     catchment = catchment,
-                                    fdr = fdr, fac = fac,
+                                    fdr = fdr, 
+                                    fac = fac,
                                     min_area_m = min_area_m, 
                                     snap_distance_m = snap_distance_m,
                                     simplify_tolerance_m = simplify_tolerance_m, 
@@ -225,15 +242,15 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec,
                                     cl = cl)
     if(!is.null(cache)) save(split_cats, file = cache)
   }
-
+  
   
   if(length(split_cats) == 0) {
     split_cats <- st_sf(FEATUREID = NA, geom = list(sf::st_multipolygon()))
   } else {
-    if(!is(split_cats, "sf")) {
-      split_cats <- st_as_sf(rbindlist(split_cats[!sapply(split_cats, is.null)]))
+    if(class(split_cats) != "sf") {
+      split_cats <- sf::st_as_sf(data.table::rbindlist(split_cats[!sapply(split_cats, is.null)]))
     }
-    split_cats <- st_cast(split_cats, "MULTIPOLYGON")
+    split_cats <- sf::st_cast(split_cats, "MULTIPOLYGON")
   }
   
   split_cats <- dplyr::group_by(split_cats, FEATUREID) %>% 
@@ -243,11 +260,11 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec,
   unsplit <- get_cat_unsplit(catchment, fline_ref, to_split_featureids)
   
   if(nrow(unsplit) > 0) {
-    split_cats <- st_as_sf(rbindlist(list(
+    split_cats <- sf::st_as_sf(data.table::rbindlist(list(
       unsplit,
       split_cats)))
   }
-
+  
   combinations <- reconciled$member_COMID[grepl(",", reconciled$member_COMID)]
   
   unioned_cats <- pbapply::pblapply(combinations, 
@@ -255,22 +272,25 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec,
                                     split_cats = split_cats,
                                     cache = cache,
                                     cl = cl)
-  
-  if(!is.null(cl))
+
+
+  if(!is.null(cl)) {
     parallel::stopCluster(cl)
+  }
   
   if(length(unioned_cats) > 0) {
-    unioned_cats <- st_as_sf(rbindlist(unioned_cats))
-    split_cats <- st_as_sf(rbindlist(list(
-      filter(split_cats, !FEATUREID %in% unioned_cats$FEATUREID),
-      unioned_cats)))
+    unioned_cats <- sf::st_as_sf(data.table::rbindlist(unioned_cats))
+    split_cats   <- sf::st_as_sf(data.table::rbindlist(list(
+      dplyr::filter(split_cats, !FEATUREID %in% unioned_cats$FEATUREID),
+      unioned_cats
+    )))
   }
-
+  
   out <- st_sf(right_join(dplyr::select(split_cats, member_COMID = FEATUREID), reconciled,
-                         by = "member_COMID"))
-
+                          by = "member_COMID"))
+  
   missing <- is.na(st_dimension(out$geom))
-
+  
   if (any(missing)) {
     
     out_mp <- filter(out, !missing) %>%
@@ -288,9 +308,9 @@ reconcile_catchment_divides <- function(catchment, fline_ref, fline_rec,
   if(fix_catchments){
     # cat("Fixing Catchment Geometries...\n")
     clean_geometry(catchments = out, "ID", 0.9) %>% 
-      st_transform(in_crs)
+      sf::st_transform(in_crs)
   } else {
-    st_transform(out, in_crs)
+    sf::st_transform(out, in_crs)
   }
 }
 
@@ -308,7 +328,7 @@ par_split_cat <- function(fid, to_split_ids, fline_ref, catchment, fdr, fac,
     # nolint end
     split_set <- to_split_ids[which(grepl(paste0("^", as.character(fid)), to_split_ids))]
     to_split_flines <- dplyr::filter(fline_ref, COMID %in% split_set)
-    to_split_cat <- dplyr::filter(catchment, FEATUREID == fid)
+    to_split_cat    <- dplyr::filter(catchment, FEATUREID == fid)
     
     split_cats <- split_catchment_divide(catchment = to_split_cat,
                                          fline = to_split_flines,
@@ -329,6 +349,7 @@ par_split_cat <- function(fid, to_split_ids, fline_ref, catchment, fdr, fac,
 }
 
 get_split_cats <- function(cats, split_cats, cache = NULL) {
+  
   error_found <- TRUE
   error_file <- paste0(gsub(".rda", "", cache), "error.rda")
   
@@ -336,8 +357,8 @@ get_split_cats <- function(cats, split_cats, cache = NULL) {
   cats_vec <- unlist(strsplit(cats, ","))
   
   union_cats <- dplyr::filter(split_cats, FEATUREID %in% cats_vec)
-  
-  if (nrow(union_cats) != length(cats_vec)) {
+
+  if (length(unique(union_cats$FEATUREID)) != length(cats_vec)) {
     if(!is.null(cache)) {
       
       save(list = ls(), file = error_file)
@@ -345,7 +366,7 @@ get_split_cats <- function(cats, split_cats, cache = NULL) {
                  cats_vec, "environment saved to:", cache))
     } 
     stop(paste("missing a split catchment for an expected flowline.", 
-                cats_vec))
+                paste(cats_vec, collapse = "\n")))
 
   }
   

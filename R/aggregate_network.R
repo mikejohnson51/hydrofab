@@ -42,7 +42,6 @@
 #' @importFrom igraph graph_from_data_frame topo_sort incident_edges V bfs head_of shortest_paths
 #' @importFrom sf st_is_empty st_drop_geometry
 #' @importFrom dplyr filter mutate left_join select distinct case_when bind_rows
-#' @importFrom tidyr unnest_longer
 #' @examples
 #' source(system.file("extdata", "walker_data.R", package = "nhdplusTools"))
 #'
@@ -91,9 +90,7 @@ aggregate_network <- function(flowpath, outlets,
   
   outlets <- make_outlets_valid(outlets, flowpath, lps,da_thresh = da_thresh, only_larger = only_larger) %>%
     distinct()
-  
-  lps <- get_lps(flowpath)
-  
+
   outlets <- mutate(outlets, ID = paste0("cat-", .data$ID))
   
   # Build catchment and nexus data.frames to preserve sanity in graph traversal.
@@ -241,8 +238,13 @@ aggregate_network <- function(flowpath, outlets,
   fline_sets[["ID"]] <- as.numeric(gsub("^cat-", "", outlets$ID))
   
   # create long form ID to set member list
-  sets <- tidyr::unnest_longer(drop_geometry(fline_sets), col = "set")
   
+  # BROKEN: Mike 02-02-2022
+  #sets <- tidyr::unnest_longer(drop_geometry(fline_sets[1,]), col = "set")
+  
+  sets = data.frame(ID =  rep(fline_sets$ID,  times = lengths(fline_sets$set)),
+  set = unlist(fline_sets$set))
+
   # Figure out what the ID of the downstream catchment is.
   next_id <- left_join(sets, 
               select(drop_geometry(flowpath), .data$ID, .data$toID),

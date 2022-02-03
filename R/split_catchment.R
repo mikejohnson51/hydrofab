@@ -117,14 +117,29 @@ flowpath_filter <- function(us, fac_matrix) {
   return(us)
 }
 
+
+
+#' Trace Upstream
+#' @param start_point row col index
+#' @param cat catchment
+#' @param fdr flow direction grid
+#' @param fac_matrix flow accumulation matrix
+#' @param fdr_matrix flow direction matrix
+#' @importFrom terra xFromCol yFromRow
+#' @importFrom sf st_sfc st_linestring st_crs
+#' @importFrom utils capture.output str
+#' @return sfc
+
 trace_upstream <- function(start_point, cat, fdr, fac_matrix, fdr_matrix) {
 
   s_p <- st_coordinates(start_point)
   
-  suppressWarnings(row_col <- get_row_col(fdr, c(s_p[1], s_p[2]), fac_matrix))
+  suppressWarnings(row_col <- get_row_col(fdr, s_p, fac_matrix))
   
   tryCatch({
+    
     us_flowpath <- collect_upstream(row_col, fdr_matrix, fac_matrix, flowpath_mode = TRUE)
+    
   }, error = function(e) {
     stop(paste0("Error with: ", 
                 paste(capture.output(str(start_point, 
@@ -135,10 +150,10 @@ trace_upstream <- function(start_point, cat, fdr, fac_matrix, fdr_matrix) {
   
   us_flowpath <- us_flowpath[!is.na(us_flowpath[, 1]), ]
   
-  xy_nodes <- matrix(c(raster::xFromCol(fdr, col = us_flowpath[, 2]),
-                       raster::yFromRow(fdr, row = us_flowpath[, 1])), 
+  xy_nodes <- matrix(c(terra::xFromCol(fdr, col = us_flowpath[, 2]),
+                       terra::yFromRow(fdr, row = us_flowpath[, 1])), 
                      ncol = 2)
-  
+
   xy_nodes <- rbind(start_point[[1]], xy_nodes)
   
   st_sfc(st_linestring(xy_nodes[nrow(xy_nodes):1, ]), crs = st_crs(start_point))
@@ -151,29 +166,38 @@ trace_upstream <- function(start_point, cat, fdr, fac_matrix, fdr_matrix) {
 #' @param catchment sf data.frame with one catchment divide
 #' @param fline sf data.frame with one or more flowline segments in
 #' upstream downstream order.
-#' @param fdr raster a flow direction raster that fully covers the catchment
-#' @param fac raster a flow accumulation raster that fuller covers the catchment
+#' @param fdr SpatRaster a flow direction SpatRaster that fully covers the catchment
+#' @param fac SpatRaster a flow accumulation SpatRaster that fuller covers the catchment
 #' @param lr boolean should catchments be split along the left/right bank?
 #' @param min_area_m minimum area in m^2 to filter out slivers (caution, use with care!!)
-#' @param snap_distance_m distance in meters to snap raster generated geometry to polygon geometry
+#' @param snap_distance_m distance in meters to snap SpatRaster generated geometry to polygon geometry
 #' @param simplify_tolerance_m dTolerance in meters for simplification of grid-cell based polygons
 #' @param vector_crs any object compatible with sf::st_crs. Used for vector-based calculations in case that 
-#' raster projection is not suitable (e.g. lon/lat) -- must result in units of meters.
+#' fdr projection is not suitable (e.g. lon/lat) -- must result in units of meters.
 #' @return Split catchment divides as an sfc geometry.
-#' @importFrom raster raster crs crop mask rowColFromCell cellFromXY rasterToPolygons as.matrix
+#' @importFrom terra rast setValues as.polygons
 #' @importFrom dplyr group_by ungroup filter select mutate lead n
-#' @importFrom sf st_crs st_crs<- st_coordinates as_Spatial st_buffer st_combine
+#' @importFrom sf st_crs st_coordinates as_Spatial st_buffer st_combine
 #' st_as_sf st_as_sfc st_sfc st_geometry st_simplify st_snap
-#' st_difference st_cast st_sf st_area st_distance st_within st_point
+#' st_difference st_cast st_sf st_area st_distance st_within st_point `st_crs<-`
 #' st_make_valid st_segmentize st_nearest_feature st_linestring
 #' @importFrom nhdplusTools get_node
+#' @importFrom dplyr `%>%`
 #' @export
 #'
 split_catchment_divide <- function(catchment, fline, fdr, fac, lr = FALSE, 
                                    min_area_m = 800, snap_distance_m = 100,
                                    simplify_tolerance_m = 40, vector_crs = NULL) {
 
-  check_proj(catchment, fline, fdr)
+  #check_proj(catchment, fline, fdr)
+  
+  if(class(fdr) != "SpatRaster"){
+    fdr = terra::rast(fdr)
+  }
+  
+  if(class(fac) != "SpatRaster"){
+    fac = terra::rast(fac)
+  }
 
   cat_crs <- sf::st_crs(catchment)
   
@@ -184,6 +208,7 @@ split_catchment_divide <- function(catchment, fline, fdr, fac, lr = FALSE,
     ungroup()
 
   suppressWarnings(fdr_matrix <- prep_cat_fdr_fac(catchment, fdr, fac))
+  
   fdr <- fdr_matrix$fdr
   fac <- fdr_matrix$fac
   fac_matrix <- fdr_matrix$fac_matrix
@@ -196,12 +221,13 @@ split_catchment_divide <- function(catchment, fline, fdr, fac, lr = FALSE,
   }
 
   for (cat in seq_len(nrow(outlets) - 1)) {
-    in_out <- st_within(st_sfc(st_point(c(outlets$X[cat],
-                                                      outlets$Y[cat])),
+    
+    in_out <- st_within(st_sfc(st_point(c(outlets$X[cat], outlets$Y[cat])),
                                        crs = st_crs(fline)),
                             catchment, prepared = FALSE)[[1]]
+    
     if (length(in_out) > 0 && in_out == 1) {
-      suppressWarnings(row_col <- get_row_col(fdr, c(outlets$X[cat], outlets$Y[cat]), fac_matrix))
+      suppressWarnings(row_col <- get_row_col(fdr, start = cbind(outlets$X[cat], outlets$Y[cat]), fac_matrix))
       
       tryCatch({
         us_cells <- collect_upstream(row_col, fdr_matrix)
@@ -213,21 +239,20 @@ split_catchment_divide <- function(catchment, fline, fdr, fac, lr = FALSE,
                           collapse = "\n"), " original error was: \n", e))
       })
       
-      out <- matrix(0, nrow = nrow(fdr_matrix), ncol = ncol(fdr_matrix))
+      vals <- matrix(0, nrow = nrow(fdr_matrix), ncol = ncol(fdr_matrix))
 
-      out[us_cells] <- 1
+      vals[us_cells] <- 1
 
-      out <- suppressWarnings(raster::raster(out, template = fdr))
-
+      out = terra::setValues(fdr, vals)
+      names(out) = "cats"
+      
       raster_function <- function(x) x == 1
 
-      suppressWarnings(out <- st_as_sf(
-        raster::rasterToPolygons(out,
-                                 fun = raster_function,
-                                 dissolve = TRUE)))
+      out = st_as_sf(terra::as.polygons(out)) |> 
+        filter(.data$cats == 1)
 
       smaller_than_one_pixel <- units::set_units(min_area_m, "m^2")
-      snap_distance <- units::set_units(snap_distance_m, "m")
+      snap_distance          <- units::set_units(snap_distance_m, "m")
       
       if(!is.null(vector_crs)) {
         out <- sf::st_transform(out, vector_crs)
@@ -278,7 +303,7 @@ split_catchment_divide <- function(catchment, fline, fdr, fac, lr = FALSE,
   out <- st_as_sfc(out, crs = st_crs(catchment))
   
   if(lr) {
-    return(split_lr(out, fline, fdr, fac_matrix, fdr_matrix))
+    return(split_lr(cat = out, fline, fdr, fac_matrix, fdr_matrix))
   }
   
   return(out)
@@ -287,6 +312,7 @@ split_catchment_divide <- function(catchment, fline, fdr, fac, lr = FALSE,
 split_lr <- function(cat, fline, fdr, fac_matrix, fdr_matrix) {
   
   out <- lapply(c(1:nrow(fline)), function(x, cat, fline, fdr, fac_matrix, fdr_matrix) {
+    
     line <- st_cast(st_geometry(fline[x, ]), "LINESTRING")
     
     cat <- st_sfc(st_segmentize(cat[[x]], dfMaxLength = 100), crs = st_crs(cat))
@@ -323,9 +349,17 @@ split_lr <- function(cat, fline, fdr, fac_matrix, fdr_matrix) {
   do.call(c, out)
 }
 
+
+
+#' Get Row and Column
+#' @param fdr flow direction grid
+#' @param start matrix (row, col)
+#' @param fac_matrix flow accumulation matrix
+#' @importFrom terra cellFromXY rowColFromCell
+
 get_row_col <- function(fdr, start, fac_matrix) {
-  cell <- raster::cellFromXY(fdr, start)
-  row_col <- raster::rowColFromCell(fdr, cell)
+  cell    <- terra::cellFromXY(fdr, start)
+  row_col <- terra::rowColFromCell(fdr, cell)
   
   neighbors <- get_neighbor_df(row_col[1], row_col[2],
                                nrow(fac_matrix), ncol(fac_matrix))
@@ -344,22 +378,29 @@ get_row_col <- function(fdr, start, fac_matrix) {
   return(row_col)
 }
 
+#' Prep catchment with FDR/FAC
+#' @param cat catchment (sf object)
+#' @param fdr flow direction grid
+#' @param fac flow accumulation grid
+#' @importFrom terra vect crop mask as.matrix
+#' @importFrom sf st_is_longlat st_buffer
+
 prep_cat_fdr_fac <- function(cat, fdr, fac) {
-  sp_cat_buffer <- as_Spatial(if(sf::st_is_longlat(cat)) {
-    st_buffer(cat, 0.002)
+  
+  sp_cat_buffer <- terra::vect(
+    if(sf::st_is_longlat(cat)) {
+    c = st_make_valid(st_buffer(cat, 0.002))
   } else {
-    st_buffer(cat, 200)
+    st_make_valid(st_buffer(cat, 200))
   })
+
+  fdr <- terra::crop(fdr, sp_cat_buffer, snap = "out")
+  fdr <- terra::mask(fdr, sp_cat_buffer)
+  fac <- terra::crop(fac, sp_cat_buffer, snap = "out")
+  fac <- terra::mask(fac, sp_cat_buffer)
   
-  fdr <- raster::crop(fdr, sp_cat_buffer,
-                      snap = "out")
-  fdr <- raster::mask(fdr, sp_cat_buffer)
-  fac <- raster::crop(fac, sp_cat_buffer,
-                      snap = "out")
-  fac <- raster::mask(fac, sp_cat_buffer)
-  
-  fdr_matrix <- raster::as.matrix(fdr)
-  fac_matrix <- raster::as.matrix(fac)
+  fdr_matrix <- terra::as.matrix(fdr, wide=TRUE)
+  fac_matrix <- terra::as.matrix(fac, wide=TRUE)
   
   return(list(fdr_matrix = fdr_matrix, 
               fac_matrix = fac_matrix,
@@ -368,15 +409,15 @@ prep_cat_fdr_fac <- function(cat, fdr, fac) {
 }
 
 check_proj <- function(catchment, fline, fdr = NULL) {
-  
+
   er <- "All inputs must have the same projection."
-  
+
   if(st_crs(fline) != st_crs(catchment)) {
     stop(er)
   }
-  
+
   if(!is.null(fdr)) {
-    
+
     proj <- st_crs(fdr)
     if (st_crs(catchment) != st_crs(proj) |
         st_crs(fline) != st_crs(proj)) {
@@ -393,28 +434,34 @@ check_proj <- function(catchment, fline, fdr = NULL) {
 #' Set edge of fdr and river path to NA to control stop.
 #' @noRd
 #' @param start_point sfc point where trace should start
-#' @param fdr raster flow direction grid
+#' @param fdr SpatRaster flow direction grid
 #' @param distance numeric max distance in number of grid cells
-#' @return sfc linestring path traced along flow direction in crs of rasterr
+#' @return sfc linestring path traced along flow direction in crs of fdr grid
+#' @importFrom terra rast crs rowColFromCell cellFromXY as.matrix xyFromCell cellFromRowCol
+#' @importFrom sf st_transform st_coordinates st_linestring st_sfc st_crs
 #' @examples 
+#' 
 #' source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
 #' 
 #' start_point <- sf::st_sfc(sf::st_point(c(-122.7, 38.126)), crs = 4326)
-#' fdr <- walker_fdr
 #' distance <- 100
 #' 
-#' line <- sf::st_transform(dplyr::filter(walker_flowline, 
-#'                                        COMID == 5329435), 
-#'                          sf::st_crs(fdr))
+#' line <- sf::st_transform(dplyr::filter(walker_flowline,
+#'                                        COMID == 5329435),
+#'                          sf::st_crs(walker_fdr))
 #' 
-#' fdr <- raster::mask(fdr, line, inverse = TRUE)
+#' fdr <- terra::mask(walker_fdr, line, inverse = TRUE)
 #' 
 #' xy <- trace_downstream(start_point, fdr, distance)
-#' 
-#' mapview::mapview(list(line, xy))
 
 trace_downstream <- function(start_point, fdr, distance = 10000) {
 
+  
+  if(class(fdr) != "SpatRaster"){
+    fdr = terra::rast(fdr)
+  }
+ 
+  
   lookup_rowcol <- rep(list(list()), 128)
   lookup_rowcol[[1]] <- c(0, 1)
   lookup_rowcol[[2]] <- c(1, 1)
@@ -426,12 +473,12 @@ trace_downstream <- function(start_point, fdr, distance = 10000) {
   lookup_rowcol[[128]] <- c(-1, 1)
   
   # start point in raster projection
-  stp <- sf::st_transform(start_point, sf::st_crs(fdr))
+  stp <- sf::st_transform(start_point, terra::crs(fdr))
 
   # 1X2 matrix giving start row and col in raster
-  sti <- raster::rowColFromCell(fdr, raster::cellFromXY(fdr, sf::as_Spatial(stp)))    
+  sti <- terra::rowColFromCell(fdr, terra::cellFromXY(fdr, st_coordinates(stp)))  
   
-  fdr_matrix <- raster::as.matrix(fdr)
+  fdr_matrix <- terra::as.matrix(fdr, wide = TRUE)
   
   # empty max distance X 2 matrix 
   track <- matrix(nrow = distance, ncol = 2)
@@ -461,7 +508,7 @@ trace_downstream <- function(start_point, fdr, distance = 10000) {
   track <- track[!is.na(track[,1]), ]
   
   # get xy for all row/col from track and fddr
-  xy <- raster::xyFromCell(fdr, raster::cellFromRowCol(fdr, track[, 1], track[, 2]))
+  xy <- terra::xyFromCell(fdr, terra::cellFromRowCol(fdr, track[, 1], track[, 2]))
   
   # return sfc linestring in projection of fdr
   sf::st_sfc(sf::st_linestring(xy), crs = sf::st_crs(fdr))

@@ -7,29 +7,27 @@ Authors@R: c(person("David", "Blodgett", role = c("aut", "cre"), email = "dblodg
 Description: A collection of tools for normalizing and changing the size of catchments.
 URL: https://github.com/dblodgett-usgs/hyrefactor
 BugReports: https://github.com/dblodgett-usgs/hyrefactor/issues
-Depends:
+Depends: 
     R (>= 3.5.0)
 Imports: 
-  dplyr, 
-  sf, 
-  lwgeom, 
-  units, 
-  magrittr, 
-  data.table, 
-  raster, 
-  nhdplusTools, 
-  igraph, 
-  tidyr, 
-  pbapply, 
-  xml2, 
-  rvest, 
-  httr, 
-  stringr, 
-  methods,
-  rlang,
-  rgeos,
-  rmapshaper
-Suggests: testthat, knitr, rmarkdown, mapview, rgdal, snow
+    dplyr, 
+    sf, 
+    lwgeom, 
+    units, 
+    data.table, 
+    terra, 
+    nhdplusTools, 
+    igraph, 
+    tidyr, 
+    pbapply, 
+    rvest, 
+    httr, 
+    methods,
+    rlang,
+    rgeos,
+    rmapshaper,
+    utils
+Suggests: testthat, knitr, rmarkdown
 Remotes: dblodgett-usgs/nhdplusTools
 License: CC0
 Encoding: UTF-8

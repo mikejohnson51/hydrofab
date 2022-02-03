@@ -274,7 +274,7 @@ clean_geometry = function(catchments,
   # any others that that came with the OG catchments
   
   if('areasqkm' %in% names(catchments)){
-    catchments = select(catchments, -areasqkm)
+    catchments = select(catchments, -.data$areasqkm)
   }
   
   in_cat %>%
@@ -300,20 +300,28 @@ clean_geometry = function(catchments,
 #' @examples
 #' \dontrun{
 #' path <- system.file("extdata/walker_reconcile.gpkg", package = "hyRefactor")
-#' fps  <- add_lengthmap(flowpaths = sf::read_sf(path), length_table = nhdplusTools::get_vaa("lengthkm"))
+#' fps  <- add_lengthmap(flowpaths = sf::read_sf(path), 
+#' length_table = nhdplusTools::get_vaa("lengthkm"))
 #' }
 #'@importFrom dplyr select mutate filter left_join right_join arrange group_by summarize
-#'@importFrom tidyr unnest
 #'@importFrom sf st_drop_geometry st_length st_as_sf
 #'@importFrom nhdplusTools get_vaa
 
 add_lengthmap = function(flowpaths, length_table){
 
-  unnested = dplyr::select(st_drop_geometry(flowpaths), 
+  # unnested = dplyr::select(st_drop_geometry(flowpaths), 
+  #                          .data$ID, 
+  #                          COMID = .data$member_COMID) %>%
+  #   mutate(COMID = strsplit(.data$COMID, ",")) %>%
+  #   tidyr::unnest(cols = .data$COMID)
+  
+  tmp = dplyr::select(st_drop_geometry(flowpaths), 
                            .data$ID, 
                            COMID = .data$member_COMID) %>%
-    mutate(COMID = strsplit(.data$COMID, ",")) %>%
-    tidyr::unnest(cols = .data$COMID)
+    mutate(COMID = strsplit(.data$COMID, ","))
+  
+  unnested = data.frame(ID =  rep(tmp$ID,  times = lengths(tmp$COMID)),
+                    COMID = as.character(unlist(tmp$COMID)))
   
   unnested2 = filter(unnested, grepl("\\.", COMID)) %>% 
     mutate(baseCOMID = floor(as.numeric(COMID)))
