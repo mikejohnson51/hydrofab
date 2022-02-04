@@ -238,10 +238,6 @@ aggregate_network <- function(flowpath, outlets,
   fline_sets[["ID"]] <- as.numeric(gsub("^cat-", "", outlets$ID))
   
   # create long form ID to set member list
-  
-  # BROKEN: Mike 02-02-2022
-  #sets <- tidyr::unnest_longer(drop_geometry(fline_sets[1,]), col = "set")
-  
   sets = data.frame(ID =  rep(fline_sets$ID,  times = lengths(fline_sets$set)),
   set = unlist(fline_sets$set))
 

@@ -309,12 +309,6 @@ clean_geometry = function(catchments,
 
 add_lengthmap = function(flowpaths, length_table){
 
-  # unnested = dplyr::select(st_drop_geometry(flowpaths), 
-  #                          .data$ID, 
-  #                          COMID = .data$member_COMID) %>%
-  #   mutate(COMID = strsplit(.data$COMID, ",")) %>%
-  #   tidyr::unnest(cols = .data$COMID)
-  
   tmp = dplyr::select(st_drop_geometry(flowpaths), 
                            .data$ID, 
                            COMID = .data$member_COMID) %>%

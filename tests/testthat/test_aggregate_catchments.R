@@ -34,11 +34,9 @@ aggregate_lookup_fline <- dplyr::select(sf::st_drop_geometry(aggregated$fline_se
 expect_true(!all(walker_fline_rec$ID %in% aggregate_lookup_fline$reconciled_ID), 
             "all input ids should not be in flowline output")
 
-aggregate_lookup_cat <- dplyr::select(sf::st_drop_geometry(aggregated$cat_sets), ID, set) %>%
-  tidyr::unnest_longer(col = set) %>%
-  dplyr::rename(aggregated_ID = ID, reconciled_ID = set)
+aggregate_lookup_cat <- dplyr::select(sf::st_drop_geometry(aggregated$cat_sets), ID, set) 
 
-expect_true(all(walker_fline_rec$ID %in% aggregate_lookup_cat$reconciled_ID), 
+expect_true(all(walker_fline_rec$ID %in% unlist(aggregate_lookup_cat$set)), 
             "all input ids should be in catchment output")
 
 expect_equal(aggregated_cat$toID, get_id(c(NA, "5329843", "5329339.1", "5329303")), info = "Expect these toIDs")

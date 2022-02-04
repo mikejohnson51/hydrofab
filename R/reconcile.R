@@ -173,11 +173,11 @@ reconcile_catchment_divides <- function(catchment,
   
   if(!is.null(fdr) & !is.null(fac)){
     
-    if(class(fdr) != "SpatRaster"){
+    if(!inherits(fdr, "SpatRaster")){
       fdr = terra::rast(fdr)
     }
     
-    if(class(fac) != "SpatRaster"){
+    if(!inherits(fdr, "SpatRaster")){
       fac = terra::rast(fac)
     }
     
@@ -247,7 +247,7 @@ reconcile_catchment_divides <- function(catchment,
   if(length(split_cats) == 0) {
     split_cats <- st_sf(FEATUREID = NA, geom = list(sf::st_multipolygon()))
   } else {
-    if(class(split_cats) != "sf") {
+    if(!inherits(split_cats, "sf")) {
       split_cats <- sf::st_as_sf(data.table::rbindlist(split_cats[!sapply(split_cats, is.null)]))
     }
     split_cats <- sf::st_cast(split_cats, "MULTIPOLYGON")

@@ -191,11 +191,11 @@ split_catchment_divide <- function(catchment, fline, fdr, fac, lr = FALSE,
 
   #check_proj(catchment, fline, fdr)
   
-  if(class(fdr) != "SpatRaster"){
+  if(!inherits(fdr, "SpatRaster")){
     fdr = terra::rast(fdr)
   }
   
-  if(class(fac) != "SpatRaster"){
+  if(!inherits(fac, "SpatRaster")){
     fac = terra::rast(fac)
   }
 
@@ -457,7 +457,7 @@ check_proj <- function(catchment, fline, fdr = NULL) {
 trace_downstream <- function(start_point, fdr, distance = 10000) {
 
   
-  if(class(fdr) != "SpatRaster"){
+  if(!inherits(fdr, "SpatRaster")){
     fdr = terra::rast(fdr)
   }
  

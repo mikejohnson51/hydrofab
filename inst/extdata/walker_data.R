@@ -1,5 +1,5 @@
 # nolint start
-library(terra)
+suppressWarnings(library(terra))
 extdata <- system.file("extdata", package = "hyRefactor")
 walker_fac <- suppressWarnings(terra::rast(file.path(extdata, "walker_fac.tif")))
 walker_fdr <- suppressWarnings(terra::rast(file.path(extdata, "walker_fdr.tif")))
