@@ -1,13 +1,11 @@
 # nolint start
-options("rgdal_show_exportToProj4_warnings"="none")
-library(rgdal)
-library(raster)
+library(terra)
 extdata <- system.file("extdata", package = "hyRefactor")
 
-new_hope_fac <- suppressWarnings(raster::raster(file.path(extdata, "new_hope_fac.tif")))
-new_hope_fdr <- suppressWarnings(raster::raster(file.path(extdata, "new_hope_fdr.tif")))
+new_hope_fac <- suppressWarnings(terra::rast(file.path(extdata, "new_hope_fac.tif")))
+new_hope_fdr <- suppressWarnings(terra::rast(file.path(extdata, "new_hope_fdr.tif")))
 
-proj <- as.character(raster::crs(new_hope_fdr))
+proj <- as.character(terra::crs(new_hope_fdr))
 
 nhpgpkg <- tempfile(fileext = ".gpkg")
 
@@ -48,9 +46,9 @@ new_hope_events <- sf::read_sf(nhpgpkgev)
 # new_hope_subset <- subset_nhdplus(UT, "new_hope.gpkg", overwrite = TRUE)
 # flowline <- read_sf(new_hope_subset, "NHDFlowline_Network")
 
-# fac <- fasterize::raster("~/Documents/Projects/NWM/4_data/nhdplus_raster/fac/NHDPlusSA/NHDPlus03N/NHDPlusFdrFac03a/fac.tif")
-# fdr <- fasterize::raster("~/Documents/Projects/NWM/4_data/nhdplus_raster/fdr/NHDPlusSA/NHDPlus03N/NHDPlusFdrFac03a/fdr.tif")
-# proj <- as.character(raster::crs(fdr))
+# fac <- terra::rast("~/Documents/Projects/NWM/4_data/nhdplus_raster/fac/NHDPlusSA/NHDPlus03N/NHDPlusFdrFac03a/fac.tif")
+# fdr <- terra::rast("~/Documents/Projects/NWM/4_data/nhdplus_raster/fdr/NHDPlusSA/NHDPlus03N/NHDPlusFdrFac03a/fdr.tif")
+# proj <- terra::crs(fdr)
 #
 # catchment <- read_sf(new_hope_subset, "CatchmentSP") %>%
 #   st_transform(proj)
@@ -60,10 +58,10 @@ new_hope_events <- sf::read_sf(nhpgpkgev)
 #   st_buffer(1000) %>%
 #   as_Spatial()
 #
-# sub_fac <- raster::crop(fac, cropper)
-# sub_fdr <- raster::crop(fdr, cropper)
-# raster::writeRaster(sub_fac, "new_hope_fac.tif", overwrite = TRUE)
-# raster::writeRaster(sub_fdr, "new_hope_fdr.tif", overwrite = TRUE)
+# sub_fac <- terra::crop(fac, cropper)
+# sub_fdr <- terra::crop(fdr, cropper)
+# terra::writeRaster(sub_fac, "new_hope_fac.tif", overwrite = TRUE)
+# terra::writeRaster(sub_fdr, "new_hope_fdr.tif", overwrite = TRUE)
 # #####
 #
 # flowline <- sf::read_sf("new_hope.gpkg", "NHDFlowline_Network")

@@ -22,20 +22,20 @@ split_catchment_divide(
 \item{fline}{sf data.frame with one or more flowline segments in
 upstream downstream order.}
 
-\item{fdr}{raster a flow direction raster that fully covers the catchment}
+\item{fdr}{SpatRaster a flow direction SpatRaster that fully covers the catchment}
 
-\item{fac}{raster a flow accumulation raster that fuller covers the catchment}
+\item{fac}{SpatRaster a flow accumulation SpatRaster that fuller covers the catchment}
 
 \item{lr}{boolean should catchments be split along the left/right bank?}
 
 \item{min_area_m}{minimum area in m^2 to filter out slivers (caution, use with care!!)}
 
-\item{snap_distance_m}{distance in meters to snap raster generated geometry to polygon geometry}
+\item{snap_distance_m}{distance in meters to snap SpatRaster generated geometry to polygon geometry}
 
 \item{simplify_tolerance_m}{dTolerance in meters for simplification of grid-cell based polygons}
 
 \item{vector_crs}{any object compatible with sf::st_crs. Used for vector-based calculations in case that 
-raster projection is not suitable (e.g. lon/lat) -- must result in units of meters.}
+fdr projection is not suitable (e.g. lon/lat) -- must result in units of meters.}
 }
 \value{
 Split catchment divides as an sfc geometry.

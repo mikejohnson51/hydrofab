@@ -17,7 +17,8 @@ reconcile_catchment_divides(
   simplify_tolerance_m = 40,
   vector_crs = NULL,
   fix_catchments = TRUE,
-  keep = 0.9
+  keep = 0.9,
+  crs = 5070
 )
 }
 \arguments{
@@ -30,9 +31,9 @@ included COMIDs}
 \item{fline_rec}{sf data.frame flowpaths as returned by
 \code{\link{reconcile_collapsed_flowlines}}}
 
-\item{fdr}{raster D8 flow direction}
+\item{fdr}{SpatRast D8 flow direction}
 
-\item{fac}{raster flow accumulation}
+\item{fac}{SpatRast flow accumulation}
 
 \item{para}{integer numer of cores to use for parallel execution}
 
@@ -40,17 +41,22 @@ included COMIDs}
 
 \item{min_area_m}{minimum area in m^2 to filter out slivers (caution, use with care!!)}
 
-\item{snap_distance_m}{distance in meters to snap raster generated geometry to polygon geometry}
+\item{snap_distance_m}{distance in meters to snap SpatRaster generated geometry to polygon geometry}
 
 \item{simplify_tolerance_m}{dTolerance in meters for simplification of grid-cell based polygons}
 
 \item{vector_crs}{any object compatible with sf::st_crs. Used for vector-based calculations in case that 
-raster projection is not suitable (e.g. lon/lat) -- must result in units of meters.}
+fdr projection is not suitable (e.g. lon/lat) -- must result in units of meters.}
 
 \item{fix_catchments}{logical. should catchment geometries be rectified?}
 
-\item{keep}{Only applicable if fix_catchments = TRUE. Defines the proportion of points to retain in geometry simplification (0-1; default 0.05). 
-See \code{\link[rmapshaper]{ms_simplify}}.}
+\item{keep}{Only applicable if fix_catchments = TRUE. Defines the proportion 
+of points to retain in geometry simplification (0-1; default 0.05). 
+See \code{\link[rmapshaper]{ms_simplify}}. Set to NULL to skip
+simplification.}
+
+\item{crs}{integer or object compatible with sf::st_crs coordinate reference.
+Should be a projection that supports area-calculations.}
 }
 \value{
 Catchment divides that have been split and collapsed according to

@@ -27,11 +27,7 @@
 #' split <- split_flowlines(suppressWarnings(sf::st_cast(sf::st_transform(
 #'   new_hope_flowline, 5070), "LINESTRING")),
 #'                          max_length = 2000, events = new_hope_events)
-#'
-#' mapview::mapview(list(new_hope_events, new_hope_flowline))
-#' 
-#' mapview::mapview(list(new_hope_events, split))
-#'
+
 split_flowlines <- function(flines, max_length = NULL, 
                             events = NULL, para = 0, avoid = NA) {
   

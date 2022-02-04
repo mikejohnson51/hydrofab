@@ -6,8 +6,12 @@ test_that("refactor_nhdplus works as expected with three pass mode", {
                                                  where = "package:lwgeom",
                                                  mode = "function")) {
 
-  nhdplus_flines <- sf::st_zm(readRDS("data/north_network.rds"))
-
+    
+    
+  nhdplus_flines <- sf::st_zm(readRDS(list.files(pattern = "north_network.rds$", 
+                                  full.names = TRUE, 
+                                  recursive = TRUE)))
+    
   split_flines_meters <- 2000
   split_flines_cores <- 2
   collapse_flines_meters <- collapse_flines_main_meters <- 1000
