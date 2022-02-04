@@ -86,8 +86,7 @@ aggregate_network <- function(flowpath, outlets,
   fline_sets <- fline_sets[[1]]
 
   # create long form ID to set member list
-  sets = data.frame(ID =  rep(fline_sets$ID,  times = lengths(fline_sets$set)),
-  set = unlist(fline_sets$set))
+  sets <- unnest_flines(fline_sets)
 
   # Figure out what the ID of the downstream catchment is.
   next_id <- left_join(sets,
@@ -427,6 +426,20 @@ my_combine <- function(old, new) {
   }
 }
 
+unnest_flines <- function(x, col = "set") {
+  
+  times <- lengths(x[[col]])
+  base_names <- names(x)[!names(x) == col]
+  
+  out <- as.data.frame(cbind(sapply(base_names, function(n) rep(x[[n]], times = times))))
+  
+  names(out) <- base_names
+  
+  out[[col]] <- unlist(x[[col]])
+  
+  out
+}
+
 get_catchment_sets <- function(flowpath, outlets) {
 
   fline_sets <- data.frame(ID = outlets$ID,
@@ -579,8 +592,7 @@ get_minimal_network <- function(flowpath, outlets) {
     flowpath, dplyr::filter(outlets, .data$ID %in% flowpath$ID),
     da_thresh = NA, only_larger = TRUE)
 
-  min_net <- tidyr::unnest_longer(drop_geometry(minimal$fline_sets),
-                                  col = .data$set) %>%
+  min_net <- unnest_flines(drop_geometry(minimal$fline_sets)) %>%
     left_join(select(flowpath, .data$ID, .data$lengthkm,
                      .data$areasqkm, .data$levelpathid),
               by = c("set" = "ID")) %>%

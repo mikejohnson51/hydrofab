@@ -29,11 +29,11 @@ expect_equal(length(aggregated_cat$set[aggregated_cat$ID == 31][[1]]),
 expect_true(!5 %in% aggregated_cat$set[aggregated_cat$ID == 31][[1]], 
             "an upstream outlet should not be in another set")
 
-expect_true(length(filter(aggregated_fline, ID == 31)$set[[1]]) == 2, 
+expect_true(length(dplyr::filter(aggregated_fline, ID == 31)$set[[1]]) == 2, 
             "got the wrong number of flowpaths")
 
 aggregate_lookup_fline <- dplyr::select(sf::st_drop_geometry(aggregated$fline_sets), ID, set) %>%
-  tidyr::unnest_longer(col = set) %>%
+  hyRefactor:::unnest_flines() %>%
   dplyr::rename(aggregated_ID = ID, reconciled_ID = set)
 
 expect_true(!all(walker_fline_rec$ID %in% aggregate_lookup_fline$reconciled_ID), 
