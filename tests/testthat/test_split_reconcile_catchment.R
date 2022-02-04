@@ -1,7 +1,5 @@
 context("split_catchment_divide")
 
-options("rgdal_show_exportToProj4_warnings"="none")
-
 test_that("split_catchment_divide works", {
   tf <- file.path(tempfile(fileext = ".gpkg"))
   tr <- file.path(tempfile(fileext = ".gpkg"))
@@ -61,8 +59,12 @@ test_that("split_catchment_divide works", {
   test_fline_ref = st_transform(test_fline_ref, st_crs(walker_fdr))
   test_fline_rec = st_transform(test_fline_rec, st_crs(walker_fdr))
   
-  suppressWarnings(reconciled_cats <- reconcile_catchment_divides(test_cat, test_fline_ref, test_fline_rec,
-                                          walker_fdr, walker_fac, para = 1))
+  suppressWarnings(reconciled_cats <- reconcile_catchment_divides(catchment = test_cat, 
+                                                                  fline_ref = test_fline_ref, 
+                                                                  fline_rec = test_fline_rec,
+                                                                  fdr = walker_fdr, 
+                                                                  fac = walker_fac, 
+                                                                  para = 1))
 
   expect_true(nrow(reconciled_cats) == nrow(test_fline_ref), "got the wrong number of split catchments")
   expect_true(all(reconciled_cats$member_COMID %in% test_fline_ref$COMID))
@@ -156,16 +158,17 @@ test_that("reconcile catchments works with reconciled flowline from split", {
   # "166755072,8866562.2"
   # "8833300.1", "8833300.2"
 
-  fdr <- suppressWarnings(raster::raster(
+  fdr <- suppressWarnings(terra::rast(
     list.files(pattern = "reconcile_test_fdr.tif$", 
                recursive = TRUE, full.names = TRUE)))
-  fac <- suppressWarnings(raster::raster(
+  
+  fac <- suppressWarnings(terra::rast(
     list.files(pattern = "reconcile_test_fac.tif$",
                recursive = TRUE, full.names = TRUE)))
   
   raster_proj <- sf::st_crs(fdr)
   
- rec_gpkg <- list.files(pattern = "reconcile_test.gpkg",
+  rec_gpkg <- list.files(pattern = "reconcile_test.gpkg",
              recursive = TRUE, full.names = TRUE)
   
   test_fline_ref <- st_transform(
@@ -225,23 +228,22 @@ test_that("doing nothing does nothing", {
 })
 
 test_that("too small split", {
-  
+
   # Tests the snap_distance_m parameter.
-  
-  catchment <- read_sf("data/split_bug.gpkg", "catchment")
-  fline <- read_sf("data/split_bug.gpkg", "fline")
-  fdr <- raster("data/split_bug_fdr.tif")
-  fac <- raster("data/split_bug_fac.tif")
-  
-  expect_error(split_catchment_divide(catchment, fline, fdr, fac, 
+  catchment <- read_sf(list.files(pattern = "split_bug.gpkg$", full.names = TRUE, recursive = TRUE), "catchment")
+  fline <- read_sf(list.files(pattern = "split_bug.gpkg$", full.names = TRUE, recursive = TRUE), "fline")
+
+  fdr <- rast( list.files(pattern = "split_bug_fdr.tif$", full.names = TRUE, recursive = TRUE))
+  fac <- rast( list.files(pattern = "split_bug_fac.tif$", full.names = TRUE, recursive = TRUE))
+
+  expect_error(split_catchment_divide(catchment, fline, fdr, fac,
                                       min_area_m = 800, snap_distance_m = 100),
                "Nothing left over. Split too small?")
-  
-  out <- split_catchment_divide(catchment, fline, fdr, fac, 
+
+  out <- split_catchment_divide(catchment, fline, fdr, fac,
                                 min_area_m = 800, snap_distance_m = 40)
-  
+
   expect_equal(length(out), 2)
-  
 })
 
 test_that("no fdr", {
@@ -267,6 +269,7 @@ test_that("no fdr", {
   
   fline_ref <- sf::read_sf(tf) %>%
     dplyr::arrange(COMID)
+  
   fline_rec <- sf::read_sf(tr)
   
   cat <- sf::st_transform(walker_catchment, sf::st_crs(fline_rec))
@@ -280,26 +283,28 @@ test_that("no fdr", {
 })
 
 test_that("merrit dem", {
-  fdr <- raster::raster("data/ak_fdr.tif")
-  fac <- raster::raster("data/ak_fac.tif")
-  cat <- sf::read_sf("data/ak_vector.gpkg", "catchment")
-  ref <- sf::read_sf("data/ak_vector.gpkg", "fline_ref")
-  rec <- sf::read_sf("data/ak_vector.gpkg", "fline_rec")
   
+  fdr <- terra::rast(list.files(pattern = "ak_fdr.tif$", full.names = TRUE, recursive = TRUE))
+  fac <- terra::rast(list.files(pattern = "ak_fac.tif$", full.names = TRUE, recursive = TRUE))
+  cat <- sf::read_sf(list.files(pattern = "ak_vector.gpkg$", full.names = TRUE, recursive = TRUE), "catchment")
+  ref <- sf::read_sf(list.files(pattern = "ak_vector.gpkg$", full.names = TRUE, recursive = TRUE), "fline_ref")
+  rec <- sf::read_sf(list.files(pattern = "ak_vector.gpkg$", full.names = TRUE, recursive = TRUE), "fline_rec")
+
   rec_cat <- suppressWarnings(reconcile_catchment_divides(
-    catchment = cat, 
+    catchment = cat,
     fline_ref =     ref,
-    fline_rec =     rec, 
-                              fdr, 
-                              fac,
-                              para = 1, min_area_m = 10000, 
-                              snap_distance_m = 5, 
-                              simplify_tolerance_m = 5, 
-                              vector_crs = 3338))
-  
+    fline_rec =     rec,
+    fdr,
+    fac,
+    para = 1, 
+    min_area_m = 10000,
+    snap_distance_m = 5,
+    simplify_tolerance_m = 5,
+    vector_crs = 3338))
+
   expect_equal(rec_cat$member_COMID, c("81000012.1", "81000012.2"))
-  
+
   # plot(rec_cat$geom[2])
   # plot(rec_cat$geom[1], add = TRUE, col = "red")
-  
+
 })

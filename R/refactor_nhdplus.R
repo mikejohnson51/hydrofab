@@ -42,9 +42,10 @@
 #'                    package = "nhdplusTools"))
 #' 
 #' nhdplus_flowlines <- sf::st_zm(sample_flines)
+#'
 #' refactor_nhdplus(nhdplus_flines = nhdplus_flowlines,
 #'                  split_flines_meters = 2000,
-#'                  split_flines_cores = 3,
+#'                  split_flines_cores = 2,
 #'                  collapse_flines_meters = 500,
 #'                  collapse_flines_main_meters = 500,
 #'                  out_refactored = "temp.gpkg",
@@ -52,9 +53,9 @@
 #'                  three_pass = TRUE,
 #'                  purge_non_dendritic = FALSE,
 #'                  warn = FALSE)
+#'                  
 #' unlink("temp.gpkg")
 #' unlink("temp_rec.gpkg")
-#'
 
 refactor_nhdplus <- function(nhdplus_flines,
                              split_flines_meters,

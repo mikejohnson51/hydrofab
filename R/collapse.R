@@ -26,6 +26,8 @@ collapse_flowlines <- function(flines, thresh, add_category = FALSE,
 
   check_names(flines, "collapse_flowlines")
 
+  flines[["toCOMID"]][flines[["toCOMID"]] == 0] <- NA
+  
   # very large thresh
   if (is.null(mainstem_thresh)) {
     mainstem_thresh_use <- max(flines$LENGTHKM)

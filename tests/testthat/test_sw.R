@@ -1,12 +1,24 @@
 context("sw catchment split")
 test_that("long thin sw catchment", {
-fac <- raster::raster("data/sw_fac.tif")
-fdr <- raster::raster("data/sw_fdr.tif")
-proj <- as.character(raster::crs(fdr))
+  
+fac <- terra::rast(list.files(pattern = "sw_fac.tif$", 
+                              full.names = TRUE, 
+                              recursive = TRUE))
 
-flowline <- read_sf("data/sw.gpkg", "fline") %>%
+fdr <- terra::rast(list.files(pattern = "sw_fdr.tif$", 
+                              full.names = TRUE, 
+                              recursive = TRUE))
+  
+proj <- terra::crs(fdr)
+
+flowline <- sf::read_sf(list.files(pattern = "sw.gpkg$", 
+                                   full.names = TRUE, 
+                                   recursive = TRUE), "fline") %>%
   st_transform(proj)
-catchment <- read_sf("data/sw.gpkg", "catchment") %>%
+
+catchment <- sf::read_sf(list.files(pattern = "sw.gpkg$", 
+                                    full.names = TRUE, 
+                                    recursive = TRUE), "catchment") %>%
   st_transform(proj)
 
 split <- hyRefactor::split_catchment_divide(catchment, flowline, fdr, fac)

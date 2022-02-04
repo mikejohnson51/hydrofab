@@ -7,9 +7,9 @@
 ### Installation:
 
 ```
-install.packages("devtools")
+install.packages("remotes")
 install.packages("rgeos", repos="http://R-Forge.R-project.org", type="source")
-devtools::install_github("dblodgett-usgs/hyRefactor")
+remotes::install_github("dblodgett-usgs/hyRefactor")
 ```
 
 This package is based around the same concepts as [nhdplusTools](https://usgs-r.github.io/nhdplusTools/) and uses its utilities extensively.

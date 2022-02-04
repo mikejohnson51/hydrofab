@@ -1,8 +1,8 @@
 library(sf)
 library(hyRefactor)
 
-fdr <- raster::raster("~/Documents/active_code/gfv2/workspace/data/fdrfac/NHDPlusNE/NHDPlus01/NHDPlusFdrFac01a/fdr/")
-fac <- raster::raster("~/Documents/active_code/gfv2/workspace/data/fdrfac/NHDPlusNE/NHDPlus01/NHDPlusFdrFac01a/fac/")
+fdr <- terra::rast("~/Documents/active_code/gfv2/workspace/data/fdrfac/NHDPlusNE/NHDPlus01/NHDPlusFdrFac01a/fdr/")
+fac <- terra::rast("~/Documents/active_code/gfv2/workspace/data/fdrfac/NHDPlusNE/NHDPlus01/NHDPlusFdrFac01a/fac/")
 test_cat <- sf::read_sf("~/Documents/active_code/gfv2/workspace/cache/test.gpkg", "nhd_catchment")
 test_fline <- sf::read_sf("~/Documents/active_code/gfv2/workspace/cache/test.gpkg", "nhd_flowline")
 
@@ -23,7 +23,7 @@ refactor_nhdplus(nhdplus_flines = test_fline,
 test_fline_ref <- sf::read_sf("~/temp/collapsed.gpkg", "collapsed")
 test_fline_rec <- sf::read_sf("~/temp/reconciled.gpkg", "reconciled")
 
-crs <- raster::crs(fdr)
+crs <- terra::crs(fdr)
 
 test_fline_rec <- st_transform(test_fline_rec, crs)
 test_fline_ref <- st_transform(test_fline_ref, crs)
@@ -39,8 +39,8 @@ reconciled_cats <- reconcile_catchment_divides(test_cat, test_fline_ref,
 
 catchment <- read_sf("data/split_cat.gpkg", "catchment")
 fline <- read_sf("data/split_cat.gpkg", "fline")
-fdr <- raster::raster("data/split_cat_fdr.tif")
-fac <- raster::raster("data/split_cat_fac.tif")
+fdr <- terra::rast("data/split_cat_fdr.tif")
+fac <- terra::rast("data/split_cat_fac.tif")
 
 check <- split_catchment_divide(catchment, fline, fdr, fac)
 

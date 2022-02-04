@@ -31,9 +31,9 @@ included COMIDs}
 \item{fline_rec}{sf data.frame flowpaths as returned by
 \code{\link{reconcile_collapsed_flowlines}}}
 
-\item{fdr}{raster D8 flow direction}
+\item{fdr}{SpatRast D8 flow direction}
 
-\item{fac}{raster flow accumulation}
+\item{fac}{SpatRast flow accumulation}
 
 \item{para}{integer numer of cores to use for parallel execution}
 
@@ -41,12 +41,12 @@ included COMIDs}
 
 \item{min_area_m}{minimum area in m^2 to filter out slivers (caution, use with care!!)}
 
-\item{snap_distance_m}{distance in meters to snap raster generated geometry to polygon geometry}
+\item{snap_distance_m}{distance in meters to snap SpatRaster generated geometry to polygon geometry}
 
 \item{simplify_tolerance_m}{dTolerance in meters for simplification of grid-cell based polygons}
 
 \item{vector_crs}{any object compatible with sf::st_crs. Used for vector-based calculations in case that 
-raster projection is not suitable (e.g. lon/lat) -- must result in units of meters.}
+fdr projection is not suitable (e.g. lon/lat) -- must result in units of meters.}
 
 \item{fix_catchments}{logical. should catchment geometries be rectified?}
 

@@ -1,13 +1,22 @@
+# Either export from nhdplusTools or leave this
+check7z = function (){
+  tryCatch({
+    system("7z", intern = TRUE)
+  }, error = function(e) {
+    stop(simpleError("Please Install 7zip (Windows) or p7zip (MacOS/Unix). Choose accordingly:\n        Windows: https://www.7-zip.org/download.html\n        Mac: 'brew install p7zip' or 'sudo port install p7zip'\n        Linux: https://sourceforge.net/projects/p7zip/"))
+  })
+}
+
 #' Download Elevation and Derivatives
 #' @param product character DEM, hydroDEM, or FDRFAC.  
 #' @param out_dir path to directory to store output.
 #' @param regions character vector of two digit hydrologic 
-#' @importFrom rvest html_nodes html_attr
-#' @importFrom xml2 read_html
+#' @importFrom rvest read_html html_nodes html_attr
 #' @importFrom httr RETRY write_disk progress
 #' @export
 download_elev <- function(product, out_dir, regions = NULL) {
-  dev_null <- nhdplusTools:::check7z()
+  
+  dev_null <- check7z()
   
   allowable <- c("DEM" = ".*NEDSnapshot.*", "hydroDEM" = ".*HydroDem.*", "FDRFAC" = ".*FdrFac.*")
   
@@ -25,7 +34,7 @@ download_elev <- function(product, out_dir, regions = NULL) {
   while(i <= length(check)) {
     url <- check[i]
     
-    pg <- read_html(url)
+    pg <- rvest::read_html(url)
     
     pg_links <- paste0(url, html_attr(html_nodes(pg, "a"), "href"))
     

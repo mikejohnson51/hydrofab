@@ -83,7 +83,7 @@ test_that("split lines works", {
     sf::st_as_sf() %>%
     sf::st_cast("LINESTRING") %>%
     sf::st_transform(5070) %>%
-    split_flowlines(2000, para = 3))
+    split_flowlines(2000, para = 2))
 
   expect_true(length(which(grepl("1623361", as.character(flines$COMID)))) == 10)
 

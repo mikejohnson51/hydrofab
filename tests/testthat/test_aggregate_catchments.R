@@ -1,7 +1,5 @@
 context("aggregate catchment")
 
-options("rgdal_show_exportToProj4_warnings"="none")
-
 test_that("walker aggregate runs", {
 source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
 
@@ -24,23 +22,26 @@ aggregated_cat   <- aggregated$cat_sets
 expect_true(all(aggregated_cat$ID %in% get_id(c("5329385", "5329843", "5329339.1", "5329303"))))
 expect_equal(sort(aggregated_fline$ID), sort(get_id(c("5329385", "5329843", "5329339.1", "5329303"))))
 expect_true(aggregated_cat$ID[1] %in% aggregated_cat$set[[1]], "outlet ids should be in the result")
-expect_true(length(aggregated_cat$set[[3]]) == 5, "got the wrong number in catchment set")
-expect_true(!5 %in% aggregated_cat$set[[3]], "an upstream outlet should not be in another set")
+expect_true(all(aggregated_cat$set[aggregated_cat$ID == 31][[1]] %in% 
+                  c(29, 30, 85, 86, 31)))
+expect_equal(length(aggregated_cat$set[aggregated_cat$ID == 31][[1]]),  
+                  5)
+expect_true(!5 %in% aggregated_cat$set[aggregated_cat$ID == 31][[1]], 
+            "an upstream outlet should not be in another set")
 
-expect_true(length(filter(aggregated_fline, ID == 31)$set[[1]]) == 2, "got the wrong number of flowpaths")
+expect_true(length(dplyr::filter(aggregated_fline, ID == 31)$set[[1]]) == 2, 
+            "got the wrong number of flowpaths")
 
 aggregate_lookup_fline <- dplyr::select(sf::st_drop_geometry(aggregated$fline_sets), ID, set) %>%
-  tidyr::unnest_longer(col = set) %>%
+  hyRefactor:::unnest_flines() %>%
   dplyr::rename(aggregated_ID = ID, reconciled_ID = set)
 
 expect_true(!all(walker_fline_rec$ID %in% aggregate_lookup_fline$reconciled_ID), 
             "all input ids should not be in flowline output")
 
-aggregate_lookup_cat <- dplyr::select(sf::st_drop_geometry(aggregated$cat_sets), ID, set) %>%
-  tidyr::unnest_longer(col = set) %>%
-  dplyr::rename(aggregated_ID = ID, reconciled_ID = set)
+aggregate_lookup_cat <- dplyr::select(sf::st_drop_geometry(aggregated$cat_sets), ID, set) 
 
-expect_true(all(walker_fline_rec$ID %in% aggregate_lookup_cat$reconciled_ID), 
+expect_true(all(walker_fline_rec$ID %in% unlist(aggregate_lookup_cat$set)), 
             "all input ids should be in catchment output")
 
 expect_equal(aggregated_cat$toID, get_id(c(NA, "5329843", "5329339.1", "5329303")), info = "Expect these toIDs")
@@ -54,9 +55,13 @@ aggregated_fline <- st_transform(aggregated_fline, crs)
 
 aggregated_cat <- aggregated_cat[match(aggregated_fline$ID, aggregated_cat$ID), ]
 
-new_geom <- do.call(c, lapply(c(1:nrow(aggregated_cat)), function(g, ac, af, fdr, fac) {
-  split_catchment_divide(ac[g, ], af[g, ], fdr, fac, lr = TRUE)
-}, ac = aggregated_cat, af = aggregated_fline, fdr = walker_fdr, fac = walker_fac))
+new_geom <- do.call(c, lapply(c(1:nrow(aggregated_cat)), function(g) {
+  split_catchment_divide(catchment = aggregated_cat[g, ], 
+                         fline = aggregated_fline[g, ], 
+                         fdr = walker_fdr, 
+                         fac = walker_fac, 
+                         lr = TRUE)
+}))
 
 expect_true(all(lengths(new_geom) == 2))
 
