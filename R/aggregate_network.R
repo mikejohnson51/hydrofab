@@ -186,6 +186,21 @@ fix_nexus <- function(flowpath, tail_id, da_thresh = NA, only_larger = FALSE) {
              stringsAsFactors = FALSE)
 }
 
+apply_fix_nexus <- function(bad_id, flowpath, da_thresh, only_larger) {
+  bind_rows(
+    lapply(bad_id, 
+           function(bad_tail_id, 
+                    flowpath, 
+                    da_thresh, 
+                    only_larger) {
+             fix_nexus(flowpath, bad_tail_id, 
+                       da_thresh, only_larger)
+           }, 
+           flowpath = flowpath, 
+           da_thresh = da_thresh, 
+           only_larger = only_larger))
+}
+
 fix_tail <- function(flowpath, outlets, toid_tail_id, da_thresh = NA, only_larger = FALSE) {
   potential_add <- fix_nexus(flowpath, toid_tail_id, da_thresh, only_larger)
   new <- !potential_add$ID %in% outlets$ID
@@ -207,11 +222,23 @@ make_outlets_valid <- function(outlets, flowpath,
   # Finds levelpaths and their unique head and outlet
   lps <- get_lps(drop_geometry(flowpath))
   
+  # Need to check if outlets are on levelpath tails and add
+  # required additional outlets.
+  outlets <- bind_rows(
+    outlets,
+    apply_fix_nexus(filter(get_outlets(outlets, lps), 
+                           .data$ID == .data$tail_ID)$ID, 
+                    flowpath, da_thresh, only_larger)
+  )
+
+  # deduplicate outlets.
   outlets <- distinct(outlets) %>%
     group_by(.data$ID) %>%
-    filter(!(n() > 1 & .data$type == "outlet")) %>%
+    filter(!(n() > 1 & # this removes outlets that duplicate terminals.
+               # they can be added in the above outlets check.
+               .data$type == "outlet")) %>%
     ungroup()
-  
+    
   otl <- get_outlets(outlets, lps)
   
   count_while <- 0
@@ -224,10 +251,8 @@ make_outlets_valid <- function(outlets, flowpath,
     
     outlets <- dplyr::bind_rows(
       outlets,
-      dplyr::bind_rows(lapply(
-        bad_tail, function(bad_tail_id, flowpath, da_thresh, only_larger) {
-          fix_nexus(flowpath, bad_tail_id, da_thresh, only_larger)
-        }, flowpath = flowpath, da_thresh = da_thresh, only_larger = only_larger))
+      apply_fix_nexus(bad_tail, 
+                      flowpath, da_thresh, only_larger)
     )
     
     otl <- get_outlets(outlets, lps)

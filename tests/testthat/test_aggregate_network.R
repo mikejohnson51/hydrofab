@@ -4,7 +4,7 @@ test_that("example runs", {
   source(system.file("extdata", "walker_data.R", package = "nhdplusTools"))
 
   fline <- dplyr::right_join(dplyr::select(walker_flowline, COMID),
-                             suppressWarnings(prepare_nhdplus(walker_flowline, 0, 0, 0, FALSE)))
+                             suppressWarnings(nhdplusTools::prepare_nhdplus(walker_flowline, 0, 0, 0, FALSE)))
 
   fline <- dplyr::select(fline, ID = COMID, toID = toCOMID,
                          LevelPathID = LevelPathI, Hydroseq)
@@ -37,11 +37,11 @@ test_that("minimal network", {
                         type = c("outlet", "outlet", "outlet", "outlet", "outlet"))
 
   #' Add toCOMID
-  fline[["toCOMID"]] <- nhdplusTools::get_tocomid(fline)
+  fline <- nhdplusTools::get_tocomid(fline, add = TRUE)
 
-  fline <- dplyr::select(fline, ID = COMID, toID = toCOMID,
-                         levelpathid = LevelPathI, hydroseq = Hydroseq,
-                         areasqkm = AreaSqKM, lengthkm = LENGTHKM)
+  fline <- dplyr::select(fline, ID = comid, toID = tocomid,
+                         levelpathid = levelpathi, hydroseq = hydroseq,
+                         areasqkm = areasqkm, lengthkm = lengthkm)
 
   min_net <- get_minimal_network(fline, outlets)
   
@@ -55,3 +55,17 @@ test_that("minimal network", {
   
   expect_true(all(outlets$ID %in% min_net$ID))
 })
+
+test_that("missing outlet", {
+  outlets <- as.data.frame(list(ID = c(496338, 21125133, 21047474, 249354, 
+                                       21124683, 21124865, 21046242, 255614), 
+                                type = c("outlet", "outlet", "outlet", "outlet", 
+                                         "outlet", "outlet", "outlet", "outlet")))
+  
+  net <- readRDS(list.files(pattern = "test_outlets.rds", full.names = TRUE, recursive = TRUE))
+  
+  outlets <- hyRefactor:::make_outlets_valid(outlets, net)
+  
+  expect_true(21047070 %in% outlets$ID)
+})
+

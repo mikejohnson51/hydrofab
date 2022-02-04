@@ -99,7 +99,7 @@ ids <- lapply(ids, function(x) x[[1]])
 
 outlets$ID <- as.integer(ids)
 
-outlets_sub <- filter(outlets, !is.na(ID) & ID %in% cat_rec$ID)
+outlets_sub <- dplyr::filter(outlets, !is.na(ID) & ID %in% cat_rec$ID)
 
 cat_agg <- aggregate_catchments(fline_rec, cat_rec, 
                                 outlets_sub, 
@@ -108,7 +108,7 @@ cat_agg <- aggregate_catchments(fline_rec, cat_rec,
 
 # mapview::mapview(cat_agg)
 
-expect_equal(nrow(cat_agg$cat_sets), 513)
+expect_equal(nrow(cat_agg$cat_sets), 517)
 
-expect_equal(nrow(cat_agg$fline_sets), 513)
+expect_equal(nrow(cat_agg$fline_sets), 517)
 })
