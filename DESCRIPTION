@@ -17,7 +17,6 @@ Imports:
     data.table,
     terra,
     nhdplusTools,
-    igraph,
     tidyr,
     pbapply,
     rvest,

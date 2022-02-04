@@ -33,12 +33,12 @@ outlets <- data.frame(ID = c(5329357, 5329317, 5329365, 5329435, 5329817),
                       type = c("outlet", "outlet", "outlet", "outlet", "outlet"))
 
 #' Add toCOMID
-fline[["toCOMID"]] <- nhdplusTools::get_tocomid(fline)
+fline <- nhdplusTools::get_tocomid(fline, add = TRUE)
 
 # get attributes set
-fline <- dplyr::select(fline, ID = COMID, toID = toCOMID,
-                       levelpathid = LevelPathI, hydroseq = Hydroseq,
-                       areasqkm = AreaSqKM, lengthkm = LENGTHKM)
+fline <- dplyr::select(fline, ID = comid, toID = tocomid,
+                       levelpathid = levelpathi, hydroseq = hydroseq,
+                       areasqkm = areasqkm, lengthkm = lengthkm)
 
 min_net <- get_minimal_network(fline, outlets)
 

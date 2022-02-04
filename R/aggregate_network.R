@@ -374,7 +374,7 @@ sort_outlets <- function(outlets, flowpath) {
     select(.data$ID, .data$type, .data$nexID) %>%
     distinct()
 
-  fp_sort <- nhdplusTools:::get_sorted(drop_geometry(select(flowpath, .data$ID, .data$toNexID)))$ID
+  fp_sort <- nhdplusTools::get_sorted(drop_geometry(select(flowpath, .data$ID, .data$toNexID)))$ID
 
   fp_sort <- c(fp_sort, flowpath$toNexID[flowpath$toNexID < 0])
 
@@ -559,12 +559,12 @@ get_catchment_sets <- function(flowpath, outlets) {
 #'                       type = c("outlet", "outlet", "outlet", "outlet", "outlet"))
 #'
 #' #' Add toCOMID
-#' fline[["toCOMID"]] <- nhdplusTools::get_tocomid(fline)
+#' fline <- nhdplusTools::get_tocomid(fline, add = TRUE)
 #'
 #' # get attributes set
-#' fline <- dplyr::select(fline, ID = COMID, toID = toCOMID,
-#'                        levelpathid = LevelPathI, hydroseq = Hydroseq,
-#'                        areasqkm = AreaSqKM, lengthkm = LENGTHKM)
+#' fline <- dplyr::select(fline, ID = comid, toID = tocomid,
+#'                        levelpathid = levelpathi, hydroseq = hydroseq,
+#'                        areasqkm = areasqkm, lengthkm = lengthkm)
 #'
 #' min_net <- get_minimal_network(fline, outlets)
 #'
