@@ -146,7 +146,7 @@ clean_geometry <- function(catchments,
     mutate(area = add_areasqkm(.))
   })
 
-  ids <- filter(in_cat, duplicated(.data$ID))$ID
+  ids <- unique(filter(in_cat, duplicated(.data$ID))$ID)
 
   if (length(ids) != 0) {
 
@@ -192,7 +192,9 @@ clean_geometry <- function(catchments,
 
     # message(prettyNum(nrow(frags), big.mark = ",", scientific = FALSE), " fragments to clean...")
 
-    if(!is.null(out) & nrow(out) != 0){
+    if(is.null(out)){
+      in_cat = base_cats
+    } else if(!is.null(out) & nrow(out) != 0){
       # ints are the LINSTRINGS of intersection between base_cats and frags
       ints = out %>%
         mutate(l = st_length(.)) %>%

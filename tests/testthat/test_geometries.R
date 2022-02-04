@@ -11,3 +11,15 @@ test_that("Reconciled catchments can be fixed...", {
   expect_true(length(st_cast(st_geometry(divides_new), "POLYGON")) == nrow(test_divides))
   
 })
+
+test_that("Make sure 'out' passes when NULL...", {
+  
+  catchments = readRDS(list.files(pattern = "null_geom_catch.rds$", 
+                                  full.names = TRUE, 
+                                  recursive = TRUE))
+  
+  divides_new = clean_geometry(catchments, ID = "ID", keep = .9)
+  
+  expect_true(nrow(divides_new) == 6)
+  
+})
