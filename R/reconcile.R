@@ -180,7 +180,7 @@ reconcile_catchment_divides <- function(catchment,
       fdr = terra::rast(fdr)
     }
     
-    if(!inherits(fdr, "SpatRaster")){
+    if(!inherits(fac, "SpatRaster")){
       fac = terra::rast(fac)
     }
     
