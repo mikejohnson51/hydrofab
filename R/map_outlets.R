@@ -24,21 +24,16 @@ map_outlet_ids <- function(source_outlets, reconciled) {
   reconciled$integer_COMID <- strsplit(reconciled$member_COMID, ",")
   reconciled$integer_COMID <- lapply(reconciled$integer_COMID, as.integer)
   
+  rec <- unnest_flines(select(reconciled, ID, integer_COMID), col = "integer_COMID")
+  
   # finds IDs from reconciled that represent the passed-in COMID
   # returns IDs in the hyRefactor ID space
-  find_ID <- function(COMID, reconciled) {
-    # returns boolean vector to select IDs that match up to the provided COMID
-    ID_selector <- sapply(reconciled$integer_COMID, 
-                          function(rec_COMID, COMID) COMID %in% rec_COMID, 
-                          COMID = COMID)
-    
-    return(reconciled$ID[ID_selector])
-  }
+  find_ID <- function(COMID, rec) rec$ID[which(COMID == rec$integer_COMID)]
   
   # NOT COMID
-  ids <- sapply(source_outlets$COMID, 
+  ids <- lapply(source_outlets$COMID, 
                 FUN = find_ID, 
-                reconciled = reconciled)
+                rec = rec)
   
   id_selector <- lengths(ids) > 0
   

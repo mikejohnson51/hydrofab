@@ -138,7 +138,7 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 #' of points to retain in geometry simplification (0-1; default 0.05). 
 #' See \code{\link[rmapshaper]{ms_simplify}}. Set to NULL to skip
 #' simplification.
-#' @param crs integer or object compatible with sf::st_crs coordinate reference.
+#' @param vector_crs integer or object compatible with sf::st_crs coordinate reference.
 #' Should be a projection that supports area-calculations.
 #' @inheritParams split_catchment_divide
 #' @return Catchment divides that have been split and collapsed according to
@@ -165,9 +165,9 @@ reconcile_catchment_divides <- function(catchment,
                                               min_area_m = 800, 
                                               snap_distance_m = 100,
                                               simplify_tolerance_m = 40, 
-                                              vector_crs = NULL,
+                                              vector_crs = 5070,
                                               fix_catchments = TRUE,
-                                              keep = .9, crs = 5070) {
+                                              keep = .9) {
   
   in_crs    <- st_crs(catchment)
   catchment <- rename_geometry(catchment, "geom")
@@ -176,18 +176,13 @@ reconcile_catchment_divides <- function(catchment,
   
   if(!is.null(fdr) & !is.null(fac)){
     
-    if(!inherits(fdr, "SpatRaster")){
-      fdr = terra::rast(fdr)
-    }
-    
-    if(!inherits(fac, "SpatRaster")){
-      fac = terra::rast(fac)
-    }
-    
-    catchment <-  st_transform(catchment, terra::crs(fdr)) 
-    #st_precision(catchment) <- terra::res(fdr)[1]
-    fline_ref <-  st_transform(fline_ref,  terra::crs(fdr))
-    fline_rec <-  st_transform(fline_rec,  terra::crs(fdr))
+
+    fdr_temp = terra::rast(fdr)
+
+    catchment <-  st_transform(catchment, terra::crs(fdr_temp)) 
+    #st_precision(catchment) <- terra::res(fdr_temp)[1]
+    fline_ref <-  st_transform(fline_ref,  terra::crs(fdr_temp))
+    fline_rec <-  st_transform(fline_rec,  terra::crs(fdr_temp))
   }
   
   reconciled <- st_drop_geometry(fline_rec) %>%
@@ -310,7 +305,7 @@ reconcile_catchment_divides <- function(catchment,
   
   if(fix_catchments){
     # cat("Fixing Catchment Geometries...\n")
-    clean_geometry(catchments = out, "ID", 0.9) %>% 
+    clean_geometry(catchments = out, "ID", keep) %>% 
       sf::st_transform(in_crs)
   } else {
     sf::st_transform(out, in_crs)
@@ -328,7 +323,17 @@ par_split_cat <- function(fid, to_split_ids, fline_ref, catchment, fdr, fac,
     
     # nolint start
     library(hyRefactor)
+    library(terra)
     # nolint end
+    
+    if(!inherits(fdr, "SpatRaster")){
+      fdr = terra::rast(fdr)
+    }
+    
+    if(!inherits(fac, "SpatRaster")){
+      fac = terra::rast(fac)
+    }
+    
     split_set <- to_split_ids[which(grepl(paste0("^", as.character(fid)), to_split_ids))]
     to_split_flines <- dplyr::filter(fline_ref, COMID %in% split_set)
     to_split_cat    <- dplyr::filter(catchment, FEATUREID == fid)

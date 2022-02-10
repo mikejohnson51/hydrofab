@@ -15,10 +15,9 @@ reconcile_catchment_divides(
   min_area_m = 800,
   snap_distance_m = 100,
   simplify_tolerance_m = 40,
-  vector_crs = NULL,
+  vector_crs = 5070,
   fix_catchments = TRUE,
-  keep = 0.9,
-  crs = 5070
+  keep = 0.9
 )
 }
 \arguments{
@@ -45,8 +44,8 @@ included COMIDs}
 
 \item{simplify_tolerance_m}{dTolerance in meters for simplification of grid-cell based polygons}
 
-\item{vector_crs}{any object compatible with sf::st_crs. Used for vector-based calculations in case that 
-fdr projection is not suitable (e.g. lon/lat) -- must result in units of meters.}
+\item{vector_crs}{integer or object compatible with sf::st_crs coordinate reference.
+Should be a projection that supports area-calculations.}
 
 \item{fix_catchments}{logical. should catchment geometries be rectified?}
 
@@ -54,9 +53,6 @@ fdr projection is not suitable (e.g. lon/lat) -- must result in units of meters.
 of points to retain in geometry simplification (0-1; default 0.05). 
 See \code{\link[rmapshaper]{ms_simplify}}. Set to NULL to skip
 simplification.}
-
-\item{crs}{integer or object compatible with sf::st_crs coordinate reference.
-Should be a projection that supports area-calculations.}
 }
 \value{
 Catchment divides that have been split and collapsed according to
