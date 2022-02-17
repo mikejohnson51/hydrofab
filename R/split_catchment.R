@@ -166,8 +166,8 @@ trace_upstream <- function(start_point, cat, fdr, fac_matrix, fdr_matrix) {
 #' @param catchment sf data.frame with one catchment divide
 #' @param fline sf data.frame with one or more flowline segments in
 #' upstream downstream order.
-#' @param fdr SpatRaster a flow direction SpatRaster that fully covers the catchment
-#' @param fac SpatRaster a flow accumulation SpatRaster that fuller covers the catchment
+#' @param fdr character path to flow direction that fully covers the catchment
+#' @param fac character path to flow accumulation that fuller covers the catchment
 #' @param lr boolean should catchments be split along the left/right bank?
 #' @param min_area_m minimum area in m^2 to filter out slivers (caution, use with care!!)
 #' @param snap_distance_m distance in meters to snap SpatRaster generated geometry to polygon geometry

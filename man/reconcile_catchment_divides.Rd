@@ -30,9 +30,9 @@ included COMIDs}
 \item{fline_rec}{sf data.frame flowpaths as returned by
 \code{\link{reconcile_collapsed_flowlines}}}
 
-\item{fdr}{SpatRast D8 flow direction}
+\item{fdr}{character path to D8 flow direction}
 
-\item{fac}{SpatRast flow accumulation}
+\item{fac}{character path to flow accumulation}
 
 \item{para}{integer numer of cores to use for parallel execution}
 

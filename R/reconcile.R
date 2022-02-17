@@ -129,8 +129,8 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 #' \code{\link{reconcile_collapsed_flowlines}}
 #' @param catchment sf data.frame NHDPlus Catchment or CatchmentSP layers for
 #' included COMIDs
-#' @param fdr SpatRast D8 flow direction
-#' @param fac SpatRast flow accumulation
+#' @param fdr character path to D8 flow direction
+#' @param fac character path to flow accumulation
 #' @param para integer numer of cores to use for parallel execution
 #' @param cache path .rda to cache incremental outputs
 #' @param fix_catchments logical. should catchment geometries be rectified?
@@ -176,8 +176,9 @@ reconcile_catchment_divides <- function(catchment,
   
   if(!is.null(fdr) & !is.null(fac)){
     
-    if(!inherits(fdr, "SpatRaster")){
-      fdr = terra::rast(fdr)
+    fdr_temp <- fdr
+    if(!inherits(fdr_temp, "SpatRaster")){
+      fdr_temp <- terra::rast(fdr_temp)
     }
 
     catchment <-  st_transform(catchment, terra::crs(fdr_temp)) 

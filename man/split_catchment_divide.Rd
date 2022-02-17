@@ -22,9 +22,9 @@ split_catchment_divide(
 \item{fline}{sf data.frame with one or more flowline segments in
 upstream downstream order.}
 
-\item{fdr}{SpatRaster a flow direction SpatRaster that fully covers the catchment}
+\item{fdr}{character path to flow direction that fully covers the catchment}
 
-\item{fac}{SpatRaster a flow accumulation SpatRaster that fuller covers the catchment}
+\item{fac}{character path to flow accumulation that fuller covers the catchment}
 
 \item{lr}{boolean should catchments be split along the left/right bank?}
 
