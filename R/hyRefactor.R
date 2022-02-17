@@ -76,6 +76,12 @@ assign("aggregate_network_attributes",
        c("ID", "toID", "LevelPathID", "Hydroseq"),
        envir = hyrefactor_env)
 
+assign("get_minimal_network_attributes",
+       c(get("aggregate_network_attributes", 
+           envir = hyrefactor_env), 
+         "AreaSqKM", "LENGTHKM"),
+       envir = hyrefactor_env)
+
 check_names <- function(x, function_name) {
   x <- nhdplusTools::align_nhdplus_names(x)
   names_x <- names(x)

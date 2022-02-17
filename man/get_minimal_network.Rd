@@ -7,7 +7,8 @@
 get_minimal_network(flowpath, outlets)
 }
 \arguments{
-\item{flowpath}{sf data.frame Flowpaths with ID, toID, LevelPathID, and Hydroseq attributes.}
+\item{flowpath}{sf data.frame Flowpaths with ID, toID, LevelPathID, 
+Hydroseq and LENGTHKM and AreaSqKM attributes.}
 
 \item{outlets}{data.frame with "ID" and "type" columns. "ID" must be identifiers from
 fowpath and divide data.frames. "type" should be "outlet", or "terminal".
@@ -37,8 +38,8 @@ fline <- nhdplusTools::get_tocomid(fline, add = TRUE)
 
 # get attributes set
 fline <- dplyr::select(fline, ID = comid, toID = tocomid,
-                       levelpathid = levelpathi, hydroseq = hydroseq,
-                       areasqkm = areasqkm, lengthkm = lengthkm)
+                       LevelPathID = levelpathi, hydroseq = hydroseq,
+                       AreaSqKM = areasqkm, LENGTHKM = lengthkm)
 
 min_net <- get_minimal_network(fline, outlets)
 
