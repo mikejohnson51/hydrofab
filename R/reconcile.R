@@ -176,8 +176,9 @@ reconcile_catchment_divides <- function(catchment,
   
   if(!is.null(fdr) & !is.null(fac)){
     
-
-    fdr_temp = terra::rast(fdr)
+    if(!inherits(fdr, "SpatRaster")){
+      fdr = terra::rast(fdr)
+    }
 
     catchment <-  st_transform(catchment, terra::crs(fdr_temp)) 
     #st_precision(catchment) <- terra::res(fdr_temp)[1]

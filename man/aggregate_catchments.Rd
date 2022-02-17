@@ -12,7 +12,8 @@ aggregate_catchments(
   coastal_cats = NULL,
   da_thresh = NA,
   only_larger = FALSE,
-  post_mortem_file = NA
+  post_mortem_file = NA,
+  keep = NULL
 )
 }
 \arguments{
@@ -35,6 +36,8 @@ flowpath and divide data.frames. "type" should be "outlet", or "terminal".
 \item{only_larger}{boolean See \code{\link{aggregate_network}}}
 
 \item{post_mortem_file}{rda file to dump environment to in case of error}
+
+\item{keep}{logical passed along to \code{\link{clean_geometry}}}
 }
 \description{
 Aggregates catchments according to a set of outlet catchments. 

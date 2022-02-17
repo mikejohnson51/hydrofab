@@ -27,36 +27,43 @@ add_areasqkm = function(x){
 
 union_polygons_geos = function(poly, ID){
 
-  if(any((types <- sf::st_geometry_type(poly, by_geometry = TRUE) == "GEOMETRYCOLLECTION"))) {
-    poly <- sf::st_cast(poly, "POLYGON")
+  do_union <- function(poly) {
+    if(any((types <- sf::st_geometry_type(poly, by_geometry = TRUE) == "GEOMETRYCOLLECTION"))) {
+      poly <- sf::st_cast(poly, "POLYGON")
+    }
+    
+    SPDF =  as_Spatial(poly)
+    
+    rownames(SPDF@data) <- sapply(slot(SPDF, "polygons"), function(x) slot(x, "ID"))
+    
+    tryCatch({
+      gUnaryUnion(spgeom = SPDF, id = poly[[ID]], checkValidity = 0)
+    }, error = function(x){
+      gUnaryUnion(spgeom = SPDF, id = poly[[ID]], checkValidity = 2)
+    })
   }
-
-  SPDF =  as_Spatial(poly)
-
-  rownames(SPDF@data) <- sapply(slot(SPDF, "polygons"), function(x) slot(x, "ID"))
-
-  tmp <- tryCatch({
-    gUnaryUnion(spgeom = SPDF, id = poly[[ID]], checkValidity = 0)
-  }, error = function(x){
-    gUnaryUnion(spgeom = SPDF, id = poly[[ID]], checkValidity = 2)
+  
+  poly <- tryCatch({
+    do_union(poly)
+  }, error = function(x) {
+    do_union(sf::st_make_valid(poly))
   })
-
-
-  ids <- as.numeric(sapply(slot(tmp, "polygons"), function(x) slot(x, "ID")))
+  
+  ids <- as.numeric(sapply(slot(poly, "polygons"), function(x) slot(x, "ID")))
 
   suppressWarnings({
-   tt = st_as_sf(tmp) %>%
+   poly = st_as_sf(poly) %>%
+      st_make_valid() %>%
       mutate("{ID}" := ids) %>%
       mutate(areasqkm = add_areasqkm(.)) %>%
-      st_cast("POLYGON") %>%
-      st_make_valid()
+      st_cast("POLYGON")
   })
 
-  if(any(grepl("COLLECTION", st_geometry_type(tt)))){
-    tt = st_collection_extract(tt, "POLYGON")
+  if(any(grepl("COLLECTION", st_geometry_type(poly)))){
+    poly = st_collection_extract(poly, "POLYGON")
   }
 
-  return(tt)
+  return(poly)
 
 }
 

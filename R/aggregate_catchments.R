@@ -13,6 +13,7 @@
 #' @param da_thresh numeric See \code{\link{aggregate_network}}
 #' @param only_larger boolean See \code{\link{aggregate_network}}
 #' @param post_mortem_file rda file to dump environment to in case of error
+#' @param keep logical passed along to \code{\link{clean_geometry}}
 
 #' @details See \code{\link{aggregate_network}}
 #'
@@ -38,13 +39,15 @@
 aggregate_catchments <- function(flowpath, divide, outlets, zero_order = NULL,
                                  coastal_cats = NULL,
                                  da_thresh = NA, only_larger = FALSE, 
-                                 post_mortem_file = NA) {
+                                 post_mortem_file = NA, keep = NULL) {
+  
+  in_crs <- sf::st_crs(divide)
   
   if(!is.null(zero_order)) {
     
     if(is.null(coastal_cats)) stop("must supply coastal_cats with zero order")
     
-    if(st_crs(coastal_cats) != st_crs(divide)) st_transform(coastal_cats, st_crs(divide))
+    if(st_crs(coastal_cats) != in_crs) st_transform(coastal_cats, in_crs)
     
     zero_flowpath <- filter(flowpath, member_COMID %in% do.call(c, zero_order))
   
@@ -59,7 +62,7 @@ aggregate_catchments <- function(flowpath, divide, outlets, zero_order = NULL,
       st_union(c(st_geometry(zero_cats), st_geometry(zero_div)))[[1]]
     }, coastal_cats = coastal_cats, divide = divide)
     
-    coastal <- st_sfc(coastal, crs = st_crs(divide))
+    coastal <- st_sfc(coastal, crs = in_crs)
     
     coastal <- st_sf(ID = names(coastal), geom = coastal)
   } else {
@@ -87,7 +90,9 @@ aggregate_catchments <- function(flowpath, divide, outlets, zero_order = NULL,
     st_as_sf() %>% 
     filter(!sf::st_is_empty(.)) %>%
     union_polygons_geos(ID = "ID") %>% 
-    clean_geometry(ID = "ID") %>% 
+    clean_geometry(ID = "ID", 
+                   crs = in_crs, 
+                   keep = keep) %>% 
     select(.data$ID) %>% 
     left_join(agg_network$cat_sets, by = "ID")
   
