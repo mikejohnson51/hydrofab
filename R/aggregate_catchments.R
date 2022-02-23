@@ -43,6 +43,12 @@ aggregate_catchments <- function(flowpath, divide, outlets, zero_order = NULL,
   
   in_crs <- sf::st_crs(divide)
   
+  if(any(grepl("MULTIPOLYGON", sf::st_geometry_type(divide, by_geometry = TRUE)))) {
+    warning("found MULTIPOLYGONs in divides. They must be of type POLYGON.")
+    divide <- clean_geometry(divide, ID = "ID", 
+                             crs = in_crs, keep = NULL)
+  }
+  
   if(!is.null(zero_order)) {
     
     if(is.null(coastal_cats)) stop("must supply coastal_cats with zero order")

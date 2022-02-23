@@ -128,6 +128,8 @@ flowpaths_to_linestrings = function(flowpaths){
 #' If NULL, then no simplification will be executed.
 #' @param crs integer or object compatible with sf::st_crs coordinate reference.
 #' Should be a projection that supports area-calculations.
+#' @param sys logical should the mapshaper system library be used. If NULL 
+#' the system library will be used if available.
 #' @return sf object
 #' @export
 #' @importFrom dplyr select mutate filter group_by ungroup slice_max bind_rows n right_join rename slice_min
@@ -139,8 +141,14 @@ flowpaths_to_linestrings = function(flowpaths){
 clean_geometry <- function(catchments,
                           ID = "ID",
                           keep = .9,
-                          crs = 5070) {
+                          crs = 5070, 
+                          sys = NULL) {
 
+  if(is.null(sys)) {
+    sys <- FALSE
+    try(sys <- is.character(rmapshaper::check_sys_mapshaper(verbose = FALSE)))
+  }
+  
   in_crs = st_crs(catchments)
 
   in_cat <- suppressWarnings({
@@ -148,7 +156,7 @@ clean_geometry <- function(catchments,
     dplyr::select(ID = !!ID) %>%
     st_transform(crs) %>%
     mutate(areasqkm = add_areasqkm(.)) %>%
-    ms_explode() %>%
+    ms_explode(sys = sys) %>%
     filter(!duplicated(.)) %>%
     mutate(area = add_areasqkm(.))
   })
@@ -181,8 +189,8 @@ clean_geometry <- function(catchments,
     # If fragments exist, then fix, else return empty data.frame
     if(nrow(frags) > 0){
       frags = frags %>%
-        ms_dissolve() %>%
-        ms_explode() %>%
+        ms_dissolve(sys = sys) %>%
+        ms_explode(sys = sys) %>%
         mutate(area = as.numeric(st_area(.))) %>%
         st_make_valid()
 
@@ -275,7 +283,7 @@ clean_geometry <- function(catchments,
 
   if (!is.null(keep)) {
     # message("Simplifying catchment boundaries: keep = ", keep)
-    in_cat = ms_simplify(in_cat, keep = keep, keep_shapes = TRUE)
+    in_cat = ms_simplify(in_cat, keep = keep, keep_shapes = TRUE, sys = sys)
   }
 
   # since areasqkm will be added based on the new geometries,

@@ -3,6 +3,11 @@ context("aggregate catchment")
 test_that("walker aggregate runs", {
 source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
 
+  walker_catchment_rec <- hyRefactor::clean_geometry(
+    nhdplusTools:::check_valid(walker_catchment_rec), 
+    keep = NULL, crs = 5070)
+  
+  
 get_id <- function(mc) {
   ind <- match(mc, walker_catchment_rec$member_COMID)
   walker_catchment_rec$ID[ind]
@@ -107,8 +112,13 @@ expect_true(length(aggregated_cat$set[[2]]) == 101, "got the wrong number in cat
 # nolint end
 })
 
+source(system.file("extdata", "new_hope_data.R", package = "hyRefactor"))
+
+new_hope_catchment_rec <- hyRefactor::clean_geometry(
+  nhdplusTools:::check_valid(new_hope_catchment_rec), 
+  keep = NULL, crs = 5070)
+
 test_that("new_hope aggregate", {
-  source(system.file("extdata", "new_hope_data.R", package = "hyRefactor"))
 
   get_id <- function(mc) {
     ind <- match(mc, new_hope_catchment_rec$member_COMID)
@@ -151,13 +161,13 @@ test_that("new_hope aggregate", {
   expect_true(all(!fline_sets$set[fline_sets$ID == get_id("8896032.2")][[1]] %in% fline_sets$set[fline_sets$ID == get_id("8896032.1")][[1]]),
          "a downstream catchment should not contain flowpaths from upstream catchments")
   
-  new_hope_catchment_rec$area_sqkm <- as.numeric(st_area(
-    st_transform(new_hope_catchment_rec, 5070))) / (1000^2)
+  new_hope_catchment_rec$area_sqkm <- as.numeric(sf::st_area(
+    sf::st_transform(new_hope_catchment_rec, 5070))) / (1000^2)
   new_hope_fline_rec <- dplyr::inner_join(new_hope_fline_rec,
                                   dplyr::select(sf::st_set_geometry(new_hope_catchment_rec, NULL),
                                           ID, area_sqkm), by = "ID")
   new_hope_fline_rec$TotDASqKM <-
-    nhdplusTools::calculate_total_drainage_area(rename(sf::st_set_geometry(new_hope_fline_rec, NULL),
+    nhdplusTools::calculate_total_drainage_area(dplyr::rename(sf::st_set_geometry(new_hope_fline_rec, NULL),
                                          area = area_sqkm))
 
   aggregated <- aggregate_catchments(new_hope_fline_rec, new_hope_catchment_rec, outlets,
@@ -176,20 +186,19 @@ test_that("new_hope aggregate", {
 })
 
 test_that("new_hope aggregate", {
-  source(system.file("extdata", "new_hope_data.R", package = "hyRefactor"))
 
   get_id <- function(mc) {
     ind <- match(mc, new_hope_catchment_rec$member_COMID)
     new_hope_catchment_rec$ID[ind]
   }
 
-  new_hope_catchment_rec$area_sqkm <- as.numeric(st_area(
-    st_transform(new_hope_catchment_rec, 5070))) / (1000^2)
+  new_hope_catchment_rec$area_sqkm <- as.numeric(sf::st_area(
+    sf::st_transform(new_hope_catchment_rec, 5070))) / (1000^2)
   new_hope_fline_rec <- dplyr::inner_join(new_hope_fline_rec,
                                           dplyr::select(sf::st_set_geometry(new_hope_catchment_rec, NULL),
                                                  ID, area_sqkm), by = "ID")
   new_hope_fline_rec[["TotDASqKM"]] <-
-    nhdplusTools::calculate_total_drainage_area(rename(sf::st_set_geometry(new_hope_fline_rec, NULL),
+    nhdplusTools::calculate_total_drainage_area(dplyr::rename(sf::st_set_geometry(new_hope_fline_rec, NULL),
                                          area = area_sqkm))
 
   # HU12 FPP st_joined to get these

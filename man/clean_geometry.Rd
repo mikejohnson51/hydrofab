@@ -4,7 +4,7 @@
 \alias{clean_geometry}
 \title{Clean Catchment Geometry}
 \usage{
-clean_geometry(catchments, ID = "ID", keep = 0.9, crs = 5070)
+clean_geometry(catchments, ID = "ID", keep = 0.9, crs = 5070, sys = NULL)
 }
 \arguments{
 \item{catchments}{catchments geometries to fix}
@@ -17,6 +17,9 @@ If NULL, then no simplification will be executed.}
 
 \item{crs}{integer or object compatible with sf::st_crs coordinate reference.
 Should be a projection that supports area-calculations.}
+
+\item{sys}{logical should the mapshaper system library be used. If NULL 
+the system library will be used if available.}
 }
 \value{
 sf object
