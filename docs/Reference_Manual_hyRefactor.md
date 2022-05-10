@@ -14,16 +14,22 @@
 - [collapse_flowlines](#collapse_flowlines)
 - [download_elev](#download_elev)
 - [download_fdr_fac](#download_fdr_fac)
+- [flowpaths_to_linestrings](#flowpaths_to_linestrings)
+- [get_minimal_network](#get_minimal_network)
+- [get_row_col](#get_row_col)
 - [map_outlet_ids](#map_outlet_ids)
+- [prep_cat_fdr_fac](#prep_cat_fdr_fac)
 - [reconcile_catchment_divides](#reconcile_catchment_divides)
 - [reconcile_collapsed_flowlines](#reconcile_collapsed_flowlines)
 - [refactor_nhdplus](#refactor_nhdplus)
 - [split_catchment_divide](#split_catchment_divide)
 - [split_flowlines](#split_flowlines)
+- [trace_upstream](#trace_upstream)
+- [union_linestrings_geos](#union_linestrings_geos)
 - [union_polygons_geos](#union_polygons_geos)
 
 
-September 21, 2021
+May 10, 2022
 
 # DESCRIPTION
 
@@ -31,33 +37,32 @@ September 21, 2021
 Package: hyRefactor
 Type: Package
 Title: Hydrologic Network Refactoring Tools Based on HY_Features
-Version: 0.4.6
-Authors@R: person("David", "Blodgett", role = c("aut", "cre"), email = "dblodgett@usgs.gov")
+Version: 0.4.7
+Authors@R: c(person("David", "Blodgett", role = c("aut", "cre"), email = "dblodgett@usgs.gov"),
+           person(given = "Mike", family = "Johnson", role = "aut", comment = c(ORCID = "0000-0002-5288-8350")))
 Description: A collection of tools for normalizing and changing the size of catchments.
 URL: https://github.com/dblodgett-usgs/hyrefactor
 BugReports: https://github.com/dblodgett-usgs/hyrefactor/issues
 Depends:
     R (>= 3.5.0)
-Imports: 
-  dplyr, 
-  sf, 
-  lwgeom, 
-  units, 
-  magrittr, 
-  data.table, 
-  raster, 
-  nhdplusTools, 
-  igraph, 
-  tidyr, 
-  pbapply, 
-  xml2, 
-  rvest, 
-  httr, 
-  stringr, 
-  methods,
-  rgeos,
-  rmapshaper
-Suggests: testthat, knitr, rmarkdown, mapview, rgdal, snow
+Imports:
+    dplyr,
+    sf,
+    lwgeom,
+    units,
+    data.table,
+    terra,
+    nhdplusTools,
+    tidyr,
+    pbapply,
+    rvest,
+    httr,
+    methods,
+    rlang,
+    rgeos,
+    rmapshaper,
+    utils
+Suggests: testthat, knitr, rmarkdown
 Remotes: dblodgett-usgs/nhdplusTools
 License: CC0
 Encoding: UTF-8
@@ -114,17 +119,17 @@ Add Length Map to Refactored Network
 
 ## Description
 
-This function replicated the member_COMID column of a refactored
- network but adds a new notion. Following each COMID is '.' which is proceeded
+This function replicates the member_COMID column of a refactored
+ network but adds a new notation Following each COMID is '.' which is proceeded
  by the fraction of that COMID making up the new flowpath. For example 101.1
- would indicate 100 % of COMID 101 is in the new ID.  
- Equally 101.05 would indicate 50 % of COMID 101 is present in the new ID
+ would indicate 100 % of COMID 101 is in the new ID. 
+ Equally 101.05 would indicate 50 % of COMID 101 is present in the new ID'd flowpath
 
 
 ## Usage
 
 ```r
-add_lengthmap(flowpaths)
+add_lengthmap(flowpaths, length_table)
 ```
 
 
@@ -133,6 +138,7 @@ add_lengthmap(flowpaths)
 Argument      |Description
 ------------- |----------------
 `flowpaths`     |     a refactored flowpath network containing an member_COMID column
+`length_table`     |     a table of NHDPlus COMIDs and LENGTH to use as weights. Can be found with `nhdplusTools::get_vaa("lengthkm")`
 
 
 ## Value
@@ -144,8 +150,8 @@ sf object
 
 ```r
 path <- system.file("extdata/walker_reconcile.gpkg", package = "hyRefactor")
-fps  = read_sf(path) %>%
-add_lengthmap()
+fps  <- add_lengthmap(flowpaths = sf::read_sf(path),
+length_table = nhdplusTools::get_vaa("lengthkm"))
 ```
 
 
@@ -171,7 +177,8 @@ aggregate_catchments(
   coastal_cats = NULL,
   da_thresh = NA,
   only_larger = FALSE,
-  post_mortem_file = NA
+  post_mortem_file = NA,
+  keep = NULL
 )
 ```
 
@@ -188,6 +195,7 @@ Argument      |Description
 `da_thresh`     |     numeric See [`aggregate_network`](#aggregatenetwork)
 `only_larger`     |     boolean See [`aggregate_network`](#aggregatenetwork)
 `post_mortem_file`     |     rda file to dump environment to in case of error
+`keep`     |     logical passed along to [`clean_geometry`](#cleangeometry)
 
 
 ## Details
@@ -202,12 +210,13 @@ source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
 outlets <- data.frame(ID = c(31, 3, 5, 1, 45, 92),
 type = c("outlet", "outlet", "outlet", "terminal", "outlet", "outlet"),
 stringsAsFactors = FALSE)
-aggregated <- aggregate_catchments(walker_fline_rec, walker_catchment_rec, outlets)
+aggregated <- aggregate_catchments(flowpath = walker_fline_rec,
+divide = walker_catchment_rec,
+outlets = outlets)
 plot(aggregated$cat_sets$geom, lwd = 3, border = "red")
 plot(walker_catchment_rec$geom, lwd = 1.5, border = "green", col = NA, add = TRUE)
 plot(walker_catchment$geom, lwd = 1, add = TRUE)
 plot(walker_flowline$geom, lwd = .7, col = "blue", add = TRUE)
-
 plot(aggregated$cat_sets$geom, lwd = 3, border = "black")
 plot(aggregated$fline_sets$geom, lwd = 3, col = "red", add = TRUE)
 plot(walker_flowline$geom, lwd = .7, col = "blue", add = TRUE)
@@ -283,6 +292,8 @@ stringsAsFactors = FALSE)
 
 aggregated <- aggregate_network(fline, outlets)
 
+aggregated <- aggregate_network(fline, outlets)
+
 outlets <- dplyr::filter(fline, ID %in% outlets$ID)
 
 outlets <- nhdplusTools::get_node(outlets)
@@ -295,7 +306,7 @@ plot(outlets$geometry, add = TRUE)
 
 # `clean_geometry`
 
-Catchment Geometry Doctor
+Clean Catchment Geometry
 
 
 ## Description
@@ -314,7 +325,7 @@ Fixes geometry issues present in catchments that originate in the
 ## Usage
 
 ```r
-clean_geometry(catchments, ID = "ID", keep = 0.9)
+clean_geometry(catchments, ID = "ID", keep = 0.9, crs = 5070, sys = NULL)
 ```
 
 
@@ -325,6 +336,8 @@ Argument      |Description
 `catchments`     |     catchments geometries to fix
 `ID`     |     name of uniquely identifying column
 `keep`     |     proportion of points to retain in geometry simplification (0-1; default 0.05). See [`ms_simplify`](#mssimplify) . If NULL, then no simplification will be executed.
+`crs`     |     integer or object compatible with sf::st_crs coordinate reference. Should be a projection that supports area-calculations.
+`sys`     |     logical should the mapshaper system library be used. If NULL the system library will be used if available.
 
 
 ## Value
@@ -434,6 +447,121 @@ Argument      |Description
 `regions`     |     character vector of two digit hydrologic
 
 
+# `flowpaths_to_linestrings`
+
+Convert MULITLINESTINGS to LINESTRINGS
+
+
+## Description
+
+Convert MULITLINESTINGS to LINESTRINGS
+
+
+## Usage
+
+```r
+flowpaths_to_linestrings(flowpaths)
+```
+
+
+## Arguments
+
+Argument      |Description
+------------- |----------------
+`flowpaths`     |     a flowpath `sf` object
+
+
+## Value
+
+a `sf` object
+
+
+# `get_minimal_network`
+
+Get Minimal Network
+
+
+## Description
+
+Given a set of outlets, will generate a minimal network by
+ calling [`aggregate_network`](#aggregatenetwork) and adding nhdplus attributes to the result.
+ 
+ If geometry is included with the network, it will be merged and returned.
+
+
+## Usage
+
+```r
+get_minimal_network(flowpath, outlets)
+```
+
+
+## Arguments
+
+Argument      |Description
+------------- |----------------
+`flowpath`     |     sf data.frame Flowpaths with ID, toID, LevelPathID, Hydroseq and LENGTHKM and AreaSqKM attributes.
+`outlets`     |     data.frame with "ID" and "type" columns. "ID" must be identifiers from fowpath and divide data.frames. "type" should be "outlet", or "terminal". "outlet" will include the specified ID. "terminal" will be treated as a terminal node with nothing downstream.
+
+
+## Value
+
+a data.frame (potentially including an sfc list column) with
+ attributes generated by [`add_plus_network_attributes`](#addplusnetworkattributes) 
+ and a list column "set" containing members of each output flowpath.
+
+
+## Examples
+
+```r
+source(system.file("extdata", "walker_data.R", package = "nhdplusTools"))
+fline <- walker_flowline
+
+outlets <- data.frame(ID = c(5329357, 5329317, 5329365, 5329435, 5329817),
+type = c("outlet", "outlet", "outlet", "outlet", "outlet"))
+
+#' Add toCOMID
+fline <- nhdplusTools::get_tocomid(fline, add = TRUE)
+
+# get attributes set
+fline <- dplyr::select(fline, ID = comid, toID = tocomid,
+LevelPathID = levelpathi, hydroseq = hydroseq,
+AreaSqKM = areasqkm, LENGTHKM = lengthkm)
+
+min_net <- get_minimal_network(fline, outlets)
+
+plot(sf::st_geometry(fline), col = "blue")
+plot(sf::st_geometry(min_net), lwd = 2, add = TRUE)
+plot(sf::st_geometry(nhdplusTools::get_node(min_net)), add = TRUE)
+```
+
+
+# `get_row_col`
+
+Get Row and Column
+
+
+## Description
+
+Get Row and Column
+
+
+## Usage
+
+```r
+get_row_col(fdr, start, fac_matrix)
+```
+
+
+## Arguments
+
+Argument      |Description
+------------- |----------------
+`fdr`     |     flow direction grid
+`start`     |     matrix (row, col)
+`fac_matrix`     |     flow accumulation matrix
+
+
 # `map_outlet_ids`
 
 Map outlets from COMID to ID for aggregate catchments
@@ -461,6 +589,32 @@ Argument      |Description
 `reconciled`     |     data.frame as returned by refactor workflow
 
 
+# `prep_cat_fdr_fac`
+
+Prep catchment with FDR/FAC
+
+
+## Description
+
+Prep catchment with FDR/FAC
+
+
+## Usage
+
+```r
+prep_cat_fdr_fac(cat, fdr, fac)
+```
+
+
+## Arguments
+
+Argument      |Description
+------------- |----------------
+`cat`     |     catchment (sf object)
+`fdr`     |     flow direction grid
+`fac`     |     flow accumulation grid
+
+
 # `reconcile_catchment_divides`
 
 Reconcile Catchment Divides
@@ -486,7 +640,7 @@ reconcile_catchment_divides(
   min_area_m = 800,
   snap_distance_m = 100,
   simplify_tolerance_m = 40,
-  vector_crs = NULL,
+  vector_crs = 5070,
   fix_catchments = TRUE,
   keep = 0.9
 )
@@ -500,16 +654,16 @@ Argument      |Description
 `catchment`     |     sf data.frame NHDPlus Catchment or CatchmentSP layers for included COMIDs
 `fline_ref`     |     sf data.frame flowlines as returned by [`refactor_nhdplus`](#refactornhdplus) and [`reconcile_collapsed_flowlines`](#reconcilecollapsedflowlines)
 `fline_rec`     |     sf data.frame flowpaths as returned by [`reconcile_collapsed_flowlines`](#reconcilecollapsedflowlines)
-`fdr`     |     raster D8 flow direction
-`fac`     |     raster flow accumulation
+`fdr`     |     character path to D8 flow direction
+`fac`     |     character path to flow accumulation
 `para`     |     integer numer of cores to use for parallel execution
 `cache`     |     path .rda to cache incremental outputs
 `min_area_m`     |     minimum area in m^2 to filter out slivers (caution, use with care!!)
-`snap_distance_m`     |     distance in meters to snap raster generated geometry to polygon geometry
+`snap_distance_m`     |     distance in meters to snap SpatRaster generated geometry to polygon geometry
 `simplify_tolerance_m`     |     dTolerance in meters for simplification of grid-cell based polygons
-`vector_crs`     |     any object compatible with sf::st_crs. Used for vector-based calculations in case that raster projection is not suitable (e.g. lon/lat) -- must result in units of meters.
+`vector_crs`     |     integer or object compatible with sf::st_crs coordinate reference. Should be a projection that supports area-calculations.
 `fix_catchments`     |     logical. should catchment geometries be rectified?
-`keep`     |     Only applicable if fix_catchments = TRUE. Defines the proportion of points to retain in geometry simplification (0-1; default 0.05). See [`ms_simplify`](#mssimplify) .
+`keep`     |     Only applicable if fix_catchments = TRUE. Defines the proportion of points to retain in geometry simplification (0-1; default 0.05). See [`ms_simplify`](#mssimplify) . Set to NULL to skip simplification.
 
 
 ## Details
@@ -649,9 +803,10 @@ source(system.file("extdata",
 package = "nhdplusTools"))
 
 nhdplus_flowlines <- sf::st_zm(sample_flines)
+
 refactor_nhdplus(nhdplus_flines = nhdplus_flowlines,
 split_flines_meters = 2000,
-split_flines_cores = 3,
+split_flines_cores = 2,
 collapse_flines_meters = 500,
 collapse_flines_main_meters = 500,
 out_refactored = "temp.gpkg",
@@ -659,6 +814,7 @@ out_reconciled = "temp_rec.gpkg",
 three_pass = TRUE,
 purge_non_dendritic = FALSE,
 warn = FALSE)
+
 unlink("temp.gpkg")
 unlink("temp_rec.gpkg")
 ```
@@ -699,13 +855,13 @@ Argument      |Description
 ------------- |----------------
 `catchment`     |     sf data.frame with one catchment divide
 `fline`     |     sf data.frame with one or more flowline segments in upstream downstream order.
-`fdr`     |     raster a flow direction raster that fully covers the catchment
-`fac`     |     raster a flow accumulation raster that fuller covers the catchment
+`fdr`     |     character path to flow direction that fully covers the catchment
+`fac`     |     character path to flow accumulation that fuller covers the catchment
 `lr`     |     boolean should catchments be split along the left/right bank?
 `min_area_m`     |     minimum area in m^2 to filter out slivers (caution, use with care!!)
-`snap_distance_m`     |     distance in meters to snap raster generated geometry to polygon geometry
+`snap_distance_m`     |     distance in meters to snap SpatRaster generated geometry to polygon geometry
 `simplify_tolerance_m`     |     dTolerance in meters for simplification of grid-cell based polygons
-`vector_crs`     |     any object compatible with sf::st_crs. Used for vector-based calculations in case that raster projection is not suitable (e.g. lon/lat) -- must result in units of meters.
+`vector_crs`     |     any object compatible with sf::st_crs. Used for vector-based calculations in case that fdr projection is not suitable (e.g. lon/lat) -- must result in units of meters.
 
 
 ## Value
@@ -769,23 +925,80 @@ by = "COMID")
 split <- split_flowlines(suppressWarnings(sf::st_cast(sf::st_transform(
 new_hope_flowline, 5070), "LINESTRING")),
 max_length = 2000, events = new_hope_events)
-
-mapview::mapview(list(new_hope_events, new_hope_flowline))
-
-mapview::mapview(list(new_hope_events, split))
 ```
 
 
-# `union_polygons_geos`
+# `trace_upstream`
 
-Fast Polygon Union
- This is significantly faster then sf::st_union or summarize
+Trace Upstream
 
 
 ## Description
 
-Fast Polygon Union
- This is significantly faster then sf::st_union or summarize
+Trace Upstream
+
+
+## Usage
+
+```r
+trace_upstream(start_point, cat, fdr, fac_matrix, fdr_matrix)
+```
+
+
+## Arguments
+
+Argument      |Description
+------------- |----------------
+`start_point`     |     row col index
+`cat`     |     catchment
+`fdr`     |     flow direction grid
+`fac_matrix`     |     flow accumulation matrix
+`fdr_matrix`     |     flow direction matrix
+
+
+## Value
+
+sfc
+
+
+# `union_linestrings_geos`
+
+Fast LINESTRING union
+
+
+## Description
+
+Wayyyy faster then either data.table, or sf based line merging
+
+
+## Usage
+
+```r
+union_linestrings_geos(lines, ID)
+```
+
+
+## Arguments
+
+Argument      |Description
+------------- |----------------
+`lines`     |     lines to merge
+`ID`     |     ID to merge over
+
+
+## Value
+
+an sf object
+
+
+# `union_polygons_geos`
+
+Fast POLYGON Union
+
+
+## Description
+
+This is significantly faster then sf::st_union or summarize
 
 
 ## Usage
