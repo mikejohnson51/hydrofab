@@ -99,16 +99,6 @@ check_names <- function(x, function_name) {
   return(invisible(x))
 }
 
-#nolint start
-.onAttach <- function(libname, pkgname) {
-  packageStartupMessage(paste(strwrap(
-    "USGS Support Package:
-    https://owi.usgs.gov/R/packages.html#support"),
-    collapse = "\n"))
-  invisible(NULL)
-}
-# nolint end
-
 get_ds_lengthkm <- function(flines) {
   # This gets all the next-downstream flowlines and finds the
   # length of the next downstream

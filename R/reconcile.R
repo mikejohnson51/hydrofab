@@ -93,7 +93,7 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 
   new_flines <- left_join(distinct(new_flines), distinct(new_lp), by = "LevelPathI") %>%
     select(ID, toID, LENGTHKM, TotDASqKM, member_COMID = COMID,
-           LevelPathID = ID_LevelPathID, Hydroseq = ID_Hydroseq)
+           LevelPathID = ID_LevelPathID, Hydroseq = ID_Hydroseq, orig_levelpathID = LevelPathI)
 
   if (!is.null(geom)) {
     geom_column <- attr(geom, "sf_column")
@@ -112,6 +112,7 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
                 TotDASqKM = max(TotDASqKM),
                 LevelPathID = LevelPathID[1],
                 Hydroseq = Hydroseq[1],
+                orig_levelpathID = orig_levelpathID[1],
                 member_COMID = list(unique(member_COMID))) %>%
       ungroup() %>%
       cbind(union_linestrings_geos(
