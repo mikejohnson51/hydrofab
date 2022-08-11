@@ -130,6 +130,8 @@ test_that("split_flowlines at scale", {
     split <- split_flowlines(suppressWarnings(st_cast(st_transform(new_hope_flowline, 5070), "LINESTRING")), 2000, 
                              new_hope_events)
     
+    expect_true("event_identifier" %in% names(split))
+    
     expect_equal(nrow(split), 824)
     
     split <- split_flowlines(suppressWarnings(st_cast(st_transform(new_hope_flowline, 5070), "LINESTRING")), 2000)
