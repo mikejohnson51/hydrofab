@@ -68,7 +68,7 @@ collapse_flowlines <- function(flines, thresh, add_category = FALSE,
       flines$LENGTHKM < thresh & # shorter than threshold
       is.na(flines$joined_fromCOMID) &
       is.na(flines$joined_toCOMID) &
-      !is.na(flines$toCOMID) &
+      !(is.na(flines$toCOMID) | !flines$toCOMID %in% flines$COMID) &
       flines$toCOMID != -9999
   }
 
@@ -95,7 +95,7 @@ collapse_flowlines <- function(flines, thresh, add_category = FALSE,
       (flines$num_upstream > 1 &
          flines$ds_num_upstream == 1) &
         flines$LENGTHKM < mainstem_thresh_use &
-        !is.na(flines$toCOMID) &
+        !(is.na(flines$toCOMID) | !flines$toCOMID %in% flines$COMID) &
         !flines$COMID %in% exclude_cats
     }
 
