@@ -48,7 +48,7 @@ test_that("reconcile collapse flowlines works as expected", {
 
 test_that("collapse works on a double pass", {
 
-  nhdplus_flines <- readRDS("data/oswego_network.rds")
+  nhdplus_flines <- readRDS(list.files(pattern = "oswego_network.rds", recursive = TRUE))
   split_flines_meters <- 2000
   split_flines_cores <- 2
   collapse_flines_meters <- 500
@@ -113,6 +113,8 @@ test_that("collapse works on a double pass", {
       collapsed$ID[ind]
     }
 
+    expect_true("event_identifier" %in% names(collapsed))
+    
     expect_true(collapsed$toID[which(collapsed$ID ==
                                   get_id("21976315,21975773,21976313,21975819.1"))] ==
              get_id("21975819.2"))

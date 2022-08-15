@@ -93,7 +93,8 @@ split_flowlines <- function(flines, max_length = NULL,
       mutate(COMID = as.character(COMID),
              toCOMID = as.character(toCOMID),
              event_REACHCODE = NA,
-             event_REACH_meas = NA)
+             event_REACH_meas = NA,
+             event_identifier = NA)
   }
 }
 

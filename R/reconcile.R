@@ -90,10 +90,14 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
     filter(as.integer(part) == max(as.integer(part))) %>%
     ungroup() %>%
     select(ID_LevelPathID = ID_Hydroseq, LevelPathI)
+  
+  if(!"event_identifier" %in% names(new_flines)) 
+    new_flines$event_identifier <- rep(NA, nrow(new_flines))
 
   new_flines <- left_join(distinct(new_flines), distinct(new_lp), by = "LevelPathI") %>%
     select(ID, toID, LENGTHKM, TotDASqKM, member_COMID = COMID,
-           LevelPathID = ID_LevelPathID, Hydroseq = ID_Hydroseq, orig_levelpathID = LevelPathI)
+           LevelPathID = ID_LevelPathID, Hydroseq = ID_Hydroseq, 
+           event_identifier, orig_levelpathID = LevelPathI)
 
   if (!is.null(geom)) {
     geom_column <- attr(geom, "sf_column")
@@ -112,12 +116,14 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
                 TotDASqKM = max(TotDASqKM),
                 LevelPathID = LevelPathID[1],
                 Hydroseq = Hydroseq[1],
+                event_identifier = event_identifier[1],
                 orig_levelpathID = orig_levelpathID[1],
                 member_COMID = list(unique(member_COMID))) %>%
       ungroup() %>%
       cbind(union_linestrings_geos(
         select(new_flines[!sf::st_is_empty(new_flines), ], .data$ID), "ID")) %>%
-      sf::st_as_sf()
+      sf::st_as_sf() %>%
+      select(-ID.1)
   }
   return(new_flines)
 }
