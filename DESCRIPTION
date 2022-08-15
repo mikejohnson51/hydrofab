@@ -3,33 +3,39 @@ Type: Package
 Title: Hydrologic Network Refactoring Tools Based on HY_Features
 Version: 0.4.7
 Authors@R: c(person("David", "Blodgett", role = c("aut", "cre"), email = "dblodgett@usgs.gov"),
-           person(given = "Mike", family = "Johnson", role = "aut", comment = c(ORCID = "0000-0002-5288-8350")))
+           person(given = "Mike", family = "Johnson", role = c("aut", "cre"), comment = c(ORCID = "0000-0002-5288-8350")))
 Description: A collection of tools for normalizing and changing the size of catchments.
 URL: https://github.com/dblodgett-usgs/hyrefactor
 BugReports: https://github.com/dblodgett-usgs/hyrefactor/issues
-Depends:
+Depends: 
     R (>= 3.5.0)
-Imports:
-    dplyr,
-    sf,
-    lwgeom,
-    units,
+Imports: 
     data.table,
-    terra,
-    nhdplusTools,
-    tidyr,
-    pbapply,
-    rvest,
+    dplyr,
     httr,
+    lwgeom,
     methods,
+    nhdplusTools,
+    parallel,
+    pbapply,
     rlang,
-    rgeos,
     rmapshaper,
+    rvest,
+    sf,
+    terra,
+    tidyr,
+    units,
     utils
-Suggests: testthat, knitr, rmarkdown
+Suggests: 
+    knitr,
+    magrittr,
+    mapview,
+    rmarkdown,
+    testthat,
+    tibble
 Remotes: dblodgett-usgs/nhdplusTools
 License: CC0
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.0
 VignetteBuilder: knitr

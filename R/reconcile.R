@@ -114,7 +114,7 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
                 Hydroseq = Hydroseq[1],
                 member_COMID = list(unique(member_COMID))) %>%
       ungroup() %>%
-      cbind(union_linestrings_geos(
+      cbind(union_linestrings(
         select(new_flines[!sf::st_is_empty(new_flines), ], .data$ID), "ID")) %>%
       sf::st_as_sf()
   }

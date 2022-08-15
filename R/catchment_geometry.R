@@ -19,50 +19,21 @@ add_areasqkm = function(x){
 #' @param ID the column name over which to union geometries
 #' @return sf object
 #' @export
-#' @importFrom sf as_Spatial st_as_sf st_cast st_make_valid
-#' @importFrom dplyr mutate
-#' @importFrom rgeos gUnaryUnion
-#' @importFrom methods slot
-#' @importFrom rlang :=
+#' @importFrom terra aggregate vect makeValid
+#' @importFrom dplyr select
+#' @importFrom sf st_as_sf st_collection_extract st_geometry_type st_make_valid
 
-union_polygons_geos = function(poly, ID){
 
-  do_union <- function(poly) {
-    if(any((types <- sf::st_geometry_type(poly, by_geometry = TRUE) == "GEOMETRYCOLLECTION"))) {
-      poly <- sf::st_cast(poly, "POLYGON")
-    }
-    
-    SPDF =  as_Spatial(poly)
-    
-    rownames(SPDF@data) <- sapply(slot(SPDF, "polygons"), function(x) slot(x, "ID"))
-    
-    tryCatch({
-      gUnaryUnion(spgeom = SPDF, id = poly[[ID]], checkValidity = 0)
-    }, error = function(x){
-      gUnaryUnion(spgeom = SPDF, id = poly[[ID]], checkValidity = 2)
-    })
-  }
+union_polygons = function(poly, ID){
+
+  poly = makeValid(vect(poly)) %>%
+    aggregate(by = eval(ID)) %>%
+    st_as_sf() %>%
+    select(!!ID)
   
-  poly <- tryCatch({
-    do_union(poly)
-  }, error = function(x) {
-    do_union(sf::st_make_valid(poly))
-  })
-  
-  ids <- as.numeric(sapply(slot(poly, "polygons"), function(x) slot(x, "ID")))
-
-  suppressWarnings({
-   poly = st_as_sf(poly) %>%
-      st_make_valid() %>%
-      mutate("{ID}" := ids) %>%
-      mutate(areasqkm = add_areasqkm(.)) %>%
-      st_cast("POLYGON")
-  })
-
-  if(any(grepl("COLLECTION", st_geometry_type(poly)))){
+  if (any(grepl("COLLECTION",  st_geometry_type(poly)))) {
     poly = st_collection_extract(poly, "POLYGON")
   }
-
   return(poly)
 
 }
@@ -72,23 +43,15 @@ union_polygons_geos = function(poly, ID){
 #' @param lines lines to merge
 #' @param ID ID to merge over
 #' @return an sf object
-#' @importFrom sf as_Spatial st_as_sf
-#' @importFrom rgeos gLineMerge
-#' @importFrom dplyr mutate
-#' @importFrom methods slot
 #' @export
+#' @importFrom terra aggregate vect
+#' @importFrom dplyr select
+#' @importFrom sf st_as_sf
 
-union_linestrings_geos = function(lines, ID){
-  SPDF =  as_Spatial(lines)
-
-  rownames(SPDF@data) <- sapply(slot(SPDF, "lines"), function(x) slot(x, "ID"))
-
-  tmp <- rgeos::gLineMerge(SPDF, byid = TRUE, id = lines[[ID]])
-
-  ids <- as.numeric(sapply(slot(tmp, "lines"), function(x) slot(x, "ID")))
-
-  st_as_sf(tmp) %>%
-    mutate("{ID}" := ids) %>%
+union_linestrings = function (lines, ID)  {
+  aggregate(vect(lines), by = eval(ID)) %>%
+    st_as_sf() %>%
+    select(!!ID) %>%
     flowpaths_to_linestrings()
 }
 
@@ -233,7 +196,7 @@ clean_geometry <- function(catchments,
         in_cat = base_cats
       } else {
         in_cat = suppressWarnings({
-          union_polygons_geos(filter(tj, .data$n > 1) , 'ID') %>%
+          union_polygons(filter(tj, .data$n > 1) , 'ID') %>%
             bind_rows(dplyr::select(filter(tj, .data$n == 1), .data$ID)) %>%
             mutate(tmpID = 1:n())
         })

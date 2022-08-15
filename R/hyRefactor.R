@@ -72,23 +72,24 @@ assign("split_lines_event_attributes",
        c("REACHCODE", "FromMeas", "ToMeas"),
        envir = hyrefactor_env)
 
-assign("aggregate_network_attributes",
+assign("aggregate_network_to_outlets_attributes",
        c("ID", "toID", "LevelPathID", "Hydroseq"),
        envir = hyrefactor_env)
 
 assign("get_minimal_network_attributes",
-       c(get("aggregate_network_attributes", 
-           envir = hyrefactor_env), 
+       c(get("aggregate_network_to_outlets_attributes", 
+             envir = hyrefactor_env), 
          "AreaSqKM", "LENGTHKM"),
        envir = hyrefactor_env)
 
 check_names <- function(x, function_name) {
   x <- nhdplusTools::align_nhdplus_names(x)
+  
   names_x <- names(x)
-
+  
   expect_names <- get(paste0(function_name, "_attributes"),
                       envir = hyrefactor_env)
-
+  
   if (!all(expect_names %in% names_x)) {
     stop(paste0("Missing some required attributes in call to: ",
                 function_name, ". Expected: ",
@@ -150,3 +151,4 @@ drop_geometry <- function(x) {
     x
   }
 }
+

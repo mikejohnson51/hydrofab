@@ -1,4 +1,4 @@
-context("aggregate network")
+context("aggregate network to outlets")
 
 test_that("example runs", {
   source(system.file("extdata", "walker_data.R", package = "nhdplusTools"))
@@ -13,7 +13,7 @@ test_that("example runs", {
                         type = c("outlet", "outlet", "outlet", "terminal", "outlet", "outlet"),
                         stringsAsFactors = FALSE)
 
-  aggregated <- aggregate_network(fline, outlets)
+  aggregated <- aggregate_network_to_outlets(flowpath = fline, outlets)
 
   expect_equal(names(aggregated), c("cat_sets", "fline_sets"))
 
@@ -21,12 +21,12 @@ test_that("example runs", {
 
   outlets$ID[1] <- 10
 
-  expect_error(aggregate_network(fline, outlets), "Outlet IDs must all be in flowpaths.")
+  expect_error(aggregate_network_to_outlets(fline, outlets), "Outlet IDs must all be in flowpaths.")
 
   outlets$ID[1] <- 5329357
   outlets$type[1] <- "terminal"
 
-  expect_error(aggregate_network(fline, outlets), "Terminal paths must have an NA or 0 toID")
+  expect_error(aggregate_network_to_outlets(fline, outlets), "Terminal paths must have an NA or 0 toID")
 })
 
 test_that("minimal network", {

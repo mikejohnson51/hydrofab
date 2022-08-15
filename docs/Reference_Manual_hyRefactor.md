@@ -8,8 +8,8 @@
 
 - [add_areasqkm](#add_areasqkm)
 - [add_lengthmap](#add_lengthmap)
-- [aggregate_catchments](#aggregate_catchments)
-- [aggregate_network](#aggregate_network)
+- [aggregate_catchments_to_outlets](#aggregate_catchments_to_outlets)
+- [aggregate_network_to_outlets](#aggregate_network_to_outlets)
 - [clean_geometry](#clean_geometry)
 - [collapse_flowlines](#collapse_flowlines)
 - [download_elev](#download_elev)
@@ -25,8 +25,8 @@
 - [split_catchment_divide](#split_catchment_divide)
 - [split_flowlines](#split_flowlines)
 - [trace_upstream](#trace_upstream)
-- [union_linestrings_geos](#union_linestrings_geos)
-- [union_polygons_geos](#union_polygons_geos)
+- [union_linestrings](#union_linestrings)
+- [union_polygons](#union_polygons)
 
 
 May 10, 2022

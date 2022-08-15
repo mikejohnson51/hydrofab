@@ -105,7 +105,7 @@ outlets$ID <- as.integer(ids)
 
 outlets_sub <- dplyr::filter(outlets, !is.na(ID) & ID %in% cat_rec$ID)
 
-cat_agg <- aggregate_catchments(fline_rec,
+cat_agg <- aggregate_catchments_to_outlets(fline_rec,
                                 cat_rec,
                                 outlets_sub,
                                 da_thresh = 1,
