@@ -151,6 +151,11 @@ split_lines <- function(input_lines,
       dplyr::mutate(event_identifier = ifelse(is.na(.data$event_identifier), NA, .data$event_identifier))
   } else {
     split_points <- too_long_split_points
+    
+    if(!"event_identifier" %in% names(split_points)) {
+      split_points$event_identifier <- seq_len(nrow(split_points))
+    }
+    
   }
   
   input_lines <- split_points %>%  
