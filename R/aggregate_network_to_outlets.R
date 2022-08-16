@@ -4,7 +4,7 @@
 #' @param flowpath sf data.frame Flowpaths with ID, toID, LevelPathID, and Hydroseq attributes.
 #'
 #' @param outlets data.frame with "ID" and "type" columns. "ID" must be identifiers from
-#' fowpath and divide data.frames. "type" should be "outlet", or "terminal".
+#' flowpath and divide data.frames. "type" should be "outlet", or "terminal".
 #' "outlet" will include the specified ID.
 #' "terminal" will be treated as a terminal node with nothing downstream.
 #'
@@ -508,7 +508,7 @@ get_catchment_sets <- function(flowpath, outlets) {
       
       outlet <- outlets[outlets$id == path[length(path)], ]
       
-      # I think this can be added tothe flowpath finding for free
+      # I think this can be added to the flowpath finding for free
       cat_sets$set[outlet$set][[1]] <- my_combine(cat_sets$set[outlet$set][[1]],
                                                   flowpath$ID[path])
       

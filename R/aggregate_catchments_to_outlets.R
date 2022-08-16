@@ -18,7 +18,7 @@
 #' @details See \code{\link{aggregate_network_to_outles}}
 #'
 #' @export
-#' @importFrom sf st_is_empty st_drop_geometry st_as_sf
+#' @importFrom sf st_is_empty st_drop_geometry st_as_sf st_crs st_geometry
 #' @importFrom dplyr filter left_join bind_rows select distinct
 #' @examples
 #' source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
@@ -36,16 +36,22 @@
 #' plot(aggregated$fline_sets$geom, lwd = 3, col = "red", add = TRUE)
 #' plot(walker_flowline$geom, lwd = .7, col = "blue", add = TRUE)
 
-aggregate_catchments_to_outlets <- function(flowpath, divide, outlets, zero_order = NULL,
+aggregate_to_outlets <- function(gpkg, 
+                                 flowpath, 
+                                 divide, 
+                                 outlets, 
+                                 zero_order = NULL,
                                  coastal_cats = NULL,
                                  da_thresh = NA, only_larger = FALSE, 
                                  post_mortem_file = NA, keep = NULL) {
   
-  in_crs <- sf::st_crs(divide)
+  network_list = read_hydrofabric_package(gpkg, catchments = divide, flowpaths = flowpath)
   
-  if(any(grepl("MULTIPOLYGON", sf::st_geometry_type(divide, by_geometry = TRUE)))) {
+  in_crs <- st_crs(network_list$catchments)
+  
+  if(any(grepl("MULTIPOLYGON", st_geometry_type(network_list$catchments, by_geometry = TRUE)))) {
     warning("found MULTIPOLYGONs in divides. They must be of type POLYGON.")
-    divide <- clean_geometry(divide, ID = "ID", 
+    network_list$catchments <- clean_geometry(network_list$catchments, ID = "ID", 
                              crs = in_crs, keep = NULL)
   }
   
@@ -55,18 +61,18 @@ aggregate_catchments_to_outlets <- function(flowpath, divide, outlets, zero_orde
     
     if(st_crs(coastal_cats) != in_crs) st_transform(coastal_cats, in_crs)
     
-    zero_flowpath <- filter(flowpath, member_COMID %in% do.call(c, zero_order))
+    zero_flowpath <- filter(network_list$flowpaths, member_COMID %in% do.call(c, zero_order))
   
-    flowpath <- filter(flowpath, !ID %in% zero_flowpath$ID)
+    network_list$flowpaths <- filter(network_list$flowpaths, !ID %in% zero_flowpath$ID)
     
     coastal <- lapply(zero_order, function(x, coastal_cats, divide) {
       
       zero_cats <- filter(coastal_cats, FEATUREID %in% x)
       
-      zero_div <- filter(divide, member_COMID %in% as.character(x))
+      zero_div <- filter(network_list$catchments, member_COMID %in% as.character(x))
       
       st_union(c(st_geometry(zero_cats), st_geometry(zero_div)))[[1]]
-    }, coastal_cats = coastal_cats, divide = divide)
+    }, coastal_cats = coastal_cats, divide = network_list$catchments)
     
     coastal <- st_sfc(coastal, crs = in_crs)
     
@@ -75,15 +81,15 @@ aggregate_catchments_to_outlets <- function(flowpath, divide, outlets, zero_orde
     coastal <- NULL
   }
   
-  if(any(remove_head_div <- !flowpath$ID %in% flowpath$toID & 
-         !flowpath$ID %in% divide$ID)) {
-    remove_fpaths <- filter(flowpath, remove_head_div)
+  if(any(remove_head_div <- !network_list$flowpaths$ID %in% network_list$flowpaths$toID & 
+         !network_list$flowpaths$ID %in% network_list$catchments$ID)) {
+    remove_fpaths <- filter(network_list$flowpaths, remove_head_div)
     message(paste("removing", nrow(remove_fpaths), 
                   "headwater/diversion flowlines without catchments."))
-    flowpath <- filter(flowpath, !ID %in% remove_fpaths$ID)
+    network_list$flowpaths <- filter(network_list$flowpaths, !ID %in% remove_fpaths$ID)
   }
 
-  agg_network <- aggregate_network_to_outlets(flowpath, outlets, da_thresh, only_larger, post_mortem_file)
+  agg_network <- aggregate_network_to_outlets(network_list$flowpaths, outlets, da_thresh, only_larger, post_mortem_file)
   
   agg_network$cat_sets <- 
                # setID defines which catchments go in which aggregate catchments.
@@ -91,7 +97,7 @@ aggregate_catchments_to_outlets <- function(flowpath, divide, outlets, zero_orde
                # ID is the ID of the set brought in from aggregate network.
                ID = rep(agg_network$cat_sets$ID, 
                         times = lengths(agg_network$cat_sets$set))) %>% 
-    left_join(select(divide, ID), 
+    left_join(select(network_list$catchments, ID), 
               by = c("setID" = "ID")) %>% 
     st_as_sf() %>% 
     filter(!sf::st_is_empty(.)) %>%

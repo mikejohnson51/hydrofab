@@ -16,7 +16,7 @@ aggregate_network_to_outlets(
 \item{flowpath}{sf data.frame Flowpaths with ID, toID, LevelPathID, and Hydroseq attributes.}
 
 \item{outlets}{data.frame with "ID" and "type" columns. "ID" must be identifiers from
-fowpath and divide data.frames. "type" should be "outlet", or "terminal".
+flowpath and divide data.frames. "type" should be "outlet", or "terminal".
 "outlet" will include the specified ID.
 "terminal" will be treated as a terminal node with nothing downstream.}
 

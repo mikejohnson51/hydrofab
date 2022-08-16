@@ -12,7 +12,9 @@ Depends:
 Imports: 
     data.table,
     dplyr,
+    glue,
     httr,
+    logger,
     lwgeom,
     methods,
     nhdplusTools,

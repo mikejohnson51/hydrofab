@@ -100,14 +100,6 @@ check_names <- function(x, function_name) {
   return(invisible(x))
 }
 
-#nolint start
-.onAttach <- function(libname, pkgname) {
-  packageStartupMessage(paste(strwrap(
-    "USGS Support Package:
-    https://owi.usgs.gov/R/packages.html#support"),
-    collapse = "\n"))
-  invisible(NULL)
-}
 # nolint end
 
 get_ds_lengthkm <- function(flines) {
