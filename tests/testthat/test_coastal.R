@@ -63,7 +63,7 @@ test_that("basic coastal aggregation", {
   
   nhd_outlets <- dplyr::filter(nhd, TerminalFl == 1 | 
                                  !ToNode %in% FromNode) %>%
-    st_sf()
+    sf::st_sf()
   
   cats <- sf::read_sf(source_gpkg, "CatchmentSP") %>%
     nhdplusTools::align_nhdplus_names()
@@ -129,7 +129,7 @@ test_that("basic coastal aggregation", {
                                    divide = divides, 
                                    outlets = dplyr::select(mapped_outlets, ID, type),
                                    zero_order = zero_order,
-                                   coastal_cats = sf::st_transform(coastal_cats, st_crs(divides)),
+                                   coastal_cats = sf::st_transform(coastal_cats, sf::st_crs(divides)),
                                    da_thresh = 1, 
                                    only_larger = TRUE)
   

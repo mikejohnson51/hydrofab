@@ -96,7 +96,7 @@ test_that("collapse flowlines works as expected", {
 context("collapse_flowlines - 2")
 
 test_that("headwater / top of mainstem collapes works as expected", {
-  flines <- readRDS("data/guadalupe_network_geom.rds")
+  flines <- readRDS(list.files(pattern = "guadalupe_network_geom.rds", recursive = TRUE))
   flines <- sf::st_set_geometry(flines, NULL)
   flines <- suppressWarnings(nhdplusTools::prepare_nhdplus(flines, 0, 0))
 
@@ -168,13 +168,13 @@ test_that("headwater / top of mainstem collapes works as expected", {
 context("collapse_flowlines - 3")
 
 test_that("collapse flowlines works with small networks", {
-  flines <- readRDS("data/small_networks.rds")
+  flines <- readRDS(list.files(pattern = "small_networks.rds", recursive = TRUE))
   flines <- suppressWarnings(nhdplusTools::prepare_nhdplus(flines, 0, 0))
 
   flines_collapse <- collapse_flowlines(flines, 2)
 
   flines <- suppressWarnings(nhdplusTools::prepare_nhdplus(
-    readRDS("data/frost_network.rds"), 0, 0))
+    readRDS(list.files(pattern = "frost_network.rds", recursive = TRUE)), 0, 0))
 
   c1 <- collapse_flowlines(flines, 1000, F, 1000)
 
@@ -190,13 +190,13 @@ test_that("collapse flowlines works with small networks", {
   expect_true(all(is.na(r1$toID)))
 
   flines <- suppressWarnings(nhdplusTools::prepare_nhdplus(
-    readRDS("data/tiny_network.rds"), 0, 0))
+    readRDS(list.files(pattern = "tiny_network.rds", recursive = TRUE)), 0, 0))
   c1 <- collapse_flowlines(flines, 1000, F, 1000)
 
   expect_equal(c1$LENGTHKM[which(c1$COMID == 7733111)], 0.221)
 
   flines <- suppressWarnings(nhdplusTools::prepare_nhdplus(
-    readRDS("data/flag_network.rds"), 0, 0))
+    readRDS(list.files(pattern = "flag_network.rds", recursive = TRUE)), 0, 0))
 
   c1 <- collapse_flowlines(flines, 1000, F, 1000)
 
@@ -208,7 +208,7 @@ test_that("collapse flowlines works with small networks", {
 context("collapse_flowlines - 4")
 
 test_that("collapse flowlines works as expected with add category", {
-  flines <- readRDS("data/petapsco_network.rds")
+  flines <- readRDS(list.files(pattern = "petapsco_network.rds", recursive = TRUE))
   flines <- sf::st_set_geometry(flines, NULL)
   flines <- suppressWarnings(nhdplusTools::prepare_nhdplus(flines, 20, 1))
   flines <- collapse_flowlines(flines, 1, add_category = TRUE)
@@ -219,7 +219,7 @@ context("collapse_flowlines - 5")
 
 # then go look at problem headwater combinations.
 test_that("collapse flowlines works as expected with mainstem thresh", {
-  flines <- readRDS("data/petapsco_network.rds")
+  flines <- readRDS(list.files(pattern = "petapsco_network.rds", recursive = TRUE))
   flines <- sf::st_set_geometry(flines, NULL)
   flines <- suppressWarnings(nhdplusTools::prepare_nhdplus(flines, 20, 1))
   flines <- collapse_flowlines(flines, .5, add_category = TRUE,
@@ -237,7 +237,7 @@ context("collapse_flowlines - 6")
 
 test_that("repeat collapse doesn't leave orphans", {
 
-  nhdplus_flines <- readRDS("data/oswego_network.rds")
+  nhdplus_flines <- readRDS(list.files(pattern = "oswego_network.rds", recursive = TRUE))
   flines <- suppressWarnings(dplyr::inner_join(
     dplyr::select(nhdplus_flines, COMID), 
     sf::st_set_geometry(nhdplus_flines, NULL) %>%
