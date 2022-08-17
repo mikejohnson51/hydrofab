@@ -18,5 +18,9 @@ Merging `hyRefactor` with `hyAggregate` to create `hydrofab`
   - add `aggregate_to_distribution`
   - add `add_nonnetwork_divides`
   - add `poi_to_outlet`
+  - add `add_mapped_pois`
+  - add `generate_lookup_table`
+  
+  # TODO: add subsetting utilites.
   
   - use I/O methods in all existing `hyRefactor` code

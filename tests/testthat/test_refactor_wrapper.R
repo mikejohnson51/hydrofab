@@ -2,7 +2,7 @@ context("Test refactor wrapper")
 
 test_that("IO methods", {
   
-  source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
+  source(system.file("extdata", "walker_data.R", package = "hydrofab"))
   
   refactor <- refactor(flowpaths  = walker_flowline,
                        catchments = walker_catchment,

@@ -1,5 +1,5 @@
 library(sf)
-library(hyRefactor)
+library(hydrofab)
 
 fdr <- terra::rast("~/Documents/active_code/gfv2/workspace/data/fdrfac/NHDPlusNE/NHDPlus01/NHDPlusFdrFac01a/fdr/")
 fac <- terra::rast("~/Documents/active_code/gfv2/workspace/data/fdrfac/NHDPlusNE/NHDPlus01/NHDPlusFdrFac01a/fac/")

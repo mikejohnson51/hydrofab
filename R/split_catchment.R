@@ -441,7 +441,7 @@ check_proj <- function(catchment, fline, fdr = NULL) {
 #' @importFrom sf st_transform st_coordinates st_linestring st_sfc st_crs
 #' @examples 
 #' 
-#' source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
+#' source(system.file("extdata", "walker_data.R", package = "hydrofab"))
 #' 
 #' start_point <- sf::st_sfc(sf::st_point(c(-122.7, 38.126)), crs = 4326)
 #' distance <- 100

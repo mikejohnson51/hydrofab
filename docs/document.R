@@ -2,7 +2,7 @@
 
 Rd2md::ReferenceManual(outdir = "docs/")
 
-outfile <- "docs/Reference_Manual_hyRefactor.md"
+outfile <- "docs/Reference_Manual_hydrofab.md"
 
 text <- readLines(outfile)
 

@@ -1,6 +1,6 @@
 # nolint start
 library(terra)
-extdata <- system.file("extdata", package = "hyRefactor")
+extdata <- system.file("extdata", package = "hydrofab")
 
 new_hope_fac <- suppressWarnings(terra::rast(file.path(extdata, "new_hope_fac.tif")))
 new_hope_fdr <- suppressWarnings(terra::rast(file.path(extdata, "new_hope_fdr.tif")))

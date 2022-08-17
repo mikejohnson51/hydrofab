@@ -76,7 +76,7 @@ flowpaths_to_linestrings = function(flowpaths){
 
 #' Clean Catchment Geometry
 #' @description Fixes geometry issues present in catchments that originate in the
-#' CatchmentSP layers, or from the reconcile_catchments hyRefactor preocess.
+#' CatchmentSP layers, or from the reconcile_catchments hydrofab preocess.
 #' These include, but are not limited to disjoint polygon fragments, artifacts
 #' from the 30m DEM used to generate the catchments, and non-valid geometry topolgies.
 #' A goal of this functions is also to provide means to reduce the data column
@@ -278,7 +278,7 @@ clean_geometry <- function(catchments,
 #' @export
 #' @examples
 #' \dontrun{
-#' path <- system.file("extdata/walker_reconcile.gpkg", package = "hyRefactor")
+#' path <- system.file("extdata/walker_reconcile.gpkg", package = "hydrofab")
 #' fps  <- add_lengthmap(flowpaths = sf::read_sf(path),
 #' length_table = nhdplusTools::get_vaa("lengthkm"))
 #' }

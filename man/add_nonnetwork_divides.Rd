@@ -9,8 +9,8 @@ area must be reintroduced from the reference dataset.}
 \usage{
 add_nonnetwork_divides(
   gpkg = NULL,
-  flowpath = NULL,
-  divide = NULL,
+  flowpaths = NULL,
+  divides = NULL,
   reference_gpkg,
   verbose = TRUE
 )
@@ -18,13 +18,13 @@ add_nonnetwork_divides(
 \arguments{
 \item{gpkg}{a path to a gpkg}
 
-\item{flowpath}{If gpkg is NULL, then an sf data.frame, otherwise a the layer name. See details.}
-
-\item{divide}{If gpkg is NULL, then an sf data.frame, otherwise a the layer name. See details.}
-
 \item{reference_gpkg}{A path to the reference VPU geopackage (see get_hydrofabric(..., type = "reference"))}
 
 \item{verbose}{Should messages be emitted?}
+
+\item{divide}{If gpkg is NULL, then an sf data.frame, otherwise a the layer name. See details.}
+
+\item{flowpath}{If gpkg is NULL, then an sf data.frame, otherwise a the layer name. See details.}
 }
 \value{
 gpkg path

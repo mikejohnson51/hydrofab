@@ -2,7 +2,7 @@ context("Geometry Fixes")
 
 test_that("Reconciled catchments can be fixed...", {
   
-  source(system.file("extdata", "geometry_data.R", package = "hyRefactor"))
+  source(system.file("extdata", "geometry_data.R", package = "hydrofab"))
   
   expect_false(length(st_cast(st_geometry(test_divides), "POLYGON")) == nrow(test_divides))
   

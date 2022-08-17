@@ -36,7 +36,7 @@ COMID.y <- ID <- becomes <- ds_num_upstream <- fID <-
   member_NHDPlusID <- mr_LevelPathI <- event_REACH_meas <- .data <- NULL
 
 # nolint end
-hyrefactor_env <- new.env()
+hydrofab_env <- new.env()
 
 assign("prepare_nhdplus_attributes",
        c("COMID", "LENGTHKM", "FTYPE", "TerminalFl",
@@ -44,43 +44,43 @@ assign("prepare_nhdplus_attributes",
          "StartFlag", "StreamOrde", "StreamCalc",
          "TerminalPa", "Pathlength", "Divergence", "Hydroseq",
          "LevelPathI"),
-       envir = hyrefactor_env)
+       envir = hydrofab_env)
 
 assign("split_flowlines_attributes",
        c("COMID", "toCOMID", "LENGTHKM"),
-       envir = hyrefactor_env)
+       envir = hydrofab_env)
 
 assign("collapse_flowlines_attributes",
        c("COMID", "toCOMID", "LENGTHKM", "LevelPathI", "Hydroseq"),
-       envir = hyrefactor_env)
+       envir = hydrofab_env)
 
 assign("reconcile_collapsed_flowlines_attributes",
        c("COMID", "toCOMID", "LENGTHKM", "LevelPathI", "Hydroseq"),
-       envir = hyrefactor_env)
+       envir = hydrofab_env)
 
 assign("match_levelpaths_attributes",
        c("COMID", "Hydroseq", "LevelPathI",
          "DnLevelPat", "denTotalAreaSqKM", "HUC12", "TOHUC"),
-       envir = hyrefactor_env)
+       envir = hydrofab_env)
 
 assign("match_flowpaths_attributes",
        c("COMID", "LENGTHKM", "DnHydroseq",
          "Hydroseq", "LevelPathI", "DnLevelPat"),
-       envir = hyrefactor_env)
+       envir = hydrofab_env)
 
 assign("split_lines_event_attributes",
        c("REACHCODE", "FromMeas", "ToMeas"),
-       envir = hyrefactor_env)
+       envir = hydrofab_env)
 
 assign("aggregate_network_to_outlets_attributes",
        c("ID", "toID", "LevelPathID", "Hydroseq"),
-       envir = hyrefactor_env)
+       envir = hydrofab_env)
 
 assign("get_minimal_network_attributes",
        c(get("aggregate_network_to_outlets_attributes", 
-             envir = hyrefactor_env), 
+             envir = hydrofab_env), 
          "AreaSqKM", "LENGTHKM"),
-       envir = hyrefactor_env)
+       envir = hydrofab_env)
 
 check_names <- function(x, function_name) {
   x <- nhdplusTools::align_nhdplus_names(x)
@@ -88,7 +88,7 @@ check_names <- function(x, function_name) {
   names_x <- names(x)
   
   expect_names <- get(paste0(function_name, "_attributes"),
-                      envir = hyrefactor_env)
+                      envir = hydrofab_env)
   
   if (!all(expect_names %in% names_x)) {
     stop(paste0("Missing some required attributes in call to: ",

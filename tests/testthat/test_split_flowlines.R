@@ -6,7 +6,7 @@ test_that("split lines works", {
                                                  where = "package:lwgeom",
                                                  mode = "function")) {
 
-  source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
+  source(system.file("extdata", "walker_data.R", package = "hydrofab"))
 
   flines <- suppressWarnings(nhdplusTools::prepare_nhdplus(walker_flowline, 0, 0))
   flines <- collapse_flowlines(flines, 1, F, 1)
@@ -25,7 +25,7 @@ test_that("split lines works", {
     sf::st_line_merge() %>%
     rename(COMID = ID)
 
-  split <- hyRefactor:::split_lines(sf::st_transform(dplyr::select(flines, COMID),
+  split <- hydrofab:::split_lines(sf::st_transform(dplyr::select(flines, COMID),
                                                        5070), 250)
 
   expect_true(nrow(split) == 573)
@@ -40,18 +40,18 @@ test_that("split lines works", {
                      sf::st_sfc(sf::st_point(c(-122.818325, 38.175753)), 
                                 crs = 4326))
   
-  expect_error(hyRefactor:::split_lines(sf::st_transform(walker_flowline, 5070), 
+  expect_error(hydrofab:::split_lines(sf::st_transform(walker_flowline, 5070), 
                                                  max_length = 250, events = event),
                "lines must be class LINESTRING")
   
-  split <- hyRefactor:::split_lines(sf::st_transform(suppressWarnings(st_cast(walker_flowline, 
+  split <- hydrofab:::split_lines(sf::st_transform(suppressWarnings(st_cast(walker_flowline, 
                                                                               "LINESTRING")), 
                                                      5070), 
                                     max_length = 250, events = event)
   
   expect_equal(nrow(split), 576)
   
-  split <- hyRefactor:::split_lines(sf::st_transform(suppressWarnings(st_cast(walker_flowline, 
+  split <- hydrofab:::split_lines(sf::st_transform(suppressWarnings(st_cast(walker_flowline, 
                                                                               "LINESTRING")), 
                                                      5070), 
                                     max_length = 1000000, events = event)
@@ -107,7 +107,7 @@ test_that("split_line_event", {
   
   line <- readRDS("data/event_split_line.rds")
   
-  test <- hyRefactor:::split_by_event(line, event)
+  test <- hydrofab:::split_by_event(line, event)
 
   expect_equal(test$start, c(0, 0.289), tolerance = 0.01)
   expect_equal(test$end, c(0.289, 1), tolerance = 0.01)
@@ -115,7 +115,7 @@ test_that("split_line_event", {
   event <- data.frame(REACHCODE = c("03030002000097", "03030002000097", "03030002000097"),
                       REACH_meas = c(10, 40, 75))
   
-  test <- hyRefactor:::split_by_event(line, event)
+  test <- hydrofab:::split_by_event(line, event)
   
   expect_equal(test$start, c(0, 0.25, 0.6, 0.9), tolerance = 0.01)
   expect_equal(test$end, c(0.25, 0.6, 0.9, 1), tolerance = 0.01)
@@ -127,7 +127,7 @@ test_that("split_flowlines at scale", {
                                                  where = "package:lwgeom",
                                                  mode = "function")) {
     
-    source(system.file("extdata", "new_hope_data.R", package = "hyRefactor"))
+    source(system.file("extdata", "new_hope_data.R", package = "hydrofab"))
     
     new_hope_flowline <- right_join(select(new_hope_flowline, COMID, REACHCODE, FromMeas, ToMeas), 
                                     suppressWarnings(prepare_nhdplus(new_hope_flowline, 0, 0, 0, FALSE, warn = FALSE)), by = "COMID")
@@ -168,9 +168,9 @@ test_that("split_flowlines at scale", {
 })
 
 test_that("rescale", {
-  expect_equal(hyRefactor:::rf(50, 50, 100), 0)
-  expect_equal(hyRefactor:::rf(50, 0, 50), 100)
-  expect_equal(hyRefactor:::rf(25, 0, 50), 50)
-  expect_error(hyRefactor:::rf(75, 0, 50), "m must be between f and t")
+  expect_equal(hydrofab:::rf(50, 50, 100), 0)
+  expect_equal(hydrofab:::rf(50, 0, 50), 100)
+  expect_equal(hydrofab:::rf(25, 0, 50), 50)
+  expect_error(hydrofab:::rf(75, 0, 50), "m must be between f and t")
 })
 

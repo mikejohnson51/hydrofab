@@ -20,7 +20,6 @@ omit.na = function(x){ x[!is.na(x)] }
 #' @return data to the specified gpkg
 #' @export
 #' @importFrom dplyr filter select rename
-#' @importFrom hyRefactor refactor_nhdplus add_lengthmap reconcile_catchment_divides
 #' @importFrom sf read_sf st_transform st_drop_geometry write_sf st_crs st_precision
 #' @importFrom nhdplusTools get_streamorder get_vaa
 
@@ -81,7 +80,7 @@ refactor  = function (gpkg = NULL,
       network_list$catchments = dplyr::rename( network_list$catchments, FEATUREID = .data$featureid)
     }
     
-    divides <- hyRefactor::reconcile_catchment_divides(catchment = network_list$catchments,
+    divides <- reconcile_catchment_divides(catchment = network_list$catchments,
                                                        fline_ref = sf::read_sf(tf),
                                                        fline_rec = rec,
                                                        fdr = terra::rast(grep("_fdr.tif$", fdrfac_files, value = TRUE)),

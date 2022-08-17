@@ -4,7 +4,7 @@
 # library(sf)
 # library(nhdplusTools)
 # 
-# extdata   <- system.file("extdata", package = "hyRefactor")
+# extdata   <- system.file("extdata", package = "hydrofab")
 # 
 # # gage_01013500.gpkg turned into pre-processed sample data.
 # base      = "/Volumes/Transcend/ngen/refactor-tests/base-data/"

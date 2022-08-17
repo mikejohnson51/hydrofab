@@ -25,7 +25,7 @@
 #' @details This is a convenient wrapper function that implements three phases
 #' of the network refactor workflow: split, collapse, reconcile. See the
 #' NHDPlus Refactor vignette for details of these three steps by running:
-#' \code{vignette("refactor_nhdplus", package = "hyRefactor")}
+#' \code{vignette("refactor_nhdplus", package = "hydrofab")}
 #' @seealso
 #' In addition to `prepare_nhdplus` from the nhdplusTools package,
 #' The following three functions are used in the `refactor_nhdplus` workflow.

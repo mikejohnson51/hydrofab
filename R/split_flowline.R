@@ -16,7 +16,7 @@
 #' workflow using `split_flowlines()`.
 #' @export
 #' @examples
-#' source(system.file("extdata", "new_hope_data.R", package = "hyRefactor"))
+#' source(system.file("extdata", "new_hope_data.R", package = "hydrofab"))
 #' 
 #' new_hope_flowline <- 
 #'   dplyr::right_join(dplyr::select(new_hope_flowline, COMID, REACHCODE, FromMeas, ToMeas),

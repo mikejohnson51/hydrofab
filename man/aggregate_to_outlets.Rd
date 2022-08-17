@@ -48,7 +48,7 @@ Network aggregation is completed using: See \code{\link{aggregate_network_to_out
 See \code{\link{aggregate_network_to_outles}}
 }
 \examples{
-source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
+source(system.file("extdata", "walker_data.R", package = "hydrofab"))
 outlets <- data.frame(ID = c(31, 3, 5, 1, 45, 92),
  type = c("outlet", "outlet", "outlet", "terminal", "outlet", "outlet"),
  stringsAsFactors = FALSE)

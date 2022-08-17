@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
 
 The goal of `hydrofab` is to provide consistent hydrologic and hydraulic network manipulation tool chains to achieve model application ready datasets from a consistent reference fabric.
 
-![Alt Text](https://media1.giphy.com/media/Kd5uWrNKjhRGfopdHJ/giphy.gif?cid=ecf05e476u6oq5neboo6x6lk5gngbz2yuh5st0sxplbmczft&rid=giphy.gif)
+![Fabricating Hydrofabrics](https://media1.giphy.com/media/Kd5uWrNKjhRGfopdHJ/giphy.gif?cid=ecf05e476u6oq5neboo6x6lk5gngbz2yuh5st0sxplbmczft&rid=giphy.gif)
 
 
 
@@ -60,7 +60,6 @@ The concept of aggregating as intended here includes **aggregating** catchments 
 1. Aggregrgating to a set of defined outlet locations
 2. Aggregating to a uniform catchment size with enforced minimun areas and lengths.
 
-
 This type of functionality is especially relevant to modeling applications that
 need specific modeling unit characteristics but wish to preserve the network as
 much as possible for interoperability with other applications 
@@ -73,9 +72,10 @@ In addition to typical R package, a Dockerfile is included in this repository. O
 ```
 docker build -t hydrofab_test .
 
-# Windows
-docker run --rm -it -v $PWD:/src hydrofab_test /bin/bash -c "cp -r /src/* /check/ && cp /src/.Rbuildignore /check/ && cd /check && Rscript -e 'devtools::build()' && R CMD check --as-cran ../hydrofab_*"
-
 # Linux/Mac
-docker run --rm -it -v %cd%:/src hydrofab_test /bin/bash -c "cp -r /src/* /check/ && cp /src/.Rbuildignore /check/ && cd /check && Rscript -e 'devtools::build()' && R CMD check --as-cran ../hydrofab_"
+
+docker run --rm -it -v $PWD:/src hydrofab_test /bin/bash -c "cp -r /src/* /check/ && cp /src/.Rbuildignore /check/ && cd /check && Rscript -e 'devtools::build(vignettes = FALSE)' && R CMD check --as-cran ../hydrofab_*"
+
+# Windows
+docker run --rm -it -v %cd%:/src hydrofab_test /bin/bash -c "cp -r /src/* /check/ && cp /src/.Rbuildignore /check/ && cd /check && Rscript -e 'devtools::build(vignettes = FALSE)' && R CMD check --as-cran ../hydrofab_"
 ```

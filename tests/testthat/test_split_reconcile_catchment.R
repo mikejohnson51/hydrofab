@@ -4,7 +4,7 @@ test_that("split_catchment_divide works", {
   tf <- file.path(tempfile(fileext = ".gpkg"))
   tr <- file.path(tempfile(fileext = ".gpkg"))
 
-  source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
+  source(system.file("extdata", "walker_data.R", package = "hydrofab"))
 
   refactor <- refactor_nhdplus(nhdplus_flines = walker_flowline,
                                split_flines_meters = 2000,
@@ -72,7 +72,7 @@ test_that("split_catchment_divide works", {
 })
 
 test_that("split catchment divide left right", {
-  source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
+  source(system.file("extdata", "walker_data.R", package = "hydrofab"))
   
   cat   <- dplyr::filter(walker_catchment, FEATUREID == 5329357)
   fline <- dplyr::filter(walker_flowline, COMID == 5329357)
@@ -101,7 +101,7 @@ test_that("split catchment divide left right", {
 
 test_that("split and reconcile works", {
 
-  source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
+  source(system.file("extdata", "walker_data.R", package = "hydrofab"))
 
   out_col <- tempfile(fileext = ".gpkg")
   out_rec <- tempfile(fileext = ".gpkg")
@@ -204,7 +204,7 @@ test_that("doing nothing does nothing", {
   unlink("data/temp/*")
   dir.create("data/temp", showWarnings = FALSE, recursive = TRUE)
 
-  source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
+  source(system.file("extdata", "walker_data.R", package = "hydrofab"))
 
   refactor <- refactor_nhdplus(nhdplus_flines = walker_flowline,
                                split_flines_meters = 200000,
@@ -254,7 +254,7 @@ test_that("no fdr", {
   unlink(tf)
   unlink(tr)
   
-  source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
+  source(system.file("extdata", "walker_data.R", package = "hydrofab"))
   
   refactor <- refactor_nhdplus(nhdplus_flines = walker_flowline,
                                split_flines_meters = 2000000,

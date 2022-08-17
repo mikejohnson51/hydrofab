@@ -21,7 +21,7 @@ catchment <- sf::read_sf(list.files(pattern = "sw.gpkg$",
                                     recursive = TRUE), "catchment") %>%
   st_transform(proj)
 
-split <- hyRefactor::split_catchment_divide(catchment, flowline, fdr, fac)
+split <- hydrofab::split_catchment_divide(catchment, flowline, fdr, fac)
 
 expect_true(length(split) == 2)
 })

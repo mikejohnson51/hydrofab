@@ -24,7 +24,7 @@ Equally 101.05 would indicate 50% of COMID 101 is present in the new ID'd flowpa
 }
 \examples{
 \dontrun{
-path <- system.file("extdata/walker_reconcile.gpkg", package = "hyRefactor")
+path <- system.file("extdata/walker_reconcile.gpkg", package = "hydrofab")
 fps  <- add_lengthmap(flowpaths = sf::read_sf(path),
 length_table = nhdplusTools::get_vaa("lengthkm"))
 }
