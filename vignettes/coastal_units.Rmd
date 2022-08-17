@@ -169,7 +169,7 @@ mapped_outlets <- map_outlet_ids(keep_outlets, reconciled) %>%
 
 zero_order <- list(basin = little_terminal$COMID, zero = coastal$COMID)
 
-agg_cats <- aggregate_catchments(flowpath = reconciled, 
+agg_cats <- aggregate_to_outlets(flowpath = reconciled, 
                                  divide = divides, 
                                  outlets = dplyr::select(mapped_outlets, ID, type),
                                  zero_order = zero_order,

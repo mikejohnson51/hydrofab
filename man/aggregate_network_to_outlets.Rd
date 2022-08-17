@@ -78,6 +78,4 @@ outlets <- nhdplusTools::get_node(outlets)
 plot(aggregated$fline_sets$geom, lwd = 3, col = "red")
 plot(walker_flowline$geom, lwd = .7, col = "blue", add = TRUE)
 plot(outlets$geometry, add = TRUE)
-
-
 }

@@ -1,5 +1,7 @@
+omit.na = function(x){ x[!is.na(x)] }
+
 #' Refactoring Wrapper
-#' @description A wrapper around hyRefactor refactor_nhdplus and
+#' @description A wrapper around refactor_nhdplus and
 #' reconcile_catchment_divides that optionally adds routing parameters to the
 #' flowpath objects.
 #' @param gpkg 
@@ -13,7 +15,6 @@
 #' @param cores   integer number of cores to use for parallel execution
 #' @param keep    Defines the proportion of points to retain in geometry simplification (0-1; default .9). See ms_simplify.
 #' @param facfdr  path to directory with flow direction and flow accumulation `SpatRast`. If NULL (default) then catchments are NOT reconciled.
-#' @param routing path to National Water Model RouteLink file. If NULL (default) then routing parameters are NOT added to the refactroed flowlines.
 #' @param keep proportion of points to retain in geometry simplification (0-1; default 0.05). See ms_simplify. If NULL, then no simplification will be executed.
 #' @param outfile path to geopackage to write refactored_flowlines, and if facfdr != NULL, refactored catchments.
 #' @return data to the specified gpkg
@@ -32,11 +33,12 @@ refactor  = function (gpkg = NULL,
                       collapse_flines_main_meters = 1000,
                       cores = 1,
                       facfdr = NULL,
+                      purge_non_dendritic = TRUE,
                       keep = 0.9, 
-                      outfile) {
+                      outfile = NULL) {
   
   
-  network_list = read_hydrofabric_package(gpkg, catchments, flowpaths)
+  network_list = read_hydrofabric(gpkg, catchments, flowpaths)
   
   tf <- tempfile(pattern = "refactored", fileext = ".gpkg")
   tr <- tempfile(pattern = "reconciled", fileext = ".gpkg")

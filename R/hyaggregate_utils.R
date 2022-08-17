@@ -1,98 +1,250 @@
-#' Check if a geopackage and layer exists
-#' This function checks if a layer exists in a geopackage
-#' @param gpkg path to geopackage
-#' @param name name of layer to check
-#' @return logical
+#' Rename Geometry Column
+#' @description renames the geometry column of a sf object.
+#' @param x sf data.frame
+#' @param name character name to be used for geometry
 #' @export
-#' @importFrom sf st_layers
 
-layer_exists = function(gpkg, name){
+rename_geometry = function (x, name) {
+  current = attr(x, "sf_column")
+  names(x)[names(x) == current] = name
+  attr(x, "sf_column") <- name
+  x
+}
+
+#' @title Prepare Hydrologic Network
+#' @details This function adds an area, length, hydrosequence, streamorder and contributing drainage area
+#' metric to the flowpath list element of network_list.
+#' @details tot_drainage_areasqkm can only be added when there are no NA areas
+#' @param network_list a list with flowpath and catchment data
+#' @return a list containing flowpath and catchment `sf` objects
+#' @export
+#' @importFrom nhdplusTools get_streamorder calculate_total_drainage_area
+#' @importFrom sf st_drop_geometry
+#' @importFrom dplyr select
+#' @noRd
+
+prepare_network = function(network_list) {
   
-  if(!file.exists(gpkg)){ return(FALSE) }
+  names(network_list$flowpaths)  = tolower(names(network_list$flowpaths))
+  names(network_list$catchments) = tolower(names(network_list$catchments))
   
-  if(name %in% st_layers(gpkg)$name){
-    return(TRUE)
+  # Add a hydrosequence to the flowpaths
+  network_list$flowpaths = add_hydroseq(flowpaths = network_list$flowpaths)
+  
+  network_list$flowpaths$id[duplicated(network_list$flowpaths$id)]
+  
+  filter(network_list$flowpaths, id == 10146223)
+  
+  # Add area and length measures to the network list
+  network_list = add_measures(network_list$flowpaths, network_list$catchments)
+  
+  if (!any(is.na(network_list$flowpaths$areasqkm))) {
+    network_list$flowpaths$tot_drainage_areasqkm = calculate_total_drainage_area(st_drop_geometry(
+      select(
+        network_list$flowpaths,
+        ID = id,
+        toID = toid,
+        area = areasqkm
+      )
+    ))
+  }
+  
+  network_list$flowpaths$order = network_list$flowpaths %>%
+    st_drop_geometry() %>%
+    flush_prefix(c("id", "toid")) %>%
+    select(ID = id, toID = toid) %>%
+    get_streamorder()
+  
+  check_network_validity(network_list)
+  
+}
+
+#' Check Network Validity
+#' Validates a flowpath and catchment network
+#' @param term_cut cutoff integer to define terminal IDs
+#' @return a list containing flowline and catchment `sf` objects
+#' @noRd
+#' @importFrom dplyr mutate select left_join
+#' @importFrom sf st_drop_geometry
+
+check_network_validity     <- function(network_list,
+                                       term_cut = 1e9,
+                                       check = TRUE){
+  
+  flowpaths = network_list$flowpaths
+  cat       = network_list$catchments
+  
+  names(flowpaths) = tolower(names(flowpaths))
+  names(cat) = tolower(names(cat))
+  
+  flowpaths$toid    = ifelse(is.na(flowpaths$toid), 0, flowpaths$toid)
+  
+  if(!check){ return(list(flowpaths = fl, catchments = cat))}
+  
+  DAG               = network_is_dag(flowpaths)
+  CONNECTION        = sum(!(flowpaths$toid %in% flowpaths$id | flowpaths$toid > term_cut | flowpaths$toid == 0)) == 0
+  
+  if(all(DAG,  CONNECTION)){
+    return(list(flowpaths = flowpaths, catchments = cat))
   } else {
-    return(FALSE)
+    if(!DAG){ stop("Network is not a graph.")}
+    if(!CONNECTION){stop("All toIDs are not present in network")}
   }
 }
 
-#' HyAggregate logging shorthand
-#' Log a message with given log level, and optional verbosity.
-#' @param level log level, see logger::log_levels for more details
-#' @param message R objects that can be converted to a character vector via the active message formatter function
-#' @param verbose should message be emitted?
-#' @return log message
-#' @export
-#' @importFrom logger log_level
-#' @importFrom glue glue
+#' Check if network is DAG
+#' Checks in a `sf` flowline network is a DAG (Directed acyclic graph).
+#' @param fl a LINESTRING `sf` flowlines object
+#' @param ID the name of the ID column in `fl`
+#' @param toID the name of the toID column in `fl`
+#' @return boolean
+#' @noRd
+#' @importFrom igraph graph_from_data_frame is.dag
+#' @importFrom sf st_drop_geometry
+#' @importFrom dplyr select
 
-hyaggregate_log = function(level, message, verbose = TRUE){
-  if(verbose){ log_level(level, message) }
+network_is_dag = function(fl, ID = "id", toID = "toid"){
+  st_drop_geometry(select(fl, !!ID, !!toID)) %>%
+    graph_from_data_frame(directed = TRUE) %>%
+    is.dag()
 }
 
-#' Read Catchments and Flowpaths from Geopackage
-#' Convenience function for reading two layers into a list
-#' @param gpkg path to geopackage
-#' @param catchment_name name of catchment layer. If NULL, attempts to find divides layer
-#' @param flowpath_name name of flowpath layer. If NULL, attempts to find flowpath layer
-#' @param crs desired CRS, if NULL they stay as read. If all CRS layers arenot
-#' @param vebose should message be emitted?
+#' Add hydrosequence
+#' @param flowpaths sf object (LINESTRING)
+#' @return sf object
+#' @export
+#' @importFrom  nhdplusTools get_sorted 
+
+add_hydroseq = function(flowpaths) {
+  
+  flowpaths$terminalID = NULL
+  flowpaths$terminalid = NULL
+  flowpaths$hydroseq   = NULL
+  
+  flowpaths$toid = ifelse(is.na(flowpaths$toid), 0, flowpaths$toid)
+  
+  topo = get_sorted(st_drop_geometry(select(flowpaths, id, toid)), split = FALSE)
+  
+  topo['hydroseq'] = 1:nrow(topo)
+  
+  left_join(flowpaths, select(topo, id, hydroseq), by = "id")
+  
+}
+
+#' Add/sync/update length and area measures
+#' @param cat sf object (POLYGON)
 #' @return list
 #' @export
+#' @importFrom dplyr select left_join
+#' @importFrom sf st_drop_geometry
 
-read_hydrofabric = function(gpkg = NULL,
-                            catchments = NULL,
-                            flowpaths = NULL,
-                            crs = NULL,
-                            verbose = TRUE){
+add_measures = function(flowpaths, cat) {
+  flowpaths$lengthkm  = add_lengthkm(flowpaths)
+  cat$areasqkm = add_areasqkm(cat)
+  flowpaths$areasqkm = NULL
+  flowpaths = left_join(flowpaths,
+                        select(st_drop_geometry(cat), id, areasqkm),
+                        by = "id")
+  list(flowpaths  = rename_geometry(flowpaths, "geometry"),
+       catchments = rename_geometry(cat, "geometry"))
+}
+
+#' Compute length in kilometers
+#' @param x LINESTRING sf object
+#' @return numeric vector
+#' @export
+#' @importFrom units set_units drop_units
+#' @importFrom sf st_length
+
+add_lengthkm = function (x) { drop_units(units::set_units(st_length(x), "km")) }
+
+#' Compute area in square kilometers
+#' @param x POLYGON sf object
+#' @return numeric vector
+#' @export
+#' @importFrom units set_units drop_units
+#' @importFrom sf st_area
+
+add_areasqkm = function (x) { drop_units(set_units(st_area(x), "km2")) }
+
+#' Flush existing ID prefixes
+#' Given a data object and column, remove a prefix and adjoining "-"
+#' @param input input data object
+#' @param col column to remove prefix from
+#' @return data object with updated column
+#' @export
+flush_prefix = function(input, col) {
+  for (i in col) {
+    input[[i]] = as.numeric(gsub(".*-", "", input[[i]]))
+  }
+  input
+}
+
+#' Remove non-coincident Network Features
+#' Remove non-coincident flowlines and catchment pairs from a network list
+#' @param network_list a list containing flowpaths and catchments
+#' @param verbose should message be emitted?
+#' @return a list containing flowpaths and catchments
+#' @export
+
+drop_extra_features = function(network_list, verbose){
   
-  out = list()
+  network_list$flowpaths  =   network_list$flowpaths[!duplicated(network_list$flowpaths), ]
+  network_list$catchments =   network_list$catchments[!duplicated(network_list$catchments), ]
   
-  if(is.null(gpkg)){
-    if(inherits(catchments, "sf")){ out[["catchments"]]  <- catchments }
-    if(inherits(flowpaths, "sf")){ out[["flowpaths"]]  <- flowpaths }
+  cond = describe_hydrofabric(network_list, verbose)
+  
+  if(!cond){
+    
+    bad_fps = filter(network_list$flowpaths, !id %in% network_list$catchments$id)$id
+    
+    if(length(bad_fps) > 0) {
+      hyaggregate_log("WARN", glue("Removing flowpath(s): {paste(bad_fps, collapse = ', ')}"), verbose)
+    }
+    
+    bad_cats = filter(network_list$catchments, !id %in% network_list$flowpaths$id)$id
+    
+    if(length(bad_cats) > 0) {
+      hyaggregate_log("WARN", glue("Removing catchment(s): {paste(bad_cats, collapse = ', ')}"), verbose)
+    }
+    
+    network_list = list(flowpaths = filter(network_list$flowpaths, id %in% network_list$catchments$id),
+                        catchments = filter(network_list$catchments, id %in% network_list$flowpaths$id))
+  }
+  
+  return(network_list)
+  
+}
+
+#' Describe Hydrofabric
+#' Describes a hydrofabric in terms of flowpath and catchment count. If they
+#' are unequal, FALSE is returned. If equal TRUE is returned. Messages can optionally
+#' be emitted.
+#' @param network_list a list containing flowpaths and catchments
+#' @param verbose should messages be emitted?
+#' @return boolean condition
+#' @export
+
+
+describe_hydrofabric = function(network_list, verbose = TRUE){
+  
+  counts = sapply(network_list, nrow)
+  
+  if(counts[[1]] != counts[[2]]){
+    
+    hyaggregate_log("WARN",
+                    glue("{counts[1]} {names(counts)[1]} vs. {counts[2]} {names(counts)[2]}"),
+                    verbose)
+    
+    return(FALSE)
+    
   } else {
     
-    hyaggregate_log("INFO", glue("\n--- Read in data from {gpkg} ---\n"), verbose)
+    hyaggregate_log( "INFO",
+                     glue("{counts[1]} features in network."),
+                     verbose)
     
-    if(is.null(flowpaths)){
-      flowpaths = grep("flowpath|flowline", st_layers(gpkg)$name, value = TRUE)
-      if(length(flowpaths) > 1){ stop("Multiple flowpath names found.")}
-      hyaggregate_log(level = "INFO",
-                      message = glue("Reading flowpaths from: {flowpaths}"),
-                      verbose)
-    }
+    return(FALSE)
     
-    if(is.null(catchments)){
-      catchments = grep("divide|catchment", st_layers(gpkg)$name, value = TRUE)
-      if(length(catchments) > 1){ stop("Multiple catchment names found.")}
-      hyaggregate_log("INFO", glue("Reading catchments from: {catchments}"), verbose)
-    }
-
-    
-    if(layer_exists(gpkg, flowpaths)){
-      out[["flowpaths"]] <- read_sf(gpkg, flowpaths)
-    }
-    
-    if(layer_exists(gpkg, catchments)){
-      out[["catchments"]] <- read_sf(gpkg, catchments)
-    }
   }
-  
-  if(!is.null(crs)){
-    out = lapply(out, function(x){ st_transform(x, crs)})
-  }
-  
-  crs_collection = lapply(out, st_crs)
-  
-  if(length(crs_collection) > 1){
-    if(!identical(crs_collection[1], crs_collection[2])){
-      out[[2]] = st_transform(out[[2]], st_crs(out[[1]]))
-    }
-  }
- 
-  
-  return(out)
-  
 }

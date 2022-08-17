@@ -125,7 +125,7 @@ test_that("basic coastal aggregation", {
   
   zero_order <- list(basin = little_terminal$COMID, zero = coastal$COMID)
   
-  agg_cats <- aggregate_catchments_to_outlets(flowpath = reconciled, 
+  agg_cats <- aggregate_to_outlets(flowpath = reconciled, 
                                    divide = divides, 
                                    outlets = dplyr::select(mapped_outlets, ID, type),
                                    zero_order = zero_order,

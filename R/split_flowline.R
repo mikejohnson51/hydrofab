@@ -12,7 +12,6 @@
 #' appended and must be treated as one would treat a semantic version. .1 is the 
 #' most upstream and the sequence increases in the downstream direction.
 #' @importFrom dplyr group_by ungroup filter select mutate lead n right_join
-#' @importFrom nhdplusTools rename_geometry
 #' @seealso The \code{\link{refactor_nhdplus}} function implements a complete
 #' workflow using `split_flowlines()`.
 #' @export
@@ -36,7 +35,9 @@ split_flowlines <- function(flines, max_length = NULL,
   
   flines <- rename_geometry(flines, "geom")
   
-  split <- split_lines(flines, max_length, events, 
+  split <- split_lines(input_lines = flines, 
+                       max_length, 
+                       events, 
                        para = para, 
                        avoid = avoid)
   
@@ -191,7 +192,7 @@ rf <- function(m, f, t) {
   
 }
 
-add_length <- function(input_lines) {
+add_lengthm <- function(input_lines) {
   
   input_lines$geom_len <- sf::st_length(sf::st_geometry(input_lines))
   attr(input_lines$geom_len, "units") <- NULL
@@ -295,7 +296,7 @@ split_by_length <- function(lines, max_length, event_split_points, avoid) {
   
   if(is.null(max_length)) return(data.frame())
   
-  lines <- sf::st_drop_geometry(add_length(lines))
+  lines <- sf::st_drop_geometry(add_lengthm(lines))
   
   if(nrow(event_split_points) > 0) {
     event_split_points <- dplyr::left_join(event_split_points, 

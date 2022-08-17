@@ -65,8 +65,7 @@
 #' plot(aggregated$fline_sets$geom, lwd = 3, col = "red")
 #' plot(walker_flowline$geom, lwd = .7, col = "blue", add = TRUE)
 #' plot(outlets$geometry, add = TRUE)
-#'
-#'
+
 aggregate_network_to_outlets <- function(flowpath, outlets,
                                          da_thresh = NA, only_larger = FALSE,
                                          post_mortem_file = NA) {
@@ -134,7 +133,7 @@ validate_flowpath <- function(flowpath, outlets, post_mortem_file) {
     stop("Terminal paths must have an NA or 0 toID")
   }
   
-  flowpath$toID <- methods::as(flowpath$toID, class(flowpath$ID))
+  flowpath$toID <- as(flowpath$toID, class(flowpath$ID))
   
   return(flowpath)
 }
@@ -212,12 +211,13 @@ fix_tail <- function(flowpath, outlets, toid_tail_id, da_thresh = NA, only_large
 #' @param outlets the outlet list of gages, etc.
 #' @param flowpath the reconciled flowline network
 #' @importFrom dplyr filter distinct select left_join group_by mutate
+#' @importFrom methods as
 #' @noRd
 
 make_outlets_valid <- function(outlets, flowpath,
                                da_thresh = NA, only_larger = FALSE) {
   
-  outlets$ID <- methods::as(outlets$ID, class(flowpath$ID))
+  outlets$ID <- as(outlets$ID, class(flowpath$ID))
   
   # Finds levelpaths and their unique head and outlet
   lps <- get_lps(drop_geometry(flowpath))

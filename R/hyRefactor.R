@@ -100,11 +100,8 @@ check_names <- function(x, function_name) {
   return(invisible(x))
 }
 
-<<<<<<< HEAD
 # nolint end
 
-=======
->>>>>>> 1bd43a1b3b8c273b703b5ec4d1078f4ea6895f5e
 get_ds_lengthkm <- function(flines) {
   # This gets all the next-downstream flowlines and finds the
   # length of the next downstream

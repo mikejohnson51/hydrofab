@@ -25,7 +25,7 @@
 #' outlets <- data.frame(ID = c(31, 3, 5, 1, 45, 92),
 #'  type = c("outlet", "outlet", "outlet", "terminal", "outlet", "outlet"),
 #'  stringsAsFactors = FALSE)
-#' aggregated <- aggregate_catchments_to_outlets(flowpath = walker_fline_rec, 
+#' aggregated <- aggregate_to_outlets(flowpath = walker_fline_rec, 
 #'                                    divide = walker_catchment_rec, 
 #'                                    outlets = outlets)
 #' plot(aggregated$cat_sets$geom, lwd = 3, border = "red")
@@ -36,16 +36,16 @@
 #' plot(aggregated$fline_sets$geom, lwd = 3, col = "red", add = TRUE)
 #' plot(walker_flowline$geom, lwd = .7, col = "blue", add = TRUE)
 
-aggregate_to_outlets <- function(gpkg, 
-                                 flowpath, 
-                                 divide, 
-                                 outlets, 
+aggregate_to_outlets <- function(gpkg = NULL, 
+                                 flowpath = NULL, 
+                                 divide = NULL, 
+                                 outlets = NULL, 
                                  zero_order = NULL,
                                  coastal_cats = NULL,
                                  da_thresh = NA, only_larger = FALSE, 
                                  post_mortem_file = NA, keep = NULL) {
   
-  network_list = read_hydrofabric_package(gpkg, catchments = divide, flowpaths = flowpath)
+  network_list = read_hydrofabric(gpkg, catchments = divide, flowpaths = flowpath)
   
   in_crs <- st_crs(network_list$catchments)
   

@@ -4,7 +4,7 @@
 #' locations can be provided over which the network cannot be aggregated (see \link{\code{nexus_from_poi}}
 #' @param gpkg a path to a gpkg
 #' @param divide If gpkg is NULL, then an sf data.frame, otherwise a the layer name. See details.
-#' @param flowpath sf data.frame
+#' @param flowpath If gpkg is NULL, then an sf data.frame, otherwise a the layer name. See details.
 #' @param outlets data.frame with mandatory "ID" column and optional "POI_ID" column. "ID" must be identifiers from
 #' flowpath and divide data.frames and POI ID must be unique.
 #' @param ideal_size_sqkm The ideal size of catchments (default = 10 sqkm)
@@ -26,20 +26,27 @@
 #' @importFrom nhdplusTools get_sorted calculate_total_drainage_area get_streamorder
 #' @importFrom logger log_appender appender_file appender_console
 
-aggregate_network_to_distribution = function(flowpath = NULL,
-                                             divide = NULL,
-                                             outlets = NULL,
-                                             ideal_size_sqkm = 10,
-                                             min_length_km = 1,
-                                             min_area_sqkm  = 3,
-                                             outfile = NULL,
-                                             log = TRUE,
-                                             overwrite = FALSE,
-                                             cache = FALSE,
-                                             verbose = TRUE) {
+aggregate_to_distribution = function(gpkg = NULL,
+                                     flowpath = NULL,
+                                     divide = NULL,
+                                     outlets = NULL,
+                                     ideal_size_sqkm = 10,
+                                     min_length_km = 1,
+                                     min_area_sqkm  = 3,
+                                     outfile = NULL,
+                                     log = TRUE,
+                                     overwrite = FALSE,
+                                     cache = FALSE,
+                                     verbose = TRUE) {
   
   if(cache & is.null(outfile)){ stop("cache cannot be written if outfile is NULL") }
   
+  if(cache){ 
+    cache_file = outfile
+  } else {
+    cache_file = NULL
+  }
+
   if(!is.logical(log)){
     log_appender(appender_file(log))
     verbose = TRUE
@@ -47,7 +54,6 @@ aggregate_network_to_distribution = function(flowpath = NULL,
     log_appender(appender_console)
     verbose = log
   }
-
     
  if(!is.null(outfile)){
    if (file.exists(outfile) & overwrite) {
@@ -58,36 +64,36 @@ aggregate_network_to_distribution = function(flowpath = NULL,
    }
  }
  
-  network_list = read_hydrofabric_package(gpkg,
-                                          catchments = catchment_name,
-                                          flowpaths = flowpath_name,
-                                          crs = 5070)
+  network_list = read_hydrofabric(gpkg,
+                                  catchments = divide,
+                                  flowpaths = flowpath,
+                                  crs = 5070)
     
     
-    if (!is.null(outlets)) {
-      
-      nex = distinct(nexus_locations, ID, poi_id)
+ if (!is.null(outlets)) {
+   
+   nex = distinct(nexus_locations, ID, poi_id)
 
-      network_list$flowpaths  = left_join(network_list$flowpaths,
-                                          distinct(nexus_locations, ID, poi_id),
-                                          by = "ID")
-      
-    } else {
-      network_list$flowpaths$poi_id   = NA
-    }
+   network_list$flowpaths  = left_join(network_list$flowpaths,
+                                       distinct(nexus_locations, ID, poi_id),
+                                       by = "ID")
+   
+ } else {
+   network_list$flowpaths$poi_id   = NA
+ }
     
     network_list <- drop_extra_features(prepare_network(network_list), verbose)
     
-    if (!is.null(cache_file)) {
-      write_hydrofabric_package(network_list,
-                                cache_file,
-                                "base_catchments",
-                                "base_flowpaths",
-                                verbose)
+    if (cache) {
+      write_hydrofabric(network_list,
+                        cache_file,
+                        "base_catchments",
+                        "base_flowpaths",
+                        verbose)
     }
     
-
-  network_list = aggregate_along_mainstems(network_list,
+    
+    network_list = aggregate_along_mainstems(network_list,
                                            ideal_size_sqkm,
                                            min_area_sqkm,
                                            min_length_km,
@@ -100,10 +106,10 @@ aggregate_network_to_distribution = function(flowpath = NULL,
                                       verbose = verbose,
                                       cache_file = cache_file)
   
-  network_list = add_mapped_pois(network_list)
+  # network_list = add_mapped_pois(network_list)
   
   if (!is.null(cache_file)) {
-    write_hydrofabric_package(network_list,
+    write_hydrofabric(network_list,
                               cache_file,
                               catchment_name  = "divides",
                               flowpath_name   = "flowpaths",
@@ -113,7 +119,7 @@ aggregate_network_to_distribution = function(flowpath = NULL,
     
   } else if(!is.null(outfile)){
     
-    write_hydrofabric_package(network_list,
+    write_hydrofabric(network_list,
                               outfile,
                               catchment_name  = "divides",
                               flowpath_name   = "flowpaths",

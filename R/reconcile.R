@@ -157,7 +157,6 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 #' @details Note that all inputs must be passed in the same projection.
 #' @export
 #' @importFrom sf st_crs st_transform st_precision st_drop_geometry st_sf st_multipolygon st_as_sf st_cast st_dimension
-#' @importFrom nhdplusTools rename_geometry
 #' @importFrom terra crs res
 #' @importFrom dplyr select distinct filter group_by summarise ungroup row_number mutate bind_rows
 #' @importFrom tidyr separate_rows

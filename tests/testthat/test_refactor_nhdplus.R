@@ -71,8 +71,14 @@ test_that("The refactor_nhdplus function runs as expected", {
                                                  where = "package:lwgeom",
                                                  mode = "function")) {
 
-  nhdplus_flowlines <- sf::st_zm(readRDS("data/north_network.rds"))
+  nhdplus_flowlines <- sf::st_zm(readRDS(list.files(pattern = "north_network.rds$", 
+                                                    full.names = TRUE, 
+                                                    recursive = TRUE)))
 
+  unlink("temp.gpkg")
+  unlink("temp_rec.gpkg")
+  unlink("temp.txt") # could test the contents of this file.
+  
   sink(file = "temp.txt") # Captures sf output
     m <- suppressWarnings(# Known warnings -- don't want.
       capture_messages(refactor_nhdplus(nhdplus_flines = nhdplus_flowlines,

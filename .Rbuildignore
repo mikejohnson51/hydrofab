@@ -15,3 +15,4 @@ data-raw
 ^\.github$
 ^tic\.R$
 Dockerfile
+^README\.Rmd$

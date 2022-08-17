@@ -98,7 +98,6 @@ flowpaths_to_linestrings = function(flowpaths){
 #' @importFrom dplyr select mutate filter group_by ungroup slice_max bind_rows n right_join rename slice_min
 #' @importFrom sf st_crs st_touches st_transform st_area st_make_valid st_intersection st_collection_extract st_cast st_intersects st_length st_filter st_union st_is_empty
 #' @importFrom rmapshaper ms_explode ms_dissolve ms_simplify
-#' @importFrom nhdplusTools rename_geometry
 #' @importFrom rlang :=
 
 clean_geometry <- function(catchments,
@@ -189,7 +188,7 @@ clean_geometry <- function(catchments,
         group_by(.data$ID) %>%
         mutate(n = n()) %>%
         ungroup() %>%
-        nhdplusTools::rename_geometry('geometry') %>%
+        rename_geometry('geometry') %>%
         ungroup()
 
       if(nrow(tj) == 0){
