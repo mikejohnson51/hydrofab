@@ -16,9 +16,9 @@
 #' @param log a filepath to write messages to or booleen (TRUE = print to console; FALSE = no messages)
 #' @param verbose print status updates. Default = TRUE
 #' @return if outfile = TRUE, a file path, else a list object
-#' @details If gpkg is not NULL, divide and flowpath can be left NULL as well. The code attempts to 
+#' @details If gpkg is not NULL, divide and flowpath can be left NULL as well. The code attempts to
 #' infer the correct layers. The divides layer will be the one including the word "divide" or "catchment" and the
-#' flowpath layer will be the one including 'flowpath' or 'flowline'. If no layers, or more then one layer are deemed possible 
+#' flowpath layer will be the one including 'flowpath' or 'flowline'. If no layers, or more then one layer are deemed possible
 #' for each input, then the function will stop and ask for explicit names.
 #' @export
 #' @importFrom sf st_transform read_sf st_set_crs write_sf st_layers
@@ -38,92 +38,88 @@ aggregate_to_distribution = function(gpkg = NULL,
                                      overwrite = FALSE,
                                      cache = FALSE,
                                      verbose = TRUE) {
+  if (cache &
+      is.null(outfile)) {
+    stop("cache cannot be written if outfile is NULL")
+  }
   
-  if(cache & is.null(outfile)){ stop("cache cannot be written if outfile is NULL") }
-  
-  if(cache){ 
+  if (cache) {
     cache_file = outfile
   } else {
     cache_file = NULL
   }
-
-  if(!is.logical(log)){
+  
+  if (!is.logical(log)) {
     log_appender(appender_file(log))
     verbose = TRUE
   } else {
     log_appender(appender_console)
     verbose = log
   }
-    
- if(!is.null(outfile)){
-   if (file.exists(outfile) & overwrite) {
-     unlink(outfile)
-   } else if (file.exists(outfile)) {
-     hyaggregate_log("WARN", glue("{outfile} already exists and overwrite is FALSE"), verbose)
-     return(outfile)
-   }
- }
- 
+  
+  if (!is.null(outfile)) {
+    if (file.exists(outfile) & overwrite) {
+      unlink(outfile)
+    } else if (file.exists(outfile)) {
+      hyaggregate_log("WARN",
+                      glue("{outfile} already exists and overwrite is FALSE"),
+                      verbose)
+      return(outfile)
+    }
+  }
+  
   network_list = read_hydrofabric(gpkg,
                                   catchments = divide,
                                   flowpaths = flowpath,
                                   crs = 5070)
+  
+  
+  if (!is.null(outlets)) {
+    network_list$flowpaths  = left_join(network_list$flowpaths, outlets, by = "ID")
     
+  } else {
+    network_list$flowpaths$poi_id   = NA
     
- if (!is.null(outlets)) {
-   
-   nex = distinct(nexus_locations, ID, poi_id)
+  }
+  
+  network_list <-
+    drop_extra_features(prepare_network(network_list), verbose)
+  
+  if (cache) {
+    write_hydrofabric(network_list,
+                      cache_file,
+                      "base_catchments",
+                      "base_flowpaths",
+                      verbose)
+  }
+  
+  
+  network_list = aggregate_along_mainstems(
+    network_list,
+    ideal_size_sqkm,
+    min_area_sqkm,
+    min_length_km,
+    verbose = verbose,
+    cache_file = cache_file
+  )
+  
+  network_list  = collapse_headwaters(
+    network_list,
+    min_area_sqkm,
+    min_length_km,
+    verbose = verbose,
+    cache_file = cache_file
+  )
+  
+  network_list = add_mapped_pois(network_list, gpkg, verbose)
 
-   network_list$flowpaths  = left_join(network_list$flowpaths,
-                                       distinct(nexus_locations, ID, poi_id),
-                                       by = "ID")
-   
- } else {
-   network_list$flowpaths$poi_id   = NA
- }
-    
-    network_list <- drop_extra_features(prepare_network(network_list), verbose)
-    
-    if (cache) {
-      write_hydrofabric(network_list,
-                        cache_file,
-                        "base_catchments",
-                        "base_flowpaths",
-                        verbose)
-    }
-    
-    
-    network_list = aggregate_along_mainstems(network_list,
-                                           ideal_size_sqkm,
-                                           min_area_sqkm,
-                                           min_length_km,
-                                           verbose = verbose,
-                                           cache_file = cache_file)
-  
-  network_list  = collapse_headwaters(network_list,
-                                      min_area_sqkm,
-                                      min_length_km,
-                                      verbose = verbose,
-                                      cache_file = cache_file)
-  
-  # network_list = add_mapped_pois(network_list)
-  
-  if (!is.null(cache_file)) {
-    write_hydrofabric(network_list,
-                              cache_file,
-                              catchment_name  = "divides",
-                              flowpath_name   = "flowpaths",
-                              verbose = verbose)
-    
-    return(cache_file)
-    
-  } else if(!is.null(outfile)){
-    
-    write_hydrofabric(network_list,
-                              outfile,
-                              catchment_name  = "divides",
-                              flowpath_name   = "flowpaths",
-                              verbose = verbose)
+  if (!is.null(outfile)) {
+    write_hydrofabric(
+      network_list,
+      outfile,
+      catchment_name  = "divides",
+      flowpath_name   = "flowpaths",
+      verbose = verbose)
     
     return(outfile)
     

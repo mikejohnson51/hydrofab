@@ -175,13 +175,13 @@ write_hydrofabric = function(network_list,
   
   hyaggregate_log("SUCCESS", glue("Writing {flowpath_name} & {catchment_name} to {outfile}"), verbose)
   
-  el = get_waterbody_edges_terms(network_list$flowpaths)
+  #el = get_waterbody_edges_terms(network_list$flowpaths)
   
   names_nl = names(network_list)
   
   write_sf(network_list$flowpaths, outfile, flowpath_name)
   write_sf(network_list$catchments, outfile, catchment_name)
-  write_sf(el, outfile, edge_list_name)
+  #write_sf(el, outfile, edge_list_name)
   
   if("mapped_POIs" %in% names_nl){
     write_sf(network_list[['mapped_POIs']], outfile, 'mapped_POIs')

@@ -8,9 +8,9 @@
 [![Dependencies](https://img.shields.io/badge/dependencies-19/80-red?style=flat)](#)
 <!-- badges: end -->
 
-The goal of hydrofab is to provide consistent hydrologic and hydraulic
-network manipulation tool chains to achive model application ready
-datasets from a consistent refeerence fabric.
+The goal of `hydrofab` is to provide consistent hydrologic and hydraulic
+network manipulation tool chains to achieve model application ready
+datasets from a consistent reference fabric.
 
 ![Alt
 Text](https://media1.giphy.com/media/Kd5uWrNKjhRGfopdHJ/giphy.gif?cid=ecf05e476u6oq5neboo6x6lk5gngbz2yuh5st0sxplbmczft&rid=giphy.gif)
@@ -63,4 +63,8 @@ repository. Once built, it can be run with the following command.
 
     docker build -t hydrofab_test .
 
-    docker run --rm -it -v %cd%:/src hydrofab_test /bin/bash -c "cp -r /src/* /check/ && cp /src/.Rbuildignore /check/ && cd /check && Rscript -e 'devtools::build()' && R CMD check --as-cran ../hydrofabric"
+    # Windows
+    docker run --rm -it -v $PWD:/src hydrofab_test /bin/bash -c "cp -r /src/* /check/ && cp /src/.Rbuildignore /check/ && cd /check && Rscript -e 'devtools::build()' && R CMD check --as-cran ../hydrofab_*"
+
+    # Linux/Mac
+    docker run --rm -it -v %cd%:/src hydrofab_test /bin/bash -c "cp -r /src/* /check/ && cp /src/.Rbuildignore /check/ && cd /check && Rscript -e 'devtools::build()' && R CMD check --as-cran ../hydrofab_"

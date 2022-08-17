@@ -31,10 +31,6 @@ prepare_network = function(network_list) {
   # Add a hydrosequence to the flowpaths
   network_list$flowpaths = add_hydroseq(flowpaths = network_list$flowpaths)
   
-  network_list$flowpaths$id[duplicated(network_list$flowpaths$id)]
-  
-  filter(network_list$flowpaths, id == 10146223)
-  
   # Add area and length measures to the network list
   network_list = add_measures(network_list$flowpaths, network_list$catchments)
   
@@ -48,6 +44,8 @@ prepare_network = function(network_list) {
       )
     ))
   }
+  
+
   
   network_list$flowpaths$order = network_list$flowpaths %>%
     st_drop_geometry() %>%

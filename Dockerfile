@@ -25,4 +25,4 @@ RUN cd /check \
 RUN tlmgr update --self && \
   tlmgr install ec
 
-RUN Rscipt -e 'devtools::install_github("nhdplusTools")'
+RUN Rscript -e 'devtools::install_github("dblodgett-usgs/nhdplusTools")'

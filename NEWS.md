@@ -17,5 +17,6 @@ Merging `hyRefactor` with `hyAggregate` to create `hydrofab`
   - add `collapse_headwaters`
   - add `aggregate_to_distribution`
   - add `add_nonnetwork_divides`
+  - add `poi_to_outlet`
   
   - use I/O methods in all existing `hyRefactor` code
