@@ -58,6 +58,7 @@ read_hydrofabric = function(gpkg = NULL,
     
     if(is.null(flowpaths)){
       flowpaths = grep("flowpath|flowline", st_layers(gpkg)$name, value = TRUE)
+      flowpaths = flowpaths[!grepl("attributes|edge_list", flowpaths)]
       if(length(flowpaths) > 1){ stop("Multiple flowpath names found.")}
       hyaggregate_log(level = "INFO",
                       message = glue("Reading flowpaths from: {flowpaths}"),
@@ -165,27 +166,39 @@ get_hydrofabric = function(VPU = "01",
 #' @param flowpath_name the layer name for flowpaths
 #' @param verbose should messages be emitted?
 #' @return file path
+#' @export
 
 write_hydrofabric = function(network_list,
                              outfile,
                              catchment_name = "divides",
                              flowpath_name  = "flowpaths",
-                             edge_list_name = "edge_list",
                              verbose = TRUE){
   
   hyaggregate_log("SUCCESS", glue("Writing {flowpath_name} & {catchment_name} to {outfile}"), verbose)
-  
-  #el = get_waterbody_edges_terms(network_list$flowpaths)
-  
+
   names_nl = names(network_list)
   
   write_sf(network_list$flowpaths, outfile, flowpath_name)
-  write_sf(network_list$catchments, outfile, catchment_name)
-  #write_sf(el, outfile, edge_list_name)
   
+  write_sf(network_list$catchments, outfile, catchment_name)
+
   if("mapped_POIs" %in% names_nl){
     write_sf(network_list[['mapped_POIs']], outfile, 'mapped_POIs')
   }
+  
+  if("flowpath_attributes" %in% names_nl){
+    write_sf(network_list[['flowpath_attributes']], outfile, 'flowpath_attributes')
+  }
+  
+  if("nexus" %in% names_nl){
+    write_sf(network_list[['nexus']], outfile, 'nexus')
+  }
+  
+  if("flowpath_edge_list" %in% names_nl){
+    write_sf(network_list[['flowpath_edge_list']], outfile, 'flowpath_edge_list')
+  }
+  
+  return(outfile)
 }
 
 
