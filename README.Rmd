@@ -19,7 +19,7 @@ knitr::opts_chunk$set(
 [![Dependencies](https://img.shields.io/badge/dependencies-19/80-red?style=flat)](#)
 <!-- badges: end -->
 
-The goal of `hydrofab` is to provide consistent hydrologic and hydraulic network manipulation tool chains to achieve model application ready datasets from a consistent reference fabric.
+The goal of `hydrofab` is to provide consistent hydrologic and hydraulic network manipulation tool chains to achieve model application ready datasets from a consistent reference fabric. Some of these are being built at [ngen.hydrofab](https://github.com/mikejohnson51/ngen.hydrofab) and [gfv2.0](https://code.usgs.gov/wma/nhgf/gfv2.0)
 
 ![Fabricating Hydrofabrics](https://media1.giphy.com/media/Kd5uWrNKjhRGfopdHJ/giphy.gif?cid=ecf05e476u6oq5neboo6x6lk5gngbz2yuh5st0sxplbmczft&rid=giphy.gif)
 
@@ -55,10 +55,10 @@ distribution,
 2) **collapsing** catchment topology to eliminate small catchments
 
 
-The concept of aggregating as intended here includes **aggregating** catchments into groups based on existing network topology and defined critiera. Two primary use cases are offered:
+The concept of aggregating as intended here includes **aggregating** catchments into groups based on existing network topology and defined criteria. Two primary use cases are offered:
 
-1. Aggregrgating to a set of defined outlet locations
-2. Aggregating to a uniform catchment size with enforced minimun areas and lengths.
+1. Aggregating to a set of defined outlet locations
+2. Aggregating to a uniform catchment size with enforced minimum areas and lengths.
 
 This type of functionality is especially relevant to modeling applications that
 need specific modeling unit characteristics but wish to preserve the network as
