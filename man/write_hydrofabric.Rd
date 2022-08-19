@@ -11,7 +11,6 @@ write_hydrofabric(
   outfile,
   catchment_name = "divides",
   flowpath_name = "flowpaths",
-  edge_list_name = "edge_list",
   verbose = TRUE
 )
 }

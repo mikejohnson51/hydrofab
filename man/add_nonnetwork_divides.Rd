@@ -11,7 +11,7 @@ add_nonnetwork_divides(
   gpkg = NULL,
   flowpaths = NULL,
   divides = NULL,
-  reference_gpkg,
+  reference_gpkg = NULL,
   verbose = TRUE
 )
 }
