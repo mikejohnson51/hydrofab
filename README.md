@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# hydrofab: Fabricating Hydrofabrics <img src='inst/figures/imgfile.png' align="right" height="139" />
+# hydrofab: Fabricating Hydrofabrics <img src='man/figures/imgfile.png' align="right" height="139" />
 
 <!-- badges: start -->
 

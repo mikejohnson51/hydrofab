@@ -17,7 +17,7 @@ layer_exists = function(gpkg, name){
   }
 }
 
-#' HyAggregate logging shorthand
+#'Logging shorthand
 #' Log a message with given log level, and optional verbosity.
 #' @param level log level, see logger::log_levels for more details
 #' @param message R objects that can be converted to a character vector via the active message formatter function
@@ -196,6 +196,10 @@ write_hydrofabric = function(network_list,
   
   if("flowpath_edge_list" %in% names_nl){
     write_sf(network_list[['flowpath_edge_list']], outfile, 'flowpath_edge_list')
+  }
+  
+  if("crosswalk" %in% names_nl){
+    write_sf(network_list[['crosswalk']], outfile, 'crosswalk')
   }
   
   return(outfile)

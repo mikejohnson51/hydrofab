@@ -4,12 +4,7 @@
 \alias{add_mapped_pois}
 \title{Add a mapped_POI layer to network_list}
 \usage{
-add_mapped_pois(
-  network_list,
-  refactored_gpkg = NULL,
-  type = c("HUC12", "Gages", "TE", "NID", "WBIn", "WBOut"),
-  verbose = TRUE
-)
+add_mapped_pois(network_list, refactored_gpkg = NULL, verbose = TRUE)
 }
 \arguments{
 \item{network_list}{a list with flowpath and catchment data}

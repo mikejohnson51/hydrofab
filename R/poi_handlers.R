@@ -84,7 +84,6 @@ poi_to_outlet = function(gpkg,
 
 add_mapped_pois = function(network_list, 
                            refactored_gpkg = NULL, 
-                           type = c('HUC12', 'Gages', 'TE', 'NID', 'WBIn', 'WBOut'),
                            verbose = TRUE){
   
   generate_mapped_pois = filter(network_list$flowpaths, !is.na(poi_id)) %>%

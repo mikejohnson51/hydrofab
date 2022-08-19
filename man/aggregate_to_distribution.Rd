@@ -37,13 +37,13 @@ flowpath and divide data.frames and POI ID must be unique.}
 
 \item{outfile}{of not NULL, where to write the output files}
 
-\item{log}{a filepath to write messages to or booleen (TRUE = print to console; FALSE = no messages)}
+\item{log}{a filepath to write messages to or Boolean (TRUE = print to console; FALSE = no messages)}
 
 \item{overwrite}{overwrite existing gf file. Default is FALSE}
 
 \item{verbose}{print status updates. Default = TRUE}
 
-\item{nexus_locations}{a data.frame with columns specifiying the ID, and the nexus type.}
+\item{nexus_locations}{a data.frame with columns specifying the ID, and the nexus type.}
 }
 \value{
 if outfile = TRUE, a file path, else a list object
@@ -51,7 +51,7 @@ if outfile = TRUE, a file path, else a list object
 \description{
 This function aggregates a network to a desired size distribution while
 enforcing minimum flowpath legnths and catchment areas. Additionally a set of explicit nexus
-locations can be provided over which the network cannot be aggregated (see \link{\code{nexus_from_poi}}
+locations can be provided over which the network cannot be aggregated (see \link{\code{poi_to_outlet}})
 }
 \details{
 If gpkg is not NULL, divide and flowpath can be left NULL as well. The code attempts to

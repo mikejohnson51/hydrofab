@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# hydrofab: Fabricating Hydrofabrics <img src='inst/figures/imgfile.png' align="right" height="139" />
+# hydrofab: Fabricating Hydrofabrics <img src='man/figures/imgfile.png' align="right" height="139" />
 
 <!-- badges: start -->
 [![Dependencies](https://img.shields.io/badge/dependencies-19/80-red?style=flat)](#)

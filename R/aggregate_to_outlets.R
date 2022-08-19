@@ -15,7 +15,7 @@
 #' @param post_mortem_file rda file to dump environment to in case of error
 #' @param keep logical passed along to \code{\link{clean_geometry}}
 
-#' @details See \code{\link{aggregate_network_to_outles}}
+#' @details See \code{\link{aggregate_network_to_outlets}}
 #'
 #' @export
 #' @importFrom sf st_is_empty st_drop_geometry st_as_sf st_crs st_geometry

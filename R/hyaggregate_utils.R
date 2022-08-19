@@ -21,7 +21,6 @@ rename_geometry = function (x, name) {
 #' @importFrom nhdplusTools get_streamorder calculate_total_drainage_area
 #' @importFrom sf st_drop_geometry
 #' @importFrom dplyr select
-#' @noRd
 
 prepare_network = function(network_list) {
   

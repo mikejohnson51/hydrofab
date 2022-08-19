@@ -45,7 +45,7 @@ Aggregates catchments according to a set of outlet catchments.
 Network aggregation is completed using: See \code{\link{aggregate_network_to_outles}}.
 }
 \details{
-See \code{\link{aggregate_network_to_outles}}
+See \code{\link{aggregate_network_to_outlets}}
 }
 \examples{
 source(system.file("extdata", "walker_data.R", package = "hydrofab"))

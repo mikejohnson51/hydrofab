@@ -1,7 +1,7 @@
 #' @title Aggregate Network to Uniform Size
 #' @description This function aggregates a network to a desired size distribution while
 #' enforcing minimum flowpath legnths and catchment areas. Additionally a set of explicit nexus
-#' locations can be provided over which the network cannot be aggregated (see \link{\code{nexus_from_poi}}
+#' locations can be provided over which the network cannot be aggregated (see \link{\code{poi_to_outlet}})
 #' @param gpkg a path to a gpkg
 #' @param divide If gpkg is NULL, then an sf data.frame, otherwise a the layer name. See details.
 #' @param flowpath If gpkg is NULL, then an sf data.frame, otherwise a the layer name. See details.
@@ -12,8 +12,8 @@
 #' @param min_area_sqkm The minimum allowable area of catchment features (default = 3 sqkm)
 #' @param outfile of not NULL, where to write the output files
 #' @param overwrite overwrite existing gf file. Default is FALSE
-#' @param nexus_locations a data.frame with columns specifiying the ID, and the nexus type.
-#' @param log a filepath to write messages to or booleen (TRUE = print to console; FALSE = no messages)
+#' @param nexus_locations a data.frame with columns specifying the ID, and the nexus type.
+#' @param log a filepath to write messages to or Boolean (TRUE = print to console; FALSE = no messages)
 #' @param verbose print status updates. Default = TRUE
 #' @return if outfile = TRUE, a file path, else a list object
 #' @details If gpkg is not NULL, divide and flowpath can be left NULL as well. The code attempts to
@@ -25,6 +25,8 @@
 #' @importFrom dplyr left_join filter
 #' @importFrom nhdplusTools get_sorted calculate_total_drainage_area get_streamorder
 #' @importFrom logger log_appender appender_file appender_console
+
+
 
 aggregate_to_distribution = function(gpkg = NULL,
                                      flowpath = NULL,

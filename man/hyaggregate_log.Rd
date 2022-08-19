@@ -2,7 +2,7 @@
 % Please edit documentation in R/hydrofabric_io.R
 \name{hyaggregate_log}
 \alias{hyaggregate_log}
-\title{HyAggregate logging shorthand
+\title{Logging shorthand
 Log a message with given log level, and optional verbosity.}
 \usage{
 hyaggregate_log(level, message, verbose = TRUE)
@@ -18,6 +18,6 @@ hyaggregate_log(level, message, verbose = TRUE)
 log message
 }
 \description{
-HyAggregate logging shorthand
+Logging shorthand
 Log a message with given log level, and optional verbosity.
 }
