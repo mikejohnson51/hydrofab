@@ -79,16 +79,23 @@ union_polygons_geos = function(poly, ID){
 #' @export
 
 union_linestrings_geos = function(lines, ID){
-  SPDF =  as_Spatial(lines)
+union_linestrings(lines, ID)
+}
 
-  rownames(SPDF@data) <- sapply(slot(SPDF, "lines"), function(x) slot(x, "ID"))
+#' Fast LINESTRING union
+#' @description Wayyyy faster then either data.table, or sf based line merging
+#' @param lines lines to merge
+#' @param ID ID to merge over
+#' @return an sf object
+#' @export
+#' @importFrom terra aggregate vect
+#' @importFrom dplyr select
+#' @importFrom sf st_as_sf
 
-  tmp <- rgeos::gLineMerge(SPDF, byid = TRUE, id = lines[[ID]])
-
-  ids <- as.numeric(sapply(slot(tmp, "lines"), function(x) slot(x, "ID")))
-
-  st_as_sf(tmp) %>%
-    mutate("{ID}" := ids) %>%
+union_linestrings = function (lines, ID)  {
+  aggregate(vect(lines), by = eval(ID)) %>%
+    st_as_sf() %>%
+    select(!!ID) %>%
     flowpaths_to_linestrings()
 }
 
