@@ -1,3 +1,27 @@
+#' Return ScienceBase ID for hydrofabric
+#' This function checks if a layer exists in a geopackage
+#' @param gpkg path to geopackage
+#' @param name name of layer to check
+#' @return character
+#' @export
+
+sb_id = function(type){
+  
+  if(type == "refactor") {
+    id = '61fbfdced34e622189cb1b0a'
+  } else if(type == "reference"){
+    id = '61295190d34e40dd9c06bcd7'
+  } else if(type == "uniform") {
+    id = '629a4246d34ec53d276f446d'
+  } else {
+    id = '60be1502d34e86b9389102cc'
+  }
+  
+  return(id)
+}
+
+
+
 #' Check if a geopackage and layer exists
 #' This function checks if a layer exists in a geopackage
 #' @param gpkg path to geopackage
@@ -40,6 +64,7 @@ hyaggregate_log = function(level, message, verbose = TRUE){
 #' @param vebose should message be emitted?
 #' @return list
 #' @export
+#' @importFrom sf read_sf st_transform
 
 read_hydrofabric = function(gpkg = NULL,
                             catchments = NULL,
@@ -67,6 +92,7 @@ read_hydrofabric = function(gpkg = NULL,
     
     if(is.null(catchments)){
       catchments = grep("divide|catchment", st_layers(gpkg)$name, value = TRUE)
+      catchments = catchments[!grepl("network", catchments)]
       if(length(catchments) > 1){ stop("Multiple catchment names found.")}
       hyaggregate_log("INFO", glue("Reading catchments from: {catchments}"), verbose)
     }
@@ -93,14 +119,11 @@ read_hydrofabric = function(gpkg = NULL,
     }
   }
   
-  
   return(out)
   
 }
 
-
 #' Download Reference Fabric Data by VPU ID
-#'
 #' @param VPU a VPU ID
 #' @param type either 'refactor' (default) or 'reference'
 #' @param dir directory path to save data to
@@ -110,7 +133,6 @@ read_hydrofabric = function(gpkg = NULL,
 #' @importFrom nhdplusTools get_boundaries
 #' @importFrom dplyr filter slice_min
 #' @importFrom jsonlite fromJSON
-#' @importFrom sbtools item_file_download
 #' @importFrom httr GET write_disk
 
 get_hydrofabric = function(VPU = "01",
@@ -131,28 +153,15 @@ get_hydrofabric = function(VPU = "01",
     return(outfile)
   } else {
     
-    path = ifelse(
-      type == "refactor",
-      'https://www.sciencebase.gov/catalog/item/61fbfdced34e622189cb1b0a',
-      #reference
-      'https://www.sciencebase.gov/catalog/item/61295190d34e40dd9c06bcd7'
-      # uniform
-      # minimal
-    )
+    url = paste0("https://www.sciencebase.gov/catalog/item/", sb_id(type), '?format=json')
     
-    xx = fromJSON(paste0(path, '?format=json'), simplifyDataFrame = TRUE)
+    xx = fromJSON(url, simplifyDataFrame = TRUE)
     
     find = slice_max(filter(xx$files, grepl(VPU, xx$files$name)), dateUploaded)
     
-    tryCatch({
-      sbtools::item_file_download(
-        sb_id = basename(path),
-        names = find$name,
-        destinations = outfile,
-        overwrite_file = TRUE
-      )}, error = function(e){
-        httr::GET(find$url, httr::write_disk(oufile, overwrite = TRUE))
-      })
+    httr::GET(find$url, httr::write_disk(outfile, overwrite = TRUE))
+    
+    return(outfile)
   }
   
 }

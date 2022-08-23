@@ -25,13 +25,13 @@ Imports:
     rlang,
     rmapshaper,
     rvest,
-    sbtools,
     sf,
     terra,
     tidyr,
     units,
     utils
 Suggests: 
+    hyRefactor,
     knitr,
     magrittr,
     mapview,
