@@ -85,12 +85,14 @@ aggregate_network_to_outlets <- function(flowpath, outlets,
   fline_sets <- fline_sets[[1]]
   
   # create long form ID to set member list
-  sets <- unnest_flines(fline_sets)
-  
+  sets <- unnest_flines(fline_sets) %>%
+    left_join(distinct(select(drop_geometry(flowpath), .data$ID, .data$LevelPathID)), 
+              by = c("set" = "ID"))
+
   # Figure out what the ID of the downstream catchment is.
-  next_id <- left_join(sets,
-                       select(drop_geometry(flowpath), .data$ID, .data$toID),
-                       by = c("set" = "ID")) %>%
+  next_id <- left_join(select(sets, .data$set, .data$ID),
+              select(drop_geometry(flowpath), .data$ID, .data$toID),
+              by = c("set" = "ID")) %>%
     # first find the ID downstream of the outlet of each catchment.
     group_by(.data$ID) %>%
     filter(!.data$toID %in% .data$set) %>%
@@ -113,10 +115,12 @@ aggregate_network_to_outlets <- function(flowpath, outlets,
       union_linestrings(ID = "ID") %>%
       left_join(fline_sets, by = "ID")
   }
-  
-  fline_sets <- left_join(fline_sets, next_id, by = "ID")
-  cat_sets   <- left_join(cat_sets, next_id, by = "ID")
-  
+
+  fline_sets <- left_join(fline_sets, next_id, by = "ID") %>%
+    left_join(distinct(select(sets, .data$ID, .data$LevelPathID)), by = "ID")
+  cat_sets   <- left_join(cat_sets, next_id, by = "ID") %>%
+    left_join(distinct(select(sets, .data$ID, .data$LevelPathID)), by = "ID")
+
   return(list(cat_sets = cat_sets, fline_sets = fline_sets))
 }
 
@@ -597,8 +601,8 @@ get_minimal_network <- function(flowpath, outlets) {
   minimal <- aggregate_network_to_outlets(
     flowpath, dplyr::filter(outlets, .data$ID %in% flowpath$ID),
     da_thresh = NA, only_larger = TRUE)
-  
-  min_net <- unnest_flines(drop_geometry(minimal$fline_sets)) %>%
+
+  min_net <- unnest_flines(select(drop_geometry(minimal$fline_sets), -LevelPathID)) %>%
     left_join(select(flowpath, .data$ID, .data$LENGTHKM,
                      .data$AreaSqKM, .data$LevelPathID),
               by = c("set" = "ID")) %>%
