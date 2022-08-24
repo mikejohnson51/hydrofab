@@ -20,7 +20,8 @@ generate_catchment_network = function(gpkg){
 #' @param verbose should messages be emitted?
 #' @return data.frame with ID, type columns
 #' @export
-#' @importFrom sf read_sf st_drop_geometry mutate_at vars mutate group_by ungroup filter distinct slice
+#' @importFrom sf read_sf st_drop_geometry
+#' @importFrom dplyr mutate_at vars mutate group_by ungroup filter distinct slice
 #' @importFrom tidyr pivot_longer
 
 poi_to_outlet = function(gpkg,
