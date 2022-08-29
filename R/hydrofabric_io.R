@@ -13,8 +13,10 @@ sb_id = function(type){
     id = '61295190d34e40dd9c06bcd7'
   } else if(type == "uniform") {
     id = '629a4246d34ec53d276f446d'
-  } else {
+  } else if(type == "minimal"){
     id = '60be1502d34e86b9389102cc'
+  } else {
+    stop(glue("{type} not valid"))
   }
   
   return(id)
