@@ -40,7 +40,7 @@
 #'
 #' @export
 #' @importFrom sf st_is_empty st_drop_geometry
-#' @importFrom dplyr filter mutate left_join select distinct case_when bind_rows
+#' @importFrom dplyr filter mutate left_join select distinct case_when bind_rows slice_min
 #' @examples
 #' source(system.file("extdata", "walker_data.R", package = "nhdplusTools"))
 #'
@@ -81,46 +81,43 @@ aggregate_network <- function(flowpath, outlets,
 
   fline_sets <- get_catchment_sets(flowpath, outlets)
   
+  #set should be the _new_ ID, ID should be the _old_ ID
   cat_sets <- fline_sets[[2]]
 
   fline_sets <- fline_sets[[1]]
-
+  
   # create long form ID to set member list
-  sets <- unnest_flines(fline_sets) %>%
-    left_join(distinct(select(drop_geometry(flowpath), .data$ID, .data$LevelPathID)), 
-              by = c("set" = "ID"))
-
+  # OK to assume since Hydroseq is required in validate flowpath
+  sets <- unnest_flines(fline_sets, "set") %>% 
+    left_join(select(st_drop_geometry(flowpath), 
+                     toSet = .data$toID,  .data$ID, .data$Hydroseq, .data$LevelPathID), 
+              by = c("set" = "ID")) 
+  
   # Figure out what the ID of the downstream catchment is.
-  next_id <- left_join(select(sets, .data$set, .data$ID),
-              select(drop_geometry(flowpath), .data$ID, .data$toID),
-              by = c("set" = "ID")) %>%
-    # first find the ID downstream of the outlet of each catchment.
-    group_by(.data$ID) %>%
-    filter(!.data$toID %in% .data$set) %>%
-    select(.data$ID, .data$toID) %>%
-    ungroup() %>%
-    distinct() %>%
-    # find the actual id of the catchment the one found above is a member of.
-    left_join(select(sets, set_toID = .data$ID, .data$set),
-              by = c("toID" = "set")) %>%
-    select(.data$ID, toID = .data$set_toID)
+  next_id = sets %>% 
+    group_by(.data$ID) %>% 
+    #LEVERAGE PRE SORT! 
+    slice_min(.data$Hydroseq) %>% 
+    ungroup() %>% 
+    select(.data$ID, .data$toSet, .data$set, .data$LevelPathID) %>% 
+    left_join(select(sets, toID = .data$ID,  .data$set), by = c("toSet" = "set")) %>% 
+    select(.data$ID, .data$toID)
 
+  
   if(inherits(flowpath, "sf")) {
-    fline_sets <-
-      data.frame(
-        setID = unlist(fline_sets$set),
-        ID = rep(fline_sets$ID, times = lengths(fline_sets$set))) %>%
-      left_join(select(flowpath, .data$ID), by = c("setID" = "ID")) %>%
+    fline_sets <- select(sets, .data$set, .data$ID, .data$LevelPathID) %>% 
+      left_join(select(flowpath, .data$ID), by = c("set" = "ID")) %>%
       st_as_sf() %>%
-      filter(!sf::st_is_empty(.)) %>%
-      union_linestrings_geos(ID = "ID") %>%
-      left_join(fline_sets, by = "ID")
+      filter(!st_is_empty(.)) %>%
+      union_linestrings(ID = "ID") %>%
+      left_join(next_id, by = "ID") %>% 
+      left_join(st_drop_geometry(fline_sets), by = "ID")
+  } else {
+    fline_sets =  left_join(fline_sets, next_id, by = "ID")  %>% 
+      left_join(distinct(select(sets, .data$ID, .data$LevelPathID)), by = "ID")
   }
 
-  fline_sets <- left_join(fline_sets, next_id, by = "ID") %>%
-    left_join(distinct(select(sets, .data$ID, .data$LevelPathID)), by = "ID")
-  cat_sets   <- left_join(cat_sets, next_id, by = "ID") %>%
-    left_join(distinct(select(sets, .data$ID, .data$LevelPathID)), by = "ID")
+  cat_sets   <- left_join(cat_sets, next_id, by = "ID")
 
   return(list(cat_sets = cat_sets, fline_sets = fline_sets))
 }
@@ -597,8 +594,9 @@ get_minimal_network <- function(flowpath, outlets) {
 
   flowpath <- flowpath[flowpath_sort$terminalID %in% terminal_paths, ]
 
-  minimal <- hyRefactor::aggregate_network(
-    flowpath, dplyr::filter(outlets, .data$ID %in% flowpath$ID),
+  minimal <- aggregate_network(
+    flowpath, 
+    outlets = dplyr::filter(outlets, .data$ID %in% flowpath$ID),
     da_thresh = NA, only_larger = TRUE)
 
   min_net <- unnest_flines(select(drop_geometry(minimal$fline_sets), -LevelPathID)) %>%
