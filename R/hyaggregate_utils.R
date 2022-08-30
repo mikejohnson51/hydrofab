@@ -26,6 +26,28 @@ prepare_network = function(network_list) {
   
   names(network_list$flowpaths)  = tolower(names(network_list$flowpaths))
   names(network_list$catchments) = tolower(names(network_list$catchments))
+
+  if(any(duplicated(network_list$catchments))){
+    n = sum(duplicated(network_list$catchments))
+    id = network_list$catchments$id[which(duplicated(network_list$catchments))]
+    id = paste(id, collapse = ", ")
+    hyaggregate_log("WARN", glue("Dropping {n} duplicate catchments: {id}"))
+    network_list$catchments = filter(network_list$catchments, !duplicated(network_list$catchments))
+  }
+  
+  if(any(duplicated(network_list$flowpaths))){
+    n = sum(duplicated(network_list$flowpaths))
+    id = network_list$flowpaths$id[which(duplicated(network_list$flowpaths))]
+    id = paste(id, collapse = ", ")
+    hyaggregate_log("WARN", glue("Dropping {n} duplicate flowpaths: {id}"))
+    network_list$flowpaths = filter(network_list$flowpaths, !duplicated(network_list$flowpaths))
+  }
+  
+  if(any(duplicated(network_list$flowpaths$id))){
+    n = sum(duplicated(network_list$flowpaths))
+    hyaggregate_log("WARN", glue("Dropping {n} duplicate flowpaths."))
+  }
+  
   
   # Add a hydrosequence to the flowpaths
   network_list$flowpaths = add_hydroseq(flowpaths = network_list$flowpaths)
@@ -43,9 +65,7 @@ prepare_network = function(network_list) {
       )
     ))
   }
-  
 
-  
   network_list$flowpaths$order = network_list$flowpaths %>%
     st_drop_geometry() %>%
     flush_prefix(c("id", "toid")) %>%

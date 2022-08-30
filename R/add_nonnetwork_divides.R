@@ -42,12 +42,21 @@ add_nonnetwork_divides = function(gpkg = NULL,
   
   hyaggregate_log("INFO", glue("{nrow(non_network_divdes)} non network divides found"), verbose)
   
-  divides = out_nl$catchments %>%
-    select(id, areasqkm) %>%
-    mutate(type = "network") %>%
-    rename_geometry("geometry") %>%
-    bind_rows(non_network_divdes) %>% 
-    clean_geometry("id", keep = NULL, sys = FALSE)
+  if(nrow(non_network_divdes) > 0){
+    divides = out_nl$catchments %>%
+      select(id, areasqkm) %>%
+      mutate(type = "network") %>%
+      rename_geometry("geometry") %>%
+      bind_rows(non_network_divdes) %>% 
+      clean_geometry("id", keep = NULL, sys = FALSE)
+
+  } else {
+    divides = out_nl$catchments %>%
+      select(id, areasqkm) %>%
+      mutate(type = "network") %>%
+      rename_geometry("geometry")
+  }
+
   
   write_sf(divides, gpkg, catchment_name, overwrite = TRUE)
   

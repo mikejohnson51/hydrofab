@@ -1,3 +1,19 @@
+#' Generate Catchment Network Table
+#' @param gpkg a  hydrofabric gpkg
+#' @return data.frame with ID, toID, length, area, and levelpath
+#' @export
+#' @importFrom sf st_drop_geometry write_sf
+#' @importFrom dplyr select 
+
+
+generate_catchment_network = function(gpkg){
+  gf = read_hydrofabric(gpkg)
+  cn = select(st_drop_geometry(gf$flowpaths), id, toid, lengthkm, areasqkm, levelpathid )
+  write_sf(cn, gpkg, "catchment_network")
+  return(gpkg)
+}
+
+
 #' Extract nexus locations for Reference POIs
 #' @param gpkg a reference hydrofabric gpkg
 #' @param type the type of desired POIs
@@ -5,10 +21,8 @@
 #' @return data.frame with ID, type columns
 #' @export
 #' @importFrom sf read_sf st_drop_geometry
-#' @importFrom dplyr select mutate_at vars matches filter mutate group_by summarize slice 
-#' @importFrom logger log_info
+#' @importFrom dplyr mutate_at vars mutate group_by ungroup filter distinct slice
 #' @importFrom tidyr pivot_longer
-#' @importFrom glue glue
 
 poi_to_outlet = function(gpkg,
                          type = c('HUC12', 'Gages', 'TE', 'NID', 'WBIn', 'WBOut'),
@@ -44,12 +58,12 @@ poi_to_outlet = function(gpkg,
   if(length(dups) > 0){
     
    hyaggregate_log("WARN", glue("{length(dups)} flowpaths have multiple POI IDs. One is (randomly) being selected as flowpath outlet"))
-    nexus_locations =  group_by(nexus_locations, ID) %>% 
+    
+   nexus_locations =  group_by(nexus_locations, ID) %>% 
       slice(1) %>% 
       ungroup()
   
   } 
-  
   
   dups2 = which(duplicated(nexus_locations$poi_id))
   

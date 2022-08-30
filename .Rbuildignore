@@ -16,3 +16,6 @@ data-raw
 ^tic\.R$
 Dockerfile
 ^README\.Rmd$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
