@@ -23,10 +23,11 @@ add_areasqkm = function(x){
 #' @importFrom dplyr select
 #' @importFrom sf st_as_sf st_collection_extract st_geometry_type st_make_valid
 
-
 union_polygons = function(poly, ID){
-
-  poly = makeValid(vect(poly)) %>%
+  
+  poly = select(poly, !!ID) %>% 
+    vect() %>% 
+    makeValid() %>%
     aggregate(by = eval(ID)) %>%
     st_as_sf() %>%
     select(!!ID)
@@ -38,7 +39,7 @@ union_polygons = function(poly, ID){
 
 }
 
-#' Fast LINESTRING union
+#' DEPRECATED: Fast LINESTRING union
 #' @description Wayyyy faster then either data.table, or sf based line merging
 #' @param lines lines to merge
 #' @param ID ID to merge over
@@ -167,8 +168,6 @@ clean_geometry <- function(catchments,
       out = data.frame()
     }
 
-    # message(prettyNum(nrow(frags), big.mark = ",", scientific = FALSE), " fragments to clean...")
-
     if(is.null(out)){
       in_cat = base_cats
     } else if(!is.null(out) & nrow(out) != 0){
@@ -242,9 +241,14 @@ clean_geometry <- function(catchments,
       }
     }
   }
+  
 
   if (!is.null(keep)) {
     # message("Simplifying catchment boundaries: keep = ", keep)
+    if("tmpID" %in% names(in_cat)){
+      in_cat$tmpID = NULL
+    }
+    
     in_cat = ms_simplify(in_cat, keep = keep, keep_shapes = TRUE, sys = sys)
   }
 
@@ -257,7 +261,7 @@ clean_geometry <- function(catchments,
   }
 
   in_cat %>%
-    mutate(areasqkm = add_areasqkm(.), tmpID = NULL) %>%
+    mutate(areasqkm = add_areasqkm(.)) %>%
     st_transform(in_crs) %>%
     dplyr::select("{ID}" := ID, .data$areasqkm)  %>%
     left_join(st_drop_geometry(catchments), by = ID) %>%

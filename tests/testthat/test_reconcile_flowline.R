@@ -100,8 +100,8 @@ test_that("collapse works on a double pass", {
                  collapsed_flines$joined_fromCOMID[
                    which(collapsed_flines$COMID == "21974583")])
 
-    collapsed <- reconcile_collapsed_flowlines(collapsed_flines,
-                                               select(flines, COMID),
+    collapsed <- reconcile_collapsed_flowlines(flines = collapsed_flines,
+                                               geom = select(flines, COMID),
                                                id = "COMID")
 
     collapsed[["member_COMID"]] <-

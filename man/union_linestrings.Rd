@@ -2,7 +2,7 @@
 % Please edit documentation in R/catchment_geometry.R
 \name{union_linestrings}
 \alias{union_linestrings}
-\title{Fast LINESTRING union}
+\title{DEPRECATED: Fast LINESTRING union}
 \usage{
 union_linestrings(lines, ID)
 }
