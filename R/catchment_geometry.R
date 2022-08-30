@@ -79,7 +79,11 @@ union_polygons_geos = function(poly, ID){
 #' @export
 
 union_linestrings_geos = function(lines, ID){
-union_linestrings(lines, ID)
+  
+  u <- union_linestrings(lines, ID)
+  
+  u[match(unique(lines[[ID]]), u[[ID]]), ]
+  
 }
 
 #' Fast LINESTRING union
