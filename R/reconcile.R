@@ -120,10 +120,10 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
                 orig_levelpathID = .data$orig_levelpathID[1],
                 member_COMID = list(unique(.data$member_COMID))) %>%
       ungroup() %>%
-      cbind(union_linestrings(
-        select(new_flines[!sf::st_is_empty(new_flines), ], .data$ID), "ID")) %>%
-      sf::st_as_sf() %>%
-      select(-.data$ID.1)
+      left_join(union_linestrings(
+        select(new_flines[!sf::st_is_empty(new_flines), ], .data$ID), "ID"),
+        by = "ID") %>%
+      sf::st_as_sf()
   }
   
   return(new_flines)

@@ -39,15 +39,11 @@ union_polygons = function(poly, ID){
 
 }
 
-#' Fast LINESTRING union
+#' DEPRECATED: Fast LINESTRING union
 #' @description Wayyyy faster then either data.table, or sf based line merging
 #' @param lines lines to merge
 #' @param ID ID to merge over
 #' @return an sf object
-#' @importFrom sf as_Spatial st_as_sf
-#' @importFrom rgeos gLineMerge
-#' @importFrom dplyr mutate
-#' @importFrom methods slot
 #' @export
 
 union_linestrings_geos = function(lines, ID){

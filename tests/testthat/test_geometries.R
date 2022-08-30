@@ -25,6 +25,8 @@ test_that("Make sure 'out' passes when NULL...", {
 })
 
 test_that("union_linestrings_geos characterization", {
+  
+  # data for this was pulled from a browser session with example data.
   l <- sf::read_sf(list.files(pattern = "union_line_test.gpkg", recursive = TRUE))
   
   f <- l %>%
@@ -40,4 +42,13 @@ test_that("union_linestrings_geos characterization", {
   expect_s3_class(o, "sf")
   
   expect_true(all(grepl("LINESTRING", unique(sf::st_geometry_type(o)))))
+  
+  o <- union_linestrings(l, "ID")
+  
+  expect_true(all(f$ID %in% o$ID))
+  
+  expect_s3_class(o, "sf")
+  
+  expect_true(all(grepl("LINESTRING", unique(sf::st_geometry_type(o)))))
+  
 })

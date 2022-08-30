@@ -89,7 +89,7 @@ aggregate_network <- function(flowpath, outlets,
   # create long form ID to set member list
   # OK to assume since Hydroseq is required in validate flowpath
   sets <- unnest_flines(fline_sets, "set") %>% 
-    left_join(select(st_drop_geometry(flowpath), 
+    left_join(select(drop_geometry(flowpath), 
                      toSet = .data$toID,  .data$ID, .data$Hydroseq, .data$LevelPathID), 
               by = c("set" = "ID")) 
   
@@ -111,7 +111,7 @@ aggregate_network <- function(flowpath, outlets,
       filter(!st_is_empty(.)) %>%
       union_linestrings(ID = "ID") %>%
       left_join(next_id, by = "ID") %>% 
-      left_join(st_drop_geometry(fline_sets), by = "ID")
+      left_join(fline_sets, by = "ID")
   } else {
     fline_sets =  left_join(fline_sets, next_id, by = "ID")  %>% 
       left_join(distinct(select(sets, .data$ID, .data$LevelPathID)), by = "ID")
