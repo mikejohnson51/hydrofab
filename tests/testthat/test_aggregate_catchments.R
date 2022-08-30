@@ -21,10 +21,11 @@ outlets <- data.frame(ID = get_id(c("5329843", "5329339.1", "5329385", "5329303"
 aggregated       <- aggregate_catchments(flowpath = walker_fline_rec, 
                                          divide = walker_catchment_rec,
                                          outlets)
+
 aggregated_fline <- aggregated$fline_sets
 aggregated_cat   <- aggregated$cat_sets
 
-expect_true(all(aggregated_cat$ID %in% get_id(c("5329385", "5329843", "5329339.1", "5329303"))))
+expect_true(all(aggregated_cat$ID %in% get_id(mc = c("5329385", "5329843", "5329339.1", "5329303"))))
 expect_equal(sort(aggregated_fline$ID), sort(get_id(c("5329385", "5329843", "5329339.1", "5329303"))))
 expect_true(aggregated_cat$ID[1] %in% aggregated_cat$set[[1]], "outlet ids should be in the result")
 expect_true(all(aggregated_cat$set[aggregated_cat$ID == 31][[1]] %in% 
@@ -50,6 +51,7 @@ expect_true(all(walker_fline_rec$ID %in% unlist(aggregate_lookup_cat$set)),
             "all input ids should be in catchment output")
 
 expect_equal(aggregated_cat$toID, get_id(c(NA, "5329843", "5329339.1", "5329303")), info = "Expect these toIDs")
+
 expect_true(all(aggregated_cat$toID[!is.na(aggregated_cat$toID)] %in% aggregated_cat$ID),
        "All not NA toIDs should be in IDs")
 
@@ -141,13 +143,19 @@ test_that("new_hope aggregate", {
                         type = c("outlet", "outlet", "outlet", "terminal"),
                         stringsAsFactors = FALSE)
 
-  aggregated <- aggregate_catchments(new_hope_fline_rec, new_hope_catchment_rec, outlets)
+  aggregated <- aggregate_catchments(flowpath = new_hope_fline_rec, 
+                                     divide = new_hope_catchment_rec, 
+                                     outlets = outlets)
+  
 
   fline_sets <- aggregated$fline_sets
-  cat_sets <- aggregated$cat_sets
+  cat_sets   <- aggregated$cat_sets
 
-  expect_true(fline_sets$ID[1] == fline_sets$set[[1]][1],
+  expect_true(fline_sets$ID[1] %in% fline_sets$set[[1]],
          "A small headwater that was a divergence should show up as such")
+  
+  expect_true(filter(fline_sets, ID == 241)$toID == 335,
+              "Something is off with topology")
 
   expect_true(all(fline_sets$ID %in% cat_sets$ID), "flines and cats should have the same ids")
 
@@ -163,6 +171,7 @@ test_that("new_hope aggregate", {
   
   new_hope_catchment_rec$area_sqkm <- as.numeric(sf::st_area(
     sf::st_transform(new_hope_catchment_rec, 5070))) / (1000^2)
+  
   new_hope_fline_rec <- dplyr::inner_join(new_hope_fline_rec,
                                   dplyr::select(sf::st_set_geometry(new_hope_catchment_rec, NULL),
                                           ID, area_sqkm), by = "ID")

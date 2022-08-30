@@ -86,16 +86,11 @@ aggregate_catchments <- function(flowpath, divide, outlets, zero_order = NULL,
   agg_network <- aggregate_network(flowpath, outlets, da_thresh, only_larger, post_mortem_file)
   
   agg_network$cat_sets <- 
-               # setID defines which catchments go in which aggregate catchments.
-    data.frame(setID = unlist(agg_network$cat_sets$set),
-               # ID is the ID of the set brought in from aggregate network.
-               ID = rep(agg_network$cat_sets$ID, 
-                        times = lengths(agg_network$cat_sets$set))) %>% 
-    left_join(select(divide, ID), 
-              by = c("setID" = "ID")) %>% 
+    unnest_flines(agg_network$cat_sets, 'set') %>% 
+    left_join(select(divide, ID), by = c("set" = "ID")) %>% 
     st_as_sf() %>% 
     filter(!sf::st_is_empty(.)) %>%
-    union_polygons_geos(ID = "ID") %>% 
+    union_polygons(ID = "ID") %>% 
     clean_geometry(ID = "ID", 
                    crs = in_crs, 
                    keep = keep) %>% 
