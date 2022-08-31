@@ -1,4 +1,6 @@
 
+Sys.setenv(TURN_OFF_SYS_MAPSHAPER = "YUP")
+
 # nhdplus_path("~/Documents/Data/nhdp/NHDPlusNationalData/NHDPlusV21_National_Seamless.gdb/")
 # nhd <- stage_national_data()
 # atts <- readRDS(nhd$attributes)
@@ -115,3 +117,5 @@ expect_equal(nrow(cat_agg$cat_sets), 517)
 
 expect_equal(nrow(cat_agg$fline_sets), 517)
 })
+
+Sys.unsetenv("TURN_OFF_SYS_MAPSHAPER")

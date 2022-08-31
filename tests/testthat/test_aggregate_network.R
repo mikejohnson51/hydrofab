@@ -1,5 +1,7 @@
 context("aggregate network to outlets")
 
+Sys.setenv(TURN_OFF_SYS_MAPSHAPER = "YUP")
+
 test_that("example runs", {
   source(system.file("extdata", "walker_data.R", package = "nhdplusTools"))
 
@@ -43,13 +45,13 @@ test_that("minimal network", {
                          levelpathid = levelpathi, hydroseq = hydroseq,
                          areasqkm = areasqkm, lengthkm = lengthkm)
 
-  min_net <- get_minimal_network(fline, outlets)
+  min_net <- get_minimal_network(flowpath = fline, outlets)
   
   expect_equal(nrow(min_net), 8)
   
   expect_s3_class(min_net, "sf")  
   
-  min_net <- get_minimal_network(sf::st_drop_geometry(fline), outlets)
+  min_net <- get_minimal_network(flowpath = sf::st_drop_geometry(fline), outlets)
   
   expect_s3_class(min_net, c("tbl_df","tbl","data.frame"), exact = TRUE) 
   
@@ -68,4 +70,7 @@ test_that("missing outlet", {
   
   expect_true(21047070 %in% outlets$ID)
 })
+
+
+Sys.unsetenv("TURN_OFF_SYS_MAPSHAPER")
 
