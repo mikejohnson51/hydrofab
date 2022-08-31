@@ -163,6 +163,8 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 #' @importFrom parallel makeCluster stopCluster
 #' @importFrom pbapply pblapply
 #' @importFrom data.table rbindlist
+#' @importFrom nhdplusTools rename_geometry
+
 
 reconcile_catchment_divides <- function(catchment, 
                                               fline_ref, 
@@ -308,7 +310,7 @@ reconcile_catchment_divides <- function(catchment,
       mutate(member_COMID = paste0(member_COMID, ".1")) %>%
       mutate(ID = out$ID[match(member_COMID, out$member_COMID)]) %>%
       select(ID, member_COMID) %>% 
-      nhdplusTools::rename_geometry(attr(out_mp, "sf_column")) %>% 
+      rename_geometry(attr(out_mp, "sf_column")) %>% 
       bind_rows(out_mp)
   } 
   
