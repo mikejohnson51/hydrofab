@@ -78,7 +78,7 @@ test_that("split lines works", {
   
   flines =  dplyr::inner_join(dplyr::select(flines_in, COMID),
                     sf::st_set_geometry(flines_in, NULL) %>%
-                      nhdplusTools::prepare_nhdplus(0, 0),
+                      nhdplusTools::prepare_nhdplus(0, 0, warn = FALSE),
                     by = "COMID") %>%
     sf::st_as_sf() %>%
     sf::st_cast("LINESTRING") %>%
@@ -87,7 +87,7 @@ test_that("split lines works", {
   flines <- suppressWarnings(
     dplyr::inner_join(dplyr::select(flines_in, COMID),
                       sf::st_set_geometry(flines_in, NULL) %>%
-                        nhdplusTools::prepare_nhdplus(0, 0),
+                        nhdplusTools::prepare_nhdplus(0, 0, warn = FALSE),
                       by = "COMID") %>%
     sf::st_as_sf() %>%
     sf::st_cast("LINESTRING") %>%

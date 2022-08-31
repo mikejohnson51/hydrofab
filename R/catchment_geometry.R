@@ -23,10 +23,11 @@ add_areasqkm = function(x){
 #' @importFrom dplyr select
 #' @importFrom sf st_as_sf st_collection_extract st_geometry_type st_make_valid
 
-
 union_polygons = function(poly, ID){
-
-  poly = makeValid(vect(poly)) %>%
+  
+  poly = select(poly, !!ID) %>% 
+    vect() %>% 
+    makeValid() %>%
     aggregate(by = eval(ID)) %>%
     st_as_sf() %>%
     select(!!ID)
@@ -38,7 +39,7 @@ union_polygons = function(poly, ID){
 
 }
 
-#' Fast LINESTRING union
+#' DEPRECATED: Fast LINESTRING union
 #' @description Wayyyy faster then either data.table, or sf based line merging
 #' @param lines lines to merge
 #' @param ID ID to merge over
@@ -53,6 +54,21 @@ union_linestrings = function (lines, ID)  {
     st_as_sf() %>%
     select(!!ID) %>%
     flowpaths_to_linestrings()
+}
+
+#' DEPRECATED: Fast LINESTRING union
+#' @description Wayyyy faster then either data.table, or sf based line merging
+#' @param lines lines to merge
+#' @param ID ID to merge over
+#' @return an sf object
+#' @export
+
+union_linestrings_geos = function(lines, ID){
+  
+  u <- union_linestrings(lines, ID)
+  
+  u[match(unique(lines[[ID]]), u[[ID]]), ]
+  
 }
 
 #' Convert MULITLINESTINGS to LINESTRINGS
@@ -106,6 +122,8 @@ clean_geometry <- function(catchments,
                           crs = 5070, 
                           sys = NULL) {
 
+  if(Sys.getenv("TURN_OFF_SYS_MAPSHAPER") == "YUP") sys <- FALSE
+  
   if(is.null(sys)) {
     sys <- FALSE
     try(sys <- is.character(rmapshaper::check_sys_mapshaper(verbose = FALSE)))
@@ -166,8 +184,6 @@ clean_geometry <- function(catchments,
     } else {
       out = data.frame()
     }
-
-    # message(prettyNum(nrow(frags), big.mark = ",", scientific = FALSE), " fragments to clean...")
 
     if(is.null(out)){
       in_cat = base_cats
@@ -242,9 +258,14 @@ clean_geometry <- function(catchments,
       }
     }
   }
+  
 
   if (!is.null(keep)) {
     # message("Simplifying catchment boundaries: keep = ", keep)
+    if("tmpID" %in% names(in_cat)){
+      in_cat$tmpID = NULL
+    }
+    
     in_cat = ms_simplify(in_cat, keep = keep, keep_shapes = TRUE, sys = sys)
   }
 
@@ -257,7 +278,7 @@ clean_geometry <- function(catchments,
   }
 
   in_cat %>%
-    mutate(areasqkm = add_areasqkm(.), tmpID = NULL) %>%
+    mutate(areasqkm = add_areasqkm(.)) %>%
     st_transform(in_crs) %>%
     dplyr::select("{ID}" := ID, .data$areasqkm)  %>%
     left_join(st_drop_geometry(catchments), by = ID) %>%

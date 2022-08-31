@@ -1,5 +1,7 @@
 context("split_catchment_divide")
 
+Sys.setenv(TURN_OFF_SYS_MAPSHAPER = "YUP")
+
 test_that("split_catchment_divide works", {
   tf <- file.path(tempfile(fileext = ".gpkg"))
   tr <- file.path(tempfile(fileext = ".gpkg"))
@@ -308,3 +310,5 @@ test_that("merrit dem", {
   # plot(rec_cat$geom[1], add = TRUE, col = "red")
 
 })
+
+Sys.unsetenv("TURN_OFF_SYS_MAPSHAPER")

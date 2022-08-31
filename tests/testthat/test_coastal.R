@@ -1,5 +1,7 @@
 context("coastal aggregation")
 
+Sys.setenv(TURN_OFF_SYS_MAPSHAPER = "YUP")
+
 # bbox <- sf::st_bbox(c(xmin = -124.383377, ymin = 39.765797, xmax = -123.705239, ymax = 40.377652), crs = sf::st_crs(4326))
 # plot_nhdplus(bbox = bbox, gpkg = "tests/testthat/data/coastal.gpkg", overwrite = TRUE)
 
@@ -139,3 +141,5 @@ test_that("basic coastal aggregation", {
   
   expect_equal(nrow(agg_cats$coastal_sets), 2)
 })
+
+Sys.unsetenv("TURN_OFF_SYS_MAPSHAPER")
