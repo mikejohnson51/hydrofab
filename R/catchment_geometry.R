@@ -56,6 +56,21 @@ union_linestrings = function (lines, ID)  {
     flowpaths_to_linestrings()
 }
 
+#' DEPRECATED: Fast LINESTRING union
+#' @description Wayyyy faster then either data.table, or sf based line merging
+#' @param lines lines to merge
+#' @param ID ID to merge over
+#' @return an sf object
+#' @export
+
+union_linestrings_geos = function(lines, ID){
+  
+  u <- union_linestrings(lines, ID)
+  
+  u[match(unique(lines[[ID]]), u[[ID]]), ]
+  
+}
+
 #' Convert MULITLINESTINGS to LINESTRINGS
 #' @param flowpaths a flowpath `sf` object
 #' @return a `sf` object
@@ -107,6 +122,8 @@ clean_geometry <- function(catchments,
                           crs = 5070, 
                           sys = NULL) {
 
+  if(Sys.getenv("TURN_OFF_SYS_MAPSHAPER") == "YUP") sys <- FALSE
+  
   if(is.null(sys)) {
     sys <- FALSE
     try(sys <- is.character(rmapshaper::check_sys_mapshaper(verbose = FALSE)))

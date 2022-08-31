@@ -595,7 +595,7 @@ get_minimal_network <- function(flowpath, outlets) {
   
   flowpath <- flowpath[flowpath_sort$terminalID %in% terminal_paths, ]
 
-  minimal <- aggregate_network(
+  minimal <- aggregate_network_to_outlets(
     flowpath, 
     outlets = dplyr::filter(outlets, .data$ID %in% flowpath$ID),
     da_thresh = NA, only_larger = TRUE)

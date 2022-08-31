@@ -1,5 +1,7 @@
 context("aggregate network to outlets")
 
+Sys.setenv(TURN_OFF_SYS_MAPSHAPER = "YUP")
+
 test_that("example runs", {
   source(system.file("extdata", "walker_data.R", package = "nhdplusTools"))
 
@@ -68,4 +70,7 @@ test_that("missing outlet", {
   
   expect_true(21047070 %in% outlets$ID)
 })
+
+
+Sys.unsetenv("TURN_OFF_SYS_MAPSHAPER")
 
