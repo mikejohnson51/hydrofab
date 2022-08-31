@@ -307,21 +307,13 @@ reconcile_catchment_divides <- function(catchment,
     out_mp <- filter(out, !missing) %>%
       st_cast("MULTIPOLYGON")
     
-<<<<<<< HEAD
-    out <- select(catchment, member_COMID = FEATUREID) %>%
-      filter(member_COMID %in% unique(as.integer(out$member_COMID[missing]))) %>%
-      mutate(member_COMID = paste0(member_COMID, ".1")) %>%
-      mutate(ID = out$ID[match(member_COMID, out$member_COMID)]) %>%
-      select(ID, member_COMID) %>% 
-      rename_geometry(attr(out_mp, "sf_column")) %>% 
-=======
+
     out <- select(catchment, member_COMID = .data$FEATUREID) %>%
       filter(.data$member_COMID %in% unique(as.integer(out$member_COMID[missing]))) %>%
       mutate(member_COMID = paste0(.data$member_COMID, ".1")) %>%
       mutate(ID = out$ID[match(.data$member_COMID, out$member_COMID)]) %>%
       select(.data$ID, .data$member_COMID) %>% 
-      nhdplusTools::rename_geometry(attr(out_mp, "sf_column")) %>% 
->>>>>>> 941baf0b15b7bda5008034e152706ce4364a77a3
+      rename_geometry(attr(out_mp, "sf_column")) %>% 
       bind_rows(out_mp)
   } 
   
