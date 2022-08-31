@@ -5,7 +5,10 @@ sbtools::authenticate_sb("jjohnson@lynker.com", "Mj7-franklin-109034")
 
 
 vpus  <- c("01", "08", "10L", "15", "02", "04", "05", 
-           "06", "07", "09", "03S", "03W", "03N", "10U",        
+           "06", "07", "09", "03S", "03W", "03N", 
+           
+           
+#"10U",        
            "11", "12",  "13", "14",  "16", "17", "18")
 
 list.files(glue("{base}uniform/"), pattern = "gpkg$")

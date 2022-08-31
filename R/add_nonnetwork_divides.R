@@ -11,6 +11,8 @@
 #' @export
 #' @importFrom sf st_layers st_transform st_crs write_sf
 #' @importFrom dplyr filter select rename mutate bind_rows
+#' @importFrom nhdplusTools rename_geometry
+
 
 add_nonnetwork_divides = function(gpkg = NULL,
                                   flowpaths = NULL,
@@ -61,6 +63,5 @@ add_nonnetwork_divides = function(gpkg = NULL,
   write_sf(divides, gpkg, catchment_name, overwrite = TRUE)
   
   return(gpkg)
-  
-  #sinks = ...
+
 }

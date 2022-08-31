@@ -1,16 +1,3 @@
-#' Rename Geometry Column
-#' @description renames the geometry column of a sf object.
-#' @param x sf data.frame
-#' @param name character name to be used for geometry
-#' @export
-
-rename_geometry = function (x, name) {
-  current = attr(x, "sf_column")
-  names(x)[names(x) == current] = name
-  attr(x, "sf_column") <- name
-  x
-}
-
 #' @title Prepare Hydrologic Network
 #' @details This function adds an area, length, hydrosequence, streamorder and contributing drainage area
 #' metric to the flowpath list element of network_list.

@@ -1,10 +1,3 @@
-rename_geometry = function (g, name) {
-  current = attr(g, "sf_column")
-  names(g)[names(g) == current] = name
-  attr(g, "sf_column") <- name
-  g
-}
-
 #' Aggregate along network mainstems
 #' @description Given a set of ideal catchment sizes, plus the
 #' minimum allowable catchment size and segment length, aggregate the network along mainstems.
@@ -19,6 +12,7 @@ rename_geometry = function (g, name) {
 #' @importFrom sf st_drop_geometry
 #' @importFrom dplyr %>% cur_group_id n
 #' @importFrom logger log_info
+#' @importFrom nhdplusTools rename_geometry
 
 aggregate_along_mainstems = function(network_list,
                                      ideal_size_sqkm,
