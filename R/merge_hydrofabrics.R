@@ -23,8 +23,8 @@ network_metadata = function(gpkgs,
     meta$divides[i]   =  t$features[which(t$name == divide_layer)]
   }
   
-  meta$cumcount_fl  = cumsum(meta$flowpaths) - meta$flowpaths[1]
-  meta$cumcount_div = cumsum(meta$divides)   - meta$divides[1]
+  meta$cumcount_fl  = c(0, head(cumsum(meta$flowpaths), -1))
+  meta$cumcount_div = c(0, head(cumsum(meta$divides), -1))
   
   meta
   
@@ -112,7 +112,7 @@ update_topo = function(x, lookup, vpu_topo = NULL){
 #' @importFrom tidyr unnest
 
 assign_global_identifiers <- function(gpkgs = NULL, 
-                                      outfiles = NULL, 
+                                      outfiles = NULL,
                                       flowpath_layer = "flowpaths",
                                       mapped_POI_layer = "mapped_POIs",
                                       divide_layer   = "divides",
@@ -237,7 +237,7 @@ assign_global_identifiers <- function(gpkgs = NULL,
     hyaggregate_log("INFO", glue("Finished VPU-{meta$VPU[i]}!"), verbose)
   }
   
-  meta$cumcount_term = cumsum(meta$terminals)   - meta$terminals[1]
+  meta$cumcount_term = c(0, head(cumsum(meta$terminals), -1))
   
   meta
 }
