@@ -1,9 +1,10 @@
 #' Capture Network Metadata
-#' @param gpkgs a vecotor of file.paths to attribute
+#' This function assumes  that files are names *_{VPU}.gpkg
+#' @param gpkgs a vector of file.paths to attribute
 #' @param flowpath_layer the layer name containing flowpaths
 #' @param divide_layer the layer name containing divides
 #' @return a data.frame with the file.path, file name, VPU,flowpath count, 
-#' divides count, cummulative flowpath count and cummulative divdies count
+#' divides count, cumulative flowpath count and cummulative divdies count
 #' @export
 #' @importFrom dplyr mutate
 #' @importFrom sf st_layers
@@ -14,10 +15,7 @@ network_metadata = function(gpkgs,
   
   meta = data.frame(path = gpkgs) %>% 
     mutate(file = basename(path),
-           tmp  = gsub(".gpkg", "", file),
-           VPU =  sub('.*_', '', tmp),
-           type = sub('_.*', '', tmp),
-           tmp = NULL) 
+           VPU =  sub('.*_', '', gsub(".gpkg", "", file))) 
 
   for(i in 1:nrow(meta)){
     t = st_layers(meta$path[i])

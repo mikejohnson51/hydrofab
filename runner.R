@@ -13,7 +13,7 @@ vpus  <- c("01", "08", "10L", "15", "02",
 base = '/Volumes/Transcend/ngen/CONUS-hydrofabric/'
 overwrite = TRUE
 
-for(i in 1:length(vpus)){
+for(i in 2:length(vpus)){
   
   VPU = vpus[i]
   message(VPU)
@@ -42,7 +42,7 @@ for(i in 1:length(vpus)){
   
   gpkg = generate_catchment_network(gpkg)
   
-}
+}n
 
 
 f = list.files('/Volumes/Transcend/ngen/CONUS-hydrofabric/uniform', 
