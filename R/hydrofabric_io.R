@@ -68,9 +68,6 @@ hyaggregate_log = function(level, message, verbose = TRUE){
 #' @return list
 #' @export
 #' @importFrom sf read_sf st_transform
-#' 
-# read_hydrofabric(gpkg = meta$path[1], realization = "all")
-# fps = read_hydrofabric(gpkg = meta$path[1], realization = "flowpaths")
 
 read_hydrofabric = function(gpkg = NULL,
                             catchments = NULL,
