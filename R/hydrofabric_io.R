@@ -62,15 +62,20 @@ hyaggregate_log = function(level, message, verbose = TRUE){
 #' @param gpkg path to geopackage
 #' @param catchment_name name of catchment layer. If NULL, attempts to find divides layer
 #' @param flowpath_name name of flowpath layer. If NULL, attempts to find flowpath layer
+#' @param realization what layers to read? Options: {"catchemnts", "flowpaths", "all"}
 #' @param crs desired CRS, if NULL they stay as read. If all CRS layers arenot
 #' @param vebose should message be emitted?
 #' @return list
 #' @export
 #' @importFrom sf read_sf st_transform
+#' 
+# read_hydrofabric(gpkg = meta$path[1], realization = "all")
+# fps = read_hydrofabric(gpkg = meta$path[1], realization = "flowpaths")
 
 read_hydrofabric = function(gpkg = NULL,
                             catchments = NULL,
                             flowpaths = NULL,
+                            realization  =  "all",
                             crs = NULL,
                             verbose = TRUE){
   
@@ -78,12 +83,12 @@ read_hydrofabric = function(gpkg = NULL,
   
   if(is.null(gpkg)){
     if(inherits(catchments, "sf")){ out[["catchments"]]  <- catchments }
-    if(inherits(flowpaths, "sf")){ out[["flowpaths"]]  <- flowpaths }
+    if(inherits(flowpaths, "sf")){  out[["flowpaths"]]   <- flowpaths }
   } else {
     
     hyaggregate_log("INFO", glue("\n--- Read in data from {gpkg} ---\n"), verbose)
     
-    if(is.null(flowpaths)){
+    if(is.null(flowpaths) & realization != "catchments"){
       flowpaths = grep("flowpath|flowline", st_layers(gpkg)$name, value = TRUE)
       flowpaths = flowpaths[!grepl("attributes|edge_list", flowpaths)]
       if(length(flowpaths) > 1){ stop("Multiple flowpath names found.")}
@@ -92,7 +97,7 @@ read_hydrofabric = function(gpkg = NULL,
                       verbose)
     }
     
-    if(is.null(catchments)){
+    if(is.null(catchments) & realization != "flowpaths"){
       catchments = grep("divide|catchment", st_layers(gpkg)$name, value = TRUE)
       catchments = catchments[!grepl("network", catchments)]
       if(length(catchments) > 1){ stop("Multiple catchment names found.")}
@@ -100,12 +105,16 @@ read_hydrofabric = function(gpkg = NULL,
     }
     
     
-    if(layer_exists(gpkg, flowpaths)){
-      out[["flowpaths"]] <- read_sf(gpkg, flowpaths)
+    if(!is.null(flowpaths)){
+      if(layer_exists(gpkg, flowpaths)){
+        out[["flowpaths"]] <- read_sf(gpkg, flowpaths)
+      }
     }
     
-    if(layer_exists(gpkg, catchments)){
-      out[["catchments"]] <- read_sf(gpkg, catchments)
+    if(!is.null(catchments)){
+      if(layer_exists(gpkg, catchments)){
+        out[["catchments"]] <- read_sf(gpkg, catchments)
+      }
     }
   }
   

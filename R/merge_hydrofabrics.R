@@ -14,8 +14,7 @@ network_metadata = function(gpkgs,
                             divide_layer   = "divides"){
   
   meta = data.frame(path = gpkgs) %>% 
-    mutate(file = basename(path),
-           VPU =  sub('.*_', '', gsub(".gpkg", "", file))) 
+    mutate(VPU =  sub('.*_', '', gsub(".gpkg", "", basename(path)))) 
 
   for(i in 1:nrow(meta)){
     t = st_layers(meta$path[i])
@@ -270,7 +269,7 @@ assign_global_terminal_identifiers = function(meta,
     
     hyaggregate_log("INFO", glue("Processing VPU-{meta$VPU[i]}..."), verbose)
     
-     fl = read_sf(meta$path[i], flowpath_layer) 
+     fl = read_sf(meta$outfiles[i], flowpath_layer) 
      
      topo = select(fl, id, toid) %>% 
        st_drop_geometry()
@@ -284,7 +283,7 @@ assign_global_terminal_identifiers = function(meta,
        bind_rows(terms)
      
      ## Flowpaths ##
-     if(layer_exists(meta$path[i], flowpath_layer)){
+     if(layer_exists(meta$outfiles[i], flowpath_layer)){
        
       mutate(fl, toid = NULL) %>% 
          left_join(topo, by = 'id') %>% 
@@ -296,8 +295,8 @@ assign_global_terminal_identifiers = function(meta,
      }
   
      ### lookup_table ###
-     if(layer_exists(meta$path[i], lookup_table_layer)){
-       read_sf(meta$path[i], lookup_table_layer) %>% 
+     if(layer_exists(meta$outfiles[i], lookup_table_layer)){
+       read_sf(meta$outfiles[i], lookup_table_layer) %>% 
          mutate(toID = NULL) %>% 
          left_join(topo, by = c('aggregated_ID' = 'id')) %>% 
          rename(toid = toID) %>% 
@@ -310,8 +309,8 @@ assign_global_terminal_identifiers = function(meta,
      }
      
      ### catchment_network ###
-     if(layer_exists(meta$path[i], catchment_network_layer)){
-       read_sf(meta$path[i], catchment_network_layer) %>% 
+     if(layer_exists(meta$outfiles[i], catchment_network_layer)){
+       read_sf(meta$outfiles[i], catchment_network_layer) %>% 
          mutate(toid = NULL) %>% 
          left_join(topo, by = 'id') %>% 
          select(id, toid, everything()) %>% 
