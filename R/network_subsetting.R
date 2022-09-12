@@ -5,7 +5,7 @@
 #' @export
 #' @importFrom sf read_sf st_transform
 
-find_origin = function(gpkg, pt, catchment_name = "aggregate_divides") {
+find_origin = function(gpkg, pt, catchment_name = "divides") {
   tmp = read_sf(gpkg,  catchment_name)[st_transform(pt, 5070), ]
   gsub("cat-", "wb-", tmp$id)
 }
