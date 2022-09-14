@@ -51,7 +51,7 @@ if outfile = TRUE, a file path, else a list object
 \description{
 This function aggregates a network to a desired size distribution while
 enforcing minimum flowpath legnths and catchment areas. Additionally a set of explicit nexus
-locations can be provided over which the network cannot be aggregated (see \link{\code{poi_to_outlet}})
+locations can be provided over which the network cannot be aggregated (see poi_to_outlet)
 }
 \details{
 If gpkg is not NULL, divide and flowpath can be left NULL as well. The code attempts to

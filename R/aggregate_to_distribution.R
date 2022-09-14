@@ -1,7 +1,7 @@
 #' @title Aggregate Network to Uniform Size
 #' @description This function aggregates a network to a desired size distribution while
 #' enforcing minimum flowpath legnths and catchment areas. Additionally a set of explicit nexus
-#' locations can be provided over which the network cannot be aggregated (see \link{\code{poi_to_outlet}})
+#' locations can be provided over which the network cannot be aggregated (see poi_to_outlet)
 #' @param gpkg a path to a gpkg
 #' @param divide If gpkg is NULL, then an sf data.frame, otherwise a the layer name. See details.
 #' @param flowpath If gpkg is NULL, then an sf data.frame, otherwise a the layer name. See details.

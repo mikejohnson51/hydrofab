@@ -9,12 +9,15 @@ read_hydrofabric(
   gpkg = NULL,
   catchments = NULL,
   flowpaths = NULL,
+  realization = "all",
   crs = NULL,
   verbose = TRUE
 )
 }
 \arguments{
 \item{gpkg}{path to geopackage}
+
+\item{realization}{what layers to read? Options: {"catchemnts", "flowpaths", "all"}}
 
 \item{crs}{desired CRS, if NULL they stay as read. If all CRS layers arenot}
 

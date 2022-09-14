@@ -1,8 +1,4 @@
-library(glue)
-devtools::load_all()
-
-sbtools::authenticate_sb("jjohnson@lynker.com", "Mj7-franklin-109034")
-
+pacman::p_load(hydrofabric, glue, arrow)
 
 vpus  <- c("01", "08", "10L", "15", "02", 
            "04", "05", 
@@ -13,7 +9,9 @@ vpus  <- c("01", "08", "10L", "15", "02",
 base = '/Volumes/Transcend/ngen/CONUS-hydrofabric/'
 overwrite = TRUE
 
-for(i in 2:length(vpus)){
+## TASK 1: build out uniform catchment distribution
+
+for(i in 1:length(vpus)){
   
   VPU = vpus[i]
   message(VPU)
@@ -42,13 +40,23 @@ for(i in 2:length(vpus)){
   
   gpkg = generate_catchment_network(gpkg)
   
-}n
+}
 
 
-f = list.files('/Volumes/Transcend/ngen/CONUS-hydrofabric/uniform', 
-           full.names = TRUE,
-           pattern = "gpkg$")
+## TASK 2: Assign Globally Unique Identifiers
 
+gpkgs = list.files('/Volumes/Transcend/ngen/CONUS-hydrofabric/uniform', full.name = TRUE, pattern = "gpkg$")
+
+outfiles = gsub("uniform", "uniform_national", gpkgs)
+dir.create(dirname(outfiles[1]), showWarnings = FALSE)
+
+meta = assign_global_identifiers(gpkgs = gpkgs, outfiles = outfiles)
+
+write_parquet(meta$lookup, file.path(dirname(outfiles[1]), "lookp_table.parquet"))
+
+
+
+## TASK 3: Assign Globally Unique Identifiers
 
 sbtools::authenticate_sb("jjohnson@lynker.com", "Mj7-franklin-109034")
 

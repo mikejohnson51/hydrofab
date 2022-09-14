@@ -66,7 +66,7 @@ build_new_id_table = function(x,
 #' @param x a data.frame or sf object with id and/or toid columns
 #' @param lookup a lookup table of new ID values
 #' @param vpu_topo a VPU lookup correction table
-#' @return
+#' @return data.frame
 #' @export
 #' @importFrom dplyr filter bind_rows
 
@@ -107,7 +107,7 @@ update_topo = function(x, lookup, vpu_topo = NULL){
 #' @param overwrite overwrite existing files?
 #' @param verbose emit messages
 #' @return a data.frame
-#' @export
+#' @export 
 #' @importFrom dplyr filter select mutate left_join rename
 #' @importFrom sf read_sf write_sf
 #' @importFrom tidyr unnest

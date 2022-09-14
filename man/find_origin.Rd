@@ -4,7 +4,7 @@
 \alias{find_origin}
 \title{Find ID from location}
 \usage{
-find_origin(gpkg, pt, catchment_name = "aggregate_divides")
+find_origin(gpkg, pt, catchment_name = "divides")
 }
 \arguments{
 \item{gpkg}{path to a hydrofabric}
