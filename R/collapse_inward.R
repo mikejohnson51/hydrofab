@@ -74,7 +74,7 @@ build_collapse_table = function(network_list,
   ) %>%
     filter(!.data$id == .data$touches) %>%
     group_by(id) %>% 
-    mutate(becomes = ifelse(any(toid == touches), toid, touches)) |>
+    mutate(becomes = ifelse(any(toid == touches), min(toid), min(touches))) |>
     ungroup()   %>%
     filter(!id %in% becomes) 
   
@@ -129,6 +129,9 @@ collapse_headwaters = function(network_list,
   
   mapping_table <- build_collapse_table(network_list, min_area_sqkm, min_length_km)
 
+  filter(mapping_table, becomes == 7721)
+  filter(mapping_table, id == 7728)
+  
   count = 0
   
   while (nrow(mapping_table) > 0) {
