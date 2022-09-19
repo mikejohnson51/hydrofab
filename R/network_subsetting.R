@@ -44,7 +44,7 @@ subset_network = function(gpkg,
   tmp = read_sf(gpkg, flowpath_edgelist)
   tmp2 = filter(tmp, id == origin)
   trace = get_sorted(tmp,  outlets = tmp2$toid)
-  #trace = trace[trace$id != tmp2$toid,]
+  trace = trace[trace$id != tmp2$toid,]
   
   ll = list()
   
