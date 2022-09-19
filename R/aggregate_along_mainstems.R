@@ -55,11 +55,11 @@ aggregate_along_mainstems = function(network_list,
                   verbose)
   
   if(!is.null(cache_file)) {
-    write_hydrofabric_package(v,
-                              cache_file,
-                              "aggregate_along_mainstems_catchment",
-                              "aggregate_along_mainstems_flowpath",
-                              verbose)
+    write_hydrofabric(v,
+                      cache_file,
+                      "aggregate_along_mainstems_catchment",
+                      "aggregate_along_mainstems_flowpath",
+                      verbose)
   }
   
   return(v)

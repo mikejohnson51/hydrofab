@@ -94,7 +94,7 @@ aggregate_to_distribution = function(gpkg = NULL,
                       verbose)
   }
   
-  
+
   network_list = aggregate_along_mainstems(
     network_list,
     ideal_size_sqkm,

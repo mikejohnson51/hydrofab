@@ -68,6 +68,7 @@ hyaggregate_log = function(level, message, verbose = TRUE){
 #' @return list
 #' @export
 #' @importFrom sf read_sf st_transform
+#' @importFrom glue glue
 
 read_hydrofabric = function(gpkg = NULL,
                             catchments = NULL,

@@ -1,3 +1,39 @@
+#' Identify intersection types and downstream topology
+#' @param flowpaths sf LINESTRING
+#' @return data.frame with id, type, touches, touches_toID columns
+#' @export
+#' @importFrom nhdplusTools rename_geometry get_node
+#' @importFrom sf st_intersects st_drop_geometry
+#' @importFrom dplyr left_join select
+
+define_touch_id = function(flowpaths, term_cut = 1e9){
+  
+  tmp = flowpaths
+  
+  ends = tmp  %>%
+    nhdplusTools::rename_geometry('geometry') %>%
+    mutate(geometry = nhdplusTools::get_node(., "end")$geometry)
+  
+  starts_ends = bind_rows(get_node(tmp, "start"), get_node(tmp, "end"))
+  
+  emap     = st_intersects(ends, starts_ends)
+  tmp$type = ifelse(lengths(emap) > 1, "nex", "jun")
+  tmp$type = ifelse(tmp$toid > term_cut, "term", tmp$type)
+  
+  ends2 = left_join(st_drop_geometry(select(ends, id)), st_drop_geometry(select(tmp, id, type)), by = "id")
+  
+  tmap = st_intersects(ends, tmp)
+  
+  data.frame(
+    id            = rep(ends2$id, times = lengths(tmap)),
+    type          = rep(ends2$type, times = lengths(tmap)),
+    touches       = tmp$id[unlist(tmap)],
+    touches_toID  = tmp$toid[unlist(tmap)]
+  ) 
+}
+
+
+
 #' @title Build Headwater Collapse Table
 #' @description  Identifies small (pathlength or area) headwater catchments and returns a data.frame
 #' with the current ID and the feature ID it should collapse into (becomes).
@@ -18,7 +54,7 @@ build_collapse_table = function(network_list,
   touch_id <-  define_touch_id(network_list$flowpaths) %>% 
     filter(type == "jun") %>% 
     filter(id != touches)
-  
+
   bad =  mutate(
     network_list$flowpaths,
     hw = ifelse(!id %in% toid, TRUE, FALSE),
