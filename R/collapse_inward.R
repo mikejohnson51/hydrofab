@@ -14,6 +14,11 @@
 build_collapse_table = function(network_list,
                                 min_area_sqkm  = 3,
                                 min_length_km  = 1) {
+  
+  touch_id <-  define_touch_id(network_list$flowpaths) %>% 
+    filter(type == "jun") %>% 
+    filter(id != touches)
+  
   bad =  mutate(
     network_list$flowpaths,
     hw = ifelse(!id %in% toid, TRUE, FALSE),
@@ -29,24 +34,37 @@ build_collapse_table = function(network_list,
   df = data.frame(
     id       = rep(outlets$id, times = lengths(emap)),
     toid     = rep(outlets$toid, times = lengths(emap)),
-    touches  = network_list$flowpaths$id[unlist(emap)],
-    poi_id  = rep(outlets$poi_id, times = lengths(emap))
+    touches  = network_list$flowpaths$id[unlist(emap)]
   ) %>%
     filter(!.data$id == .data$touches) %>%
-    filter(is.na(poi_id)) %>%
     group_by(id) %>% 
     mutate(becomes = ifelse(any(toid == touches), toid, touches)) |>
-    ungroup()   %>% 
-    distinct(id, becomes) %>%
-    filter(!id %in% becomes)
+    ungroup()   %>%
+    filter(!id %in% becomes) 
+  
+  tmp_id = filter(touch_id, touches %in% df$id) %>% 
+    select(id, becomes = touches)
+  
+  df = df %>% 
+    filter(!id %in% tmp_id$becomes) %>% 
+    bind_rows(tmp_id) %>% 
+    select(id, becomes) %>% 
+    distinct()
   
   df$mC1 = network_list$flowpaths$member_comid[match(df$id, network_list$flowpaths$id)]
   df$mC2 = network_list$flowpaths$member_comid[match(df$becomes, network_list$flowpaths$id)]
   
-  group_by(df, becomes) %>%
-    mutate(member_comid = paste0(mC2[1], "," ,paste(mC1, collapse = ","))) %>%
-    ungroup() %>%
-    select(-mC1, -mC2)
+  df$poi1 = network_list$flowpaths$poi_id[match(df$id, network_list$flowpaths$id)]
+  df$poi2 = network_list$flowpaths$poi_id[match(df$becomes, network_list$flowpaths$id)]
+  
+  suppressWarnings({
+    group_by(df, becomes) %>%
+      mutate(member_comid = paste0(mC2[1], "," ,paste(mC1, collapse = ",")),
+             poi_id = as.numeric(paste(unique(na.omit(c(poi1, poi2))), collapse = ","))) %>%
+      ungroup() %>%
+      select(-mC1, -mC2, -poi1, -poi2)
+  })
+ 
   
 }
 
@@ -70,7 +88,7 @@ collapse_headwaters = function(network_list,
                                cache_file = NULL) {
   
   hyaggregate_log("INFO", "\n--- Collapse Network Inward ---\n", verbose)
-  
+
   start <- nrow(network_list$flowpaths)
   
   mapping_table <- build_collapse_table(network_list, min_area_sqkm, min_length_km)
@@ -98,7 +116,7 @@ collapse_headwaters = function(network_list,
         !id %in% c(mapping_table$id, mapping_table$becomes)
       ))
     
-    network_list = prepare_network(list(flowpaths = fl, catchments = cat))
+    network_list  = prepare_network(list(flowpaths = fl, catchments = cat))
     
     mapping_table = build_collapse_table(network_list, min_area_sqkm, min_length_km)
   }
