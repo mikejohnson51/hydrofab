@@ -8,7 +8,7 @@
 #' @param term_cut cutoff integer to define terminal IDs
 #' @return a list containing aggregated and validated flowline and catchment `sf` objects
 #' @export
-#' @importFrom dplyr filter group_by arrange mutate ungroup select
+#' @importFrom dplyr filter group_by arrange mutate ungroup select distinct
 #' @importFrom sf st_drop_geometry
 #' @importFrom dplyr %>% cur_group_id n
 #' @importFrom logger log_info
@@ -26,15 +26,32 @@ aggregate_along_mainstems = function(network_list,
   hyaggregate_log("INFO", glue("min_length_km --> {min_length_km}"),     verbose)
   hyaggregate_log("INFO", glue("min_area_sqkm --> {min_area_sqkm}"),     verbose)
   
-  index_table = network_list$flowpaths %>%
-    st_drop_geometry() %>%
+  tmp = network_list$flowpaths %>% 
+    st_drop_geometry() %>% 
+    select(id = toid, poi_un = poi_id) %>% 
+    st_drop_geometry() %>% 
+    distinct() %>% 
+    filter(!is.na(poi_un)) %>% 
+    group_by(id) %>% 
+    slice(n = 1) %>% 
+    ungroup()
+  
+  fline = network_list$flowpaths %>% 
+    st_drop_geometry() %>% 
+    mutate(poi_dn = poi_id) %>% 
+    left_join(tmp, by = "id") %>% 
+    distinct() 
+  
+  index_table = fline %>%
     group_by(.data$levelpathid) %>%
     arrange(.data$hydroseq) %>%
+    mutate(poi_un = ifelse(poi_un %in% poi_dn, NA, poi_un)) %>% 
     mutate(
       ind = cs_group(
         .data$areasqkm,
         .data$lengthkm,
-        .data$poi_id,
+        .data$poi_dn,
+        .data$poi_un,
         ideal_size_sqkm,
         min_area_sqkm,
         min_length_km
@@ -72,7 +89,8 @@ aggregate_along_mainstems = function(network_list,
 #' Additionally, this function can take a set of indexes to exclude over which the network cannot be aggregated.
 #' @param areas a vector of areas
 #' @param lengths a vector of lengths
-#' @param exclude a vector of equal length to areas and lengths. Any non NA value will be used to enforce an aggregation break
+#' @param exclude_dn a vector of equal length to areas and lengths. Any non NA value will be used to enforce an aggregation break on the outflow node of a flowpath
+#' @param exclude_un a vector of equal length to areas and lengths. Any non NA value will be used to enforce an aggregation break on the inflow node of a flowpath
 #' @param ideal_size_sqkm a vector of areas
 #' @param amin a threshold, or target, cumulative size
 #' @param lmin a threshold, or target, cumulative size
@@ -80,14 +98,17 @@ aggregate_along_mainstems = function(network_list,
 #' @export
 #' 
 
-cs_group <- function(areas, lengths, exclude, ideal_size_sqkm, amin, lmin) {
+cs_group <- function(areas, lengths, exclude_dn, exclude_un, ideal_size_sqkm, amin, lmin) {
   
   areas[is.na(areas)] = 0
   lengths[is.na(lengths)] = 0
   
   if(length(areas) == 1){ return(1) }
   
-  break_index = which(!is.na(exclude))
+  break_index = which(!is.na(exclude_dn))
+  break_index2 = which(!is.na(exclude_un)) - 1
+  
+  break_index = sort(c(break_index, break_index2))
   
   if(length(break_index) != 0){
     sub_areas = splitAt(areas, break_index)

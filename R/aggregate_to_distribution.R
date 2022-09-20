@@ -75,14 +75,16 @@ aggregate_to_distribution = function(gpkg = NULL,
                                   flowpaths = flowpath,
                                   crs = 5070)
   
-  
   # Add outlets
   if (!is.null(outlets)) {
-    network_list$flowpaths  = left_join(network_list$flowpaths, outlets, by = "ID")
+    network_list$flowpaths  = left_join(network_list$flowpaths, 
+                                        outlets, 
+                                        by = 'ID')
   } else {
     network_list$flowpaths$poi_id   = NA
   }
   
+
   network_list <-
     drop_extra_features(prepare_network(network_list), verbose)
   
@@ -94,7 +96,6 @@ aggregate_to_distribution = function(gpkg = NULL,
                       verbose)
   }
   
-
   network_list = aggregate_along_mainstems(
     network_list,
     ideal_size_sqkm,
@@ -103,8 +104,9 @@ aggregate_to_distribution = function(gpkg = NULL,
     verbose = verbose,
     cache_file = cache_file
   )
-  
-  network_list  = collapse_headwaters(
+
+
+  network_list  = collapse_headwaters2(
     network_list,
     min_area_sqkm,
     min_length_km,

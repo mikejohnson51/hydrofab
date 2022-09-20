@@ -4,14 +4,16 @@
 \alias{cs_group}
 \title{Cumulative sum area grouping}
 \usage{
-cs_group(areas, lengths, exclude, ideal_size_sqkm, amin, lmin)
+cs_group(areas, lengths, exclude_dn, exclude_un, ideal_size_sqkm, amin, lmin)
 }
 \arguments{
 \item{areas}{a vector of areas}
 
 \item{lengths}{a vector of lengths}
 
-\item{exclude}{a vector of equal length to areas and lengths. Any non NA value will be used to enforce an aggregation break}
+\item{exclude_dn}{a vector of equal length to areas and lengths. Any non NA value will be used to enforce an aggregation break on the outflow node of a flowpath}
+
+\item{exclude_un}{a vector of equal length to areas and lengths. Any non NA value will be used to enforce an aggregation break on the inflow node of a flowpath}
 
 \item{ideal_size_sqkm}{a vector of areas}
 

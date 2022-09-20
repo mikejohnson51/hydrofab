@@ -9,7 +9,6 @@ area must be reintroduced from the reference dataset.}
 \usage{
 add_nonnetwork_divides(
   gpkg = NULL,
-  flowpaths = NULL,
   divides = NULL,
   reference_gpkg = NULL,
   verbose = TRUE

@@ -52,11 +52,10 @@ build_collapse_table = function(network_list,
                                 min_area_sqkm  = 3,
                                 min_length_km  = 1) {
   
-  # are fps juctions, if so who do they touch?
+  # are fps junctions, if so who do they touch?
   touch_id <-  define_touch_id(flowpaths = network_list$flowpaths) %>% 
     filter(type == "jun") %>% 
     filter(id != touches)
-
 
   
   # bad fps are those that are both hw and too small or too large
@@ -67,6 +66,8 @@ build_collapse_table = function(network_list,
   ) %>%
     filter(hw, small) %>%
     st_cast("MULTILINESTRING")
+  
+  filter(touch_id, touches == 36112)
 
   # bad outlets
   outlets =  st_buffer(st_set_geometry(bad, st_geometry(get_node(bad, "end"))), 1)
@@ -98,10 +99,14 @@ build_collapse_table = function(network_list,
     group_by(becomes) %>% 
     slice_min(id) %>% 
     ungroup()
+    
+  tmp_id2 = tmp_id %>% 
+    left_join(touch_id, by = c('becomes' = 'id')) %>% 
+    filter(is.na(type))
 
   df = df %>% 
     filter(!id %in% tmp_id$becomes) %>% 
-    bind_rows(tmp_id) %>% 
+    bind_rows(tmp_id2) %>% 
     select(id, becomes) %>% 
     distinct() 
   
@@ -173,6 +178,10 @@ collapse_headwaters = function(network_list,
       left_join(st_drop_geometry(select(fl, id, toid)), by = "id")
     
     network_list  = prepare_network(network_list = list(flowpaths = fl, catchments = cat))
+
+    filter(fl, !(fl$toid %in% fl$id | fl$toid > term_cut | fl$toid == 0))
+    
+    filter(fl, id == 48486)
     
     mapping_table = build_collapse_table(network_list, min_area_sqkm, min_length_km)
   }

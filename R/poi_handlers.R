@@ -40,7 +40,7 @@ poi_to_outlet = function(gpkg,
   }
   
   nexus_locations  = read_sf(gpkg, "mapped_POIs") %>%
-    st_drop_geometry()  %>%
+    st_drop_geometry() %>% 
     select(ID, identifier, paste0("Type_", type)) %>%
     mutate_at(vars(matches("Type_")), as.character) %>%
     mutate(poi_id = as.character(identifier),
@@ -166,9 +166,11 @@ generate_lookup_table = function(gpkg = NULL,
   
   nl = read_hydrofabric(gpkg)
   
-  vaa = get_vaa("hydroseq", updated_network = TRUE) %>%
-    rename(NHDPlusV2_COMID = comid)
-  
+  vaa = suppressMessages({
+    get_vaa("hydroseq", updated_network = TRUE) %>%
+      rename(NHDPlusV2_COMID = comid)
+  }) 
+
   lu2 = nl$flowpaths %>%
     st_drop_geometry() %>%
     select(
