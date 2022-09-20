@@ -141,8 +141,6 @@ collapse_headwaters = function(network_list,
                                verbose = TRUE,
                                cache_file = NULL) {
   
-  #agg_net = network_list
-  network_list = agg_net
 
   hyaggregate_log("INFO", "\n--- Collapse Network Inward ---\n", verbose)
 
@@ -169,9 +167,10 @@ collapse_headwaters = function(network_list,
       mutate(id = ifelse(is.na(becomes), id, becomes)) |>
       union_polygons("id") |>
       bind_rows(filter(
-        network_list$catchments,
+        select(network_list$catchments, id),
         !id %in% c(mapping_table$id, mapping_table$becomes)
-      ))
+      )) %>% 
+      left_join(st_drop_geometry(select(fl, id, toid)), by = "id")
     
     network_list  = prepare_network(network_list = list(flowpaths = fl, catchments = cat))
     
@@ -179,7 +178,7 @@ collapse_headwaters = function(network_list,
   }
   
   hyaggregate_log("SUCCESS", glue("Collapsed {start - nrow(network_list$flowpaths)} features."), verbose)
-  
+
   if (!is.null(cache_file)) {
     write_hydrofabric(network_list,
                       cache_file,
