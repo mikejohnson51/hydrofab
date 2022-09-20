@@ -15,18 +15,22 @@
 
 
 add_nonnetwork_divides = function(gpkg = NULL,
-                                  flowpaths = NULL,
                                   divides = NULL,
                                   reference_gpkg = NULL,
                                   verbose = TRUE){
   
   if(is.null(reference_gpkg)){ stop('reference_gpkg cannot be NULL')}
   
-  ref_nl = read_hydrofabric(reference_gpkg,  verbose = verbose)
+  ref_nl = read_hydrofabric(reference_gpkg, verbose = verbose, realization = "catchments")
   
   catchment_name = grep("divide|catchment", st_layers(gpkg)$name, value = TRUE)
+  catchment_name = catchment_name[!grepl("network", catchment_name)]
   
-  out_nl = read_hydrofabric(gpkg, flowpaths = flowpaths, catchments = divides, verbose = verbose)
+  out_nl = read_hydrofabric(gpkg, 
+                            catchments = catchment_name, 
+                            flowpaths = NULL,
+                            verbose = verbose,
+                            realization = "all")
   
   # Encapsulated Flows
   u_fl = unique(as.integer(unlist(strsplit(out_nl$flowpaths$member_comid, ","))))
@@ -39,25 +43,23 @@ add_nonnetwork_divides = function(gpkg = NULL,
     st_transform(st_crs(out_nl$catchments)) %>%
     rename(id = ID) %>%
     mutate(areasqkm = add_areasqkm(.),
-           type     = ifelse(id < 0, "internal", "coastal")) %>%
-    rename_geometry("geometry") 
+           type     = ifelse(id < 0, "internal", "coastal"),
+           toid = id) %>%
+    rename_geometry("geometry")
   
   hyaggregate_log("INFO", glue("{nrow(non_network_divdes)} non network divides found"), verbose)
   
+  divides = out_nl$catchments %>%
+    mutate(type = "network") %>%
+    select(id, toid, areasqkm, type) %>%
+    rename_geometry("geometry")
+  
   if(nrow(non_network_divdes) > 0){
-    divides = out_nl$catchments %>%
-      select(id, areasqkm) %>%
-      mutate(type = "network") %>%
-      rename_geometry("geometry") %>%
-      bind_rows(non_network_divdes) %>% 
-      clean_geometry("id", keep = NULL, sys = FALSE)
-
-  } else {
-    divides = out_nl$catchments %>%
-      select(id, areasqkm) %>%
-      mutate(type = "network") %>%
-      rename_geometry("geometry")
-  }
+    divides = bind_rows(divides, non_network_divdes) 
+  } 
+  
+  divdes = clean_geometry(divides, "id", keep = NULL, sys = FALSE) %>% 
+    select(id, toid, areasqkm, type)
 
   
   write_sf(divides, gpkg, catchment_name, overwrite = TRUE)
