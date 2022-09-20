@@ -92,7 +92,7 @@ check_network_validity     <- function(network_list,
     return(list(flowpaths = flowpaths, catchments = cat))
   } else {
     if(!DAG){ stop("Network is not a graph.")}
-    if(!CONNECTION){stop("All toIDs are not present in network")}
+    if(!CONNECTION){stop("All toIDs are not present in network.")}
   }
 }
 

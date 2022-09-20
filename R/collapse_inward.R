@@ -3,15 +3,16 @@
 #' @return data.frame with id, type, touches, touches_toID columns
 #' @export
 #' @importFrom nhdplusTools rename_geometry get_node
-#' @importFrom sf st_intersects st_drop_geometry
+#' @importFrom sf st_intersects st_drop_geometry st_cast
 #' @importFrom dplyr left_join select
 
 define_touch_id = function(flowpaths, term_cut = 1e9){
   
-  tmp = flowpaths
+  tmp =  st_cast(flowpaths, "MULTILINESTRING")
   
   ends = tmp  %>%
     nhdplusTools::rename_geometry('geometry') %>%
+   
     mutate(geometry = nhdplusTools::get_node(., "end")$geometry)
   
   starts_ends = bind_rows(get_node(tmp, "start"), get_node(tmp, "end"))
@@ -51,10 +52,14 @@ build_collapse_table = function(network_list,
                                 min_area_sqkm  = 3,
                                 min_length_km  = 1) {
   
-  touch_id <-  define_touch_id(network_list$flowpaths) %>% 
+  # are fps juctions, if so who do they touch?
+  touch_id <-  define_touch_id(flowpaths = network_list$flowpaths) %>% 
     filter(type == "jun") %>% 
     filter(id != touches)
 
+
+  
+  # bad fps are those that are both hw and too small or too large
   bad =  mutate(
     network_list$flowpaths,
     hw = ifelse(!id %in% toid, TRUE, FALSE),
@@ -62,30 +67,43 @@ build_collapse_table = function(network_list,
   ) %>%
     filter(hw, small) %>%
     st_cast("MULTILINESTRING")
-  
+
+  # bad outlets
   outlets =  st_buffer(st_set_geometry(bad, st_geometry(get_node(bad, "end"))), 1)
   
+  # intersect bad outlets with fp network
   emap = st_intersects(outlets, network_list$flowpaths)
   
   df = data.frame(
+    #bad outlet ID
     id       = rep(outlets$id, times = lengths(emap)),
+    #bad outlet topo toID
     toid     = rep(outlets$toid, times = lengths(emap)),
+    # bad outlets touches
     touches  = network_list$flowpaths$id[unlist(emap)]
   ) %>%
+    # we dont care if it touches itself
     filter(!.data$id == .data$touches) %>%
+    # group_by ID
     group_by(id) %>% 
+    # If the bad fp touches is topo toid, the bad id will become the min (most downstream) toid or the id it touches (most downstream)
     mutate(becomes = ifelse(any(toid == touches), min(toid), min(touches))) |>
     ungroup()   %>%
-    filter(!id %in% becomes) 
+    filter(!id %in% becomes) %>% 
+    select(id, becomes) %>% 
+    distinct()
   
   tmp_id = filter(touch_id, touches %in% df$id) %>% 
-    select(id, becomes = touches)
-  
+    select(id, becomes = touches) %>% 
+    group_by(becomes) %>% 
+    slice_min(id) %>% 
+    ungroup()
+
   df = df %>% 
     filter(!id %in% tmp_id$becomes) %>% 
     bind_rows(tmp_id) %>% 
     select(id, becomes) %>% 
-    distinct()
+    distinct() 
   
   df$mC1 = network_list$flowpaths$member_comid[match(df$id, network_list$flowpaths$id)]
   df$mC2 = network_list$flowpaths$member_comid[match(df$becomes, network_list$flowpaths$id)]
@@ -123,14 +141,14 @@ collapse_headwaters = function(network_list,
                                verbose = TRUE,
                                cache_file = NULL) {
   
+  #agg_net = network_list
+  network_list = agg_net
+
   hyaggregate_log("INFO", "\n--- Collapse Network Inward ---\n", verbose)
 
   start <- nrow(network_list$flowpaths)
   
   mapping_table <- build_collapse_table(network_list, min_area_sqkm, min_length_km)
-
-  filter(mapping_table, becomes == 7721)
-  filter(mapping_table, id == 7728)
   
   count = 0
   
@@ -155,7 +173,7 @@ collapse_headwaters = function(network_list,
         !id %in% c(mapping_table$id, mapping_table$becomes)
       ))
     
-    network_list  = prepare_network(list(flowpaths = fl, catchments = cat))
+    network_list  = prepare_network(network_list = list(flowpaths = fl, catchments = cat))
     
     mapping_table = build_collapse_table(network_list, min_area_sqkm, min_length_km)
   }

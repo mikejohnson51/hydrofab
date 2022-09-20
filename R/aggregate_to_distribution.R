@@ -112,7 +112,6 @@ aggregate_to_distribution = function(gpkg = NULL,
     cache_file = cache_file
   )
   
-
   network_list = add_mapped_pois(network_list, gpkg, verbose)
 
   if (!is.null(outfile)) {
