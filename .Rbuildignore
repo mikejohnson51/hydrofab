@@ -19,3 +19,4 @@ Dockerfile
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$
+runners

@@ -1,4 +1,5 @@
-pacman::p_load(hydrofabric, glue, arrow)
+pacman::p_load(hydrofabric, glue, arrow) 
+devtools::load_all()
 
 vpus  <- c("01", "08", "10L", "15", "02", 
            "04", "05", 
@@ -8,10 +9,11 @@ vpus  <- c("01", "08", "10L", "15", "02",
 
 base = '/Volumes/Transcend/ngen/CONUS-hydrofabric/'
 overwrite = TRUE
+cache = FALSE
 
 ## TASK 1: build out uniform catchment distribution
 
-for(i in 1:length(vpus)){
+for(i in 2:length(vpus)){
   
   VPU = vpus[i]
   message(VPU)
@@ -31,8 +33,7 @@ for(i in 1:length(vpus)){
     outfile         = glue("{base}uniform/uniform_{VPU}.gpkg"),
     outlets         = poi_to_outlet(gpkg = refactored_gpkg, verbose = FALSE),
     overwrite = overwrite,
-    log = TRUE
-  ) 
+    log = TRUE, cache = cache) 
   
   gpkg = add_nonnetwork_divides(gpkg, reference_gpkg = reference_gpkg) 
   
@@ -47,22 +48,16 @@ for(i in 1:length(vpus)){
 
 gpkgs = list.files('/Volumes/Transcend/ngen/CONUS-hydrofabric/uniform', full.name = TRUE, pattern = "gpkg$")
 
-outfiles = gsub("uniform", "uniform_national", gpkgs)
-dir.create(dirname(outfiles[1]), showWarnings = FALSE)
+meta = assign_global_identifiers(gpkgs = gpkgs, overwrite = TRUE)
 
-meta = assign_global_identifiers(gpkgs = gpkgs, outfiles = outfiles)
-
-write_parquet(meta$lookup, file.path(dirname(outfiles[1]), "lookp_table.parquet"))
+write_parquet(meta$lookup, file.path(dirname(gpkgs[1]), "lookp_table.parquet"))
 
 
 
-## TASK 3: Assign Globally Unique Identifiers
+## TASK 3: Upload to ScienceBase
 
-sbtools::authenticate_sb("jjohnson@lynker.com", "Mj7-franklin-109034")
-
-for(i in 1:length(f)){
-  sbtools::item_append_files(sb_id("uniform"), f[i])
-  message(basename(f[i]))
+for(i in 1:length(gpkgs)){
+  sbtools::item_append_files(sb_id("uniform"), gpkgs[i])
+  message(basename(gpkgs[i]))
 }
 
-  
