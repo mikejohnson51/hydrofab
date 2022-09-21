@@ -36,7 +36,7 @@ add_nonnetwork_divides = function(gpkg = NULL,
   u_fl = unique(as.integer(unlist(strsplit(out_nl$flowpaths$member_comid, ","))))
   
   # Reference ND catchments
-  non_network_divdes = filter(ref_nl$catchments,
+  non_network_divides = filter(ref_nl$catchments,
                               !ref_nl$catchments$FEATUREID %in% u_fl) %>%
     select(ID = FEATUREID) %>%
     rename_geometry("geometry") %>%
@@ -47,15 +47,15 @@ add_nonnetwork_divides = function(gpkg = NULL,
            toid = id) %>%
     rename_geometry("geometry")
   
-  hyaggregate_log("INFO", glue("{nrow(non_network_divdes)} non network divides found"), verbose)
+  hyaggregate_log("INFO", glue("{nrow(non_network_divides)} non network divides found"), verbose)
   
   divides = out_nl$catchments %>%
     mutate(type = "network") %>%
     select(id, toid, areasqkm, type) %>%
     rename_geometry("geometry")
   
-  if(nrow(non_network_divdes) > 0){
-    divides = bind_rows(divides, non_network_divdes) 
+  if(nrow(non_network_divides) > 0){
+    divides = bind_rows(divides, non_network_divides) 
   } 
   
   divdes = clean_geometry(divides, "id", keep = NULL, sys = FALSE) %>% 

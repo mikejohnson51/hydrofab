@@ -91,6 +91,14 @@ update_topo = function(x, lookup, vpu_topo = NULL){
     x = bind_rows(good, fix)
   }
   
+  if("id" %in% names(x)){
+    x$id = as.integer(x$id)
+  }
+  
+  if("toid" %in% names(x)){
+    x$toid = as.integer(x$toid)
+  }
+  
   x
 }
 
@@ -285,6 +293,7 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
 
 assign_global_terminal_identifiers = function(meta, 
                                               flowpath_layer = "flowpaths",
+                                              divide_layer   = "divides",
                                               lookup_table_layer   = "lookup_table",
                                               catchment_network_layer   = "catchment_network",
                                               verbose = TRUE,
@@ -305,19 +314,38 @@ assign_global_terminal_identifiers = function(meta,
        terms = filter(topo, toid == 0) %>% 
          mutate(tmp_id = 1:n()) %>% 
          mutate(toid = tmp_id + term_add + meta$cumcount_term[i],
+                toid = as.integer(toid),
                 tmp_id = NULL)
        
        topo = filter(topo, !id %in% terms$id) %>% 
          bind_rows(terms)
     
-      mutate(fl, toid = NULL) %>% 
+      fl = mutate(fl, toid = NULL) %>% 
          left_join(topo, by = 'id') %>% 
-         select(id, toid, everything()) %>% 
-         write_sf(meta$outfiles[i], flowpath_layer)
+         select(id, toid, everything()) 
+      
+      write_sf(fl, meta$outfiles[i], flowpath_layer, overwrite = TRUE)
        
      } else {
        stop(flowpath_layer, " does not exist!")
      }
+    
+    
+    ## Update Catchments ##
+    if(layer_exists(meta$outfiles[i], divide_layer)){
+      
+      cat = read_sf(meta$outfiles[i], divide_layer) %>% 
+        mutate(toid = NULL) %>% 
+        left_join(st_drop_geometry(select(fl, id, toid)), by = 'id') %>% 
+        select(id, toid, everything()) %>% 
+        write_sf(meta$outfiles[i], divide_layer, overwrite = TRUE)
+      
+      rm(cat); rm(fl); gc()
+
+    } else {
+      stop(divide_layer, " does not exist!")
+    }
+    
   
      ### lookup_table ###
      if(layer_exists(meta$outfiles[i], lookup_table_layer)){
@@ -328,7 +356,7 @@ assign_global_terminal_identifiers = function(meta,
          select(NHDPlusV2_COMID, NHDPlusV2_COMID_part,
                reconciled_ID, aggregated_ID,      
                toID, mainstem, POI_ID, POI_TYPE, POI_VALUE) %>% 
-         write_sf(meta$outfiles[i], lookup_table_layer)
+         write_sf(meta$outfiles[i], lookup_table_layer, overwrite = TRUE)
      } else {
        stop(lookup_table_layer, " does not exist!")
      }
