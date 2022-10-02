@@ -127,8 +127,6 @@ new_hope_catchment_rec <- hyRefactor::clean_geometry(
 
 test_that("new_hope aggregate", {
 
-  testthat::skip("this test needs to be fixed")
-  
   get_id <- function(mc) {
     ind <- match(mc, new_hope_catchment_rec$member_COMID)
     new_hope_catchment_rec$ID[ind]
@@ -161,7 +159,7 @@ test_that("new_hope aggregate", {
   expect_true(fline_sets$ID[1] %in% fline_sets$set[[1]],
          "A small headwater that was a divergence should show up as such")
   
-  expect_true(filter(fline_sets, ID == 241)$toID == 335,
+  expect_true(dplyr::filter(fline_sets, ID == 241)$toID == 335,
               "Something is off with topology")
 
   expect_true(all(fline_sets$ID %in% cat_sets$ID), "flines and cats should have the same ids")
@@ -186,7 +184,9 @@ test_that("new_hope aggregate", {
     nhdplusTools::calculate_total_drainage_area(dplyr::rename(sf::st_set_geometry(new_hope_fline_rec, NULL),
                                          area = area_sqkm))
 
-  aggregated <- aggregate_to_outlets(new_hope_fline_rec, new_hope_catchment_rec, outlets,
+  aggregated <- aggregate_to_outlets(flowpath = new_hope_fline_rec, 
+                                     divide = new_hope_catchment_rec, 
+                                     outlets = outlets,
                                      da_thresh = 2, only_larger = TRUE)
 
   fline_sets_2 <- aggregated$fline_sets
@@ -196,8 +196,13 @@ test_that("new_hope aggregate", {
 
   expect_true(!any(get_id(c("8893788,8893784", "8894184,8894448")) %in% fline_sets_2$ID), "Shouldn't have a couple small catchments in output.")
   
-  # sf::write_sf(aggregated$cat_sets, "new_hope_collapse.gpkg", "boundary")
-  # sf::write_sf(aggregated$fline_sets, "new_hope_collapse.gpkg", "flowpath")
+  aggregated$cat_sets <- pack_set(aggregated$cat_sets)
+  aggregated$fline_sets <- pack_set(aggregated$fline_sets)
+  
+  expect_is(aggregated$cat_sets$set, "character")
+  
+  # sf::write_sf(aggregated$cat_sets, "inst/extdata/new_hope_agg.gpkg", "divides")
+  # sf::write_sf(aggregated$fline_sets, "inst/extdata/new_hope_agg.gpkg", "flowpath")
   # nolint end
 })
 

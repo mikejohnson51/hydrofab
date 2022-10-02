@@ -223,4 +223,20 @@ write_hydrofabric = function(network_list,
   return(outfile)
 }
 
+#' pack set
+#' @param x data.frame containing "set" list column to be packed
+#' @return data.frame containing comma seperated character column 
+#' @export
+pack_set <- function(x) {
+  x$set <- sapply(x$set, paste, collapse = ",")
+  x
+}
 
+#' unpack set
+#' @param x data.frame containing comma separated "set" column to be unpacked
+#' @return data.frame containing a list column
+#' @export
+unpack_set <- function(x) {
+  x$set <- strsplit(set, ",")
+  x
+}
