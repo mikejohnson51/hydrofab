@@ -1,7 +1,7 @@
 Package: hydrofab
 Type: Package
 Title: Hydrologic Network Refactoring and Aggregation Tools
-Version: 0.4.7
+Version: 0.5.0
 Authors@R: c(person("David", "Blodgett", role = c("aut"), email = "dblodgett@usgs.gov"),
            person(given = "Mike", family = "Johnson", role = c("aut", "cre"), comment = c(ORCID = "0000-0002-5288-8350"), email = "mike.johnson@noaa.gov"))
 Description: A collection of tools for maniputatling hydrologic and hydraulic networks 

@@ -9,6 +9,7 @@ be gloablaly unique.}
 assign_global_terminal_identifiers(
   meta,
   flowpath_layer = "flowpaths",
+  divide_layer = "divides",
   lookup_table_layer = "lookup_table",
   catchment_network_layer = "catchment_network",
   verbose = TRUE,
