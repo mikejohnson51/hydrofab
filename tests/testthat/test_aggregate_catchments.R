@@ -201,8 +201,6 @@ test_that("new_hope aggregate", {
   
   expect_is(aggregated$cat_sets$set, "character")
   
-  # sf::write_sf(aggregated$cat_sets, "inst/extdata/new_hope_agg.gpkg", "divides")
-  # sf::write_sf(aggregated$fline_sets, "inst/extdata/new_hope_agg.gpkg", "flowpath")
   # nolint end
 })
 
