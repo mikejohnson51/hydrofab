@@ -6,7 +6,8 @@ test_that("example runs", {
   source(system.file("extdata", "walker_data.R", package = "nhdplusTools"))
 
   fline <- dplyr::right_join(dplyr::select(walker_flowline, COMID),
-                             suppressWarnings(nhdplusTools::prepare_nhdplus(walker_flowline, 0, 0, 0, FALSE)))
+                             suppressWarnings(nhdplusTools::prepare_nhdplus(walker_flowline, 0, 0, 0, FALSE)),
+                             by = "COMID")
 
   fline <- dplyr::select(fline, ID = COMID, toID = toCOMID,
                          LevelPathID = LevelPathI, Hydroseq)
@@ -18,6 +19,7 @@ test_that("example runs", {
   aggregated <- aggregate_network_to_outlets(flowpath = fline, outlets)
 
   expect_equal(names(aggregated), c("cat_sets", "fline_sets"))
+  expect_true(any(grepl("LevelPathID", names(aggregated$fline_sets), ignore.case = TRUE)))
 
   expect_equal(nrow(aggregated$fline_sets), 12)
 

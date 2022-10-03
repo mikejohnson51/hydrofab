@@ -104,13 +104,14 @@ aggregate_network_to_outlets <- function(flowpath, outlets,
 
   
   if(inherits(flowpath, "sf")) {
-    fline_sets <- select(sets, .data$set, .data$ID, .data$LevelPathID) %>% 
+    fline_sets <- select(sets, .data$set, .data$ID) %>% 
       left_join(select(flowpath, .data$ID), by = c("set" = "ID")) %>%
       st_as_sf() %>%
       filter(!st_is_empty(.)) %>%
       union_linestrings(ID = "ID") %>%
       left_join(next_id, by = "ID") %>% 
-      left_join(fline_sets, by = "ID")
+      left_join(fline_sets, by = "ID") %>%
+      left_join(distinct(select(sets, .data$ID, .data$LevelPathID)), by = "ID")
   } else {
     fline_sets =  left_join(fline_sets, next_id, by = "ID")  %>% 
       left_join(distinct(select(sets, .data$ID, .data$LevelPathID)), by = "ID")
