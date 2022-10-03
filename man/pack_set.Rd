@@ -4,7 +4,7 @@
 \alias{pack_set}
 \title{pack set}
 \usage{
-pack_set(x)
+pack_set(x, y = "set")
 }
 \arguments{
 \item{x}{data.frame containing "set" list column to be packed}

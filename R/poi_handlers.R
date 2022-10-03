@@ -142,29 +142,74 @@ add_mapped_pois = function(network_list,
   
 }
 
-#' Generate Lookup table for Aggregated Network
-#' @param gpkg to current network. A look up table will be added here as a layer called "lookup_table"
-#' @param refactored_fabric the gpkg for the corresponding VPU preceeding gpkg
-#' @return file path
+#' Generate Lookup table for refactored or aggregated network
+#' @param gpkg character path to gpkg containing aggregated network. Omit for 
+#' refactored network lookup table creation.
+#' @param refactored_gpkg character path to the gpkg for the refactored network 
+#' used to create the aggregate network. If no aggregatedd gpkg is passed in, a 
+#' lookup table will be added to this gpkg.
+#' @param reconciled_layer character path layer name containing fully 
+#' reconciled flowpaths. Ignored for aggregated network lookup table creation.
+#' @return file path to modified gpkg
 #' @export
 #' @importFrom sf read_sf st_drop_geometry write_sf
 #' @importFrom dplyr mutate select full_join left_join
 #' @importFrom tidyr unnest
 
 generate_lookup_table = function(gpkg = NULL,
-                                 refactored_gpkg = NULL) {
+                                 refactored_gpkg = NULL,
+                                 reconciled_layer = "flowpaths") {
+  
+  if(is.null(gpkg) & !is.null(refactored_gpkg)) {
+    # create lookup for ref flowlines to use in the non-dendritic steps
+    refactor_lookup <- st_drop_geometry(read_sf(refactored_gpkg, reconciled_layer)) %>%
+      dplyr::select(ID, member_COMID) %>%
+      dplyr::mutate(member_COMID = strsplit(member_COMID, ",")) %>%
+      tidyr::unnest(cols = member_COMID) %>%
+      dplyr::mutate(NHDPlusV2_COMID = as.integer(member_COMID)) %>% # note as.integer truncates
+      dplyr::rename(reconciled_ID = ID)
+    
+    if(is.character(refactor_lookup$reconciled_ID)) 
+      refactor_lookup$reconciled_ID <- as.integer(refactor_lookup$reconciled_ID)
+    
+    lookup_table <- tibble::tibble(NHDPlusV2_COMID = unique(as.integer(refactor_lookup$member_COMID))) %>%
+      dplyr::left_join(refactor_lookup, by = "NHDPlusV2_COMID") 
+    
+    write_sf(lookup_table, refactored_gpkg, "lookup_table")
+    
+    return(refactored_gpkg)
+  }
   
   if (is.null(gpkg) | is.null(refactored_gpkg)) {
     stop("hydrofabrics must be provided.")
   }
   
-  outlets = poi_to_outlet(refactored_gpkg, verbose = FALSE) %>% 
-    select(POI_ID = poi_id, POI_TYPE = type, POI_VALUE = value)
+  outlets = poi_to_outlet(refactored_gpkg, verbose = FALSE)
   
-  lu = read_sf(refactored_gpkg, "lookup_table") %>%
-    select(NHDPlusV2_COMID, reconciled_ID)
+  lu = read_sf(refactored_gpkg, "lookup_table")
   
   nl = read_hydrofabric(gpkg)
+  
+  if(!"member_comid" %in% names(nl$flowpaths)) {
+
+    nl$flowpaths <- left_join(nl$flowpaths,
+                              select(lu, reconciled_ID, member_COMID) %>%
+                                group_by(reconciled_ID) %>%
+                                summarise(member_comid = list(member_COMID)) %>%
+                                pack_set("member_comid"), by = c("id" = "reconciled_ID"))
+  }
+  
+  if(!"poi_id" %in% names(nl$flowpaths)) {
+    nl$flowpaths <- left_join(nl$flowpaths, 
+                              select(outlets, ID, poi_id),
+                              by = c("id" = "ID"))
+  }
+  
+  outlets <- outlets %>% 
+    select(POI_ID = poi_id, POI_TYPE = type, POI_VALUE = value)
+  
+  lu <- lu %>%
+    select(NHDPlusV2_COMID, reconciled_ID)
   
   vaa = suppressMessages({
     get_vaa("hydroseq", updated_network = TRUE) %>%

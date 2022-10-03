@@ -4,7 +4,7 @@
 \alias{unpack_set}
 \title{unpack set}
 \usage{
-unpack_set(x)
+unpack_set(x, y = "set")
 }
 \arguments{
 \item{x}{data.frame containing comma separated "set" column to be unpacked}

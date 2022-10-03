@@ -406,14 +406,17 @@ renamer <- function(x) {
   rename(x, any_of(c(id = "aggregated_ID", 
                      id = "ID", 
                      toid = "toID",
+                     member_comid = "member_COMID",
                      id = "aggregated_flowpath_ID",
-                     did = "aggregated_divide_ID")))
+                     did = "aggregated_divide_ID",
+                     levelpathid = "LevelPathID")))
 }
 
 rerenamer <- function(x, agg = FALSE, lookup = FALSE) {
   if(agg) {
     check <- c(aggregated_ID = "id",
-               toID = "toid")
+               toID = "toid",
+               member_COMID = "member_comid")
   } else if(lookup) {
     check <- c(aggregated_flowpath_ID = "id",
                aggregated_divide_ID = "did")
@@ -424,3 +427,14 @@ rerenamer <- function(x, agg = FALSE, lookup = FALSE) {
   rename(x, any_of(check))
 }
 
+# TODO: replace read_sf calls with these.
+hy_read <- function(x, layer, scheme = NULL) {
+  # if inherits, data.frame, return
+  # try to read gpkg layer
+  # rename if scheme is specified
+}
+
+hy_write <- function(x, gpkg, layer, scheme = NULL) {
+  # rename if scheme is specified
+  # write out
+}
