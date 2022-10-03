@@ -105,13 +105,13 @@ read_hydrofabric = function(gpkg = NULL,
     
     if(!is.null(flowpaths)){
       if(layer_exists(gpkg, flowpaths)){
-        out[["flowpaths"]] <- read_sf(gpkg, flowpaths)
+        out[["flowpaths"]] <- renamer(read_sf(gpkg, flowpaths))
       }
     }
     
     if(!is.null(catchments)){
       if(layer_exists(gpkg, catchments)){
-        out[["catchments"]] <- read_sf(gpkg, catchments)
+        out[["catchments"]] <- renamer(read_sf(gpkg, catchments))
       }
     }
   }
@@ -227,8 +227,8 @@ write_hydrofabric = function(network_list,
 #' @param x data.frame containing "set" list column to be packed
 #' @return data.frame containing comma seperated character column 
 #' @export
-pack_set <- function(x) {
-  x$set <- sapply(x$set, paste, collapse = ",")
+pack_set <- function(x, y = "set") {
+  x[[y]] <- sapply(x[[y]], paste, collapse = ",")
   x
 }
 
@@ -236,7 +236,7 @@ pack_set <- function(x) {
 #' @param x data.frame containing comma separated "set" column to be unpacked
 #' @return data.frame containing a list column
 #' @export
-unpack_set <- function(x) {
-  x$set <- strsplit(set, ",")
+unpack_set <- function(x, y = "set") {
+  x[[y]] <- strsplit(x[[y]], ",")
   x
 }

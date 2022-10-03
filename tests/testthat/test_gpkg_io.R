@@ -26,3 +26,29 @@ test_that("IO methods", {
   expect_equal(st_crs(out4$flowpaths)$epsg, 5070)
 
 })
+
+test_that("pack unpack", {
+  x <- data.frame(x = c(1, 2, 3), 
+                  y = c("1,2,3", 
+                        "4,5,6", 
+                        "7,8,9"))
+  
+  y <- unpack_set(x, "y")
+  
+  z <- pack_set(y, "y")  
+  
+  expect_equal(
+    y, 
+    structure(list(x = c(1, 2, 3), 
+                   y = list(c("1", "2", "3"), 
+                            c("4", "5", "6"), 
+                            c("7", "8", "9"))), 
+              row.names = c(NA, -3L), 
+              class = "data.frame"))
+  
+  expect_equal(x, z)
+  
+  names(x) <- c("one", "set")
+  
+  expect_equal(x, pack_set(unpack_set(x)))
+})
