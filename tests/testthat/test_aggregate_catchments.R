@@ -4,8 +4,6 @@ Sys.setenv(TURN_OFF_SYS_MAPSHAPER = "YUP")
 
 test_that("walker aggregate runs", {
   
-  testthat::skip("this test needs to be fixed")
-  
 source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
 
   walker_catchment_rec <- hyRefactor::clean_geometry(
@@ -25,7 +23,7 @@ outlets <- data.frame(ID = get_id(c("5329843", "5329339.1", "5329385", "5329303"
 
 aggregated       <- aggregate_to_outlets(flowpath = walker_fline_rec, 
                                          divide = walker_catchment_rec,
-                                         outlets)
+                                         outlets = outlets)
 
 aggregated_fline <- aggregated$fline_sets
 aggregated_cat   <- aggregated$cat_sets
@@ -83,7 +81,7 @@ outlets <- data.frame(ID = get_id(c("5329843", "5329339.1", "5329385", "5329303"
 
 aggregated <- aggregate_to_outlets(flowpath = walker_fline_rec, 
                                    divide = walker_catchment_rec, 
-                                   outlets)
+                                   outlets = outlets)
 
 aggregated_fline <- aggregated$fline_sets
 aggregated_cat <- aggregated$cat_sets
@@ -97,7 +95,7 @@ outlets <- data.frame(ID = get_id(c("5329363", "5329303")),
                       type = c("outlet", "terminal"),
                       stringsAsFactors = FALSE)
 
-aggregated <- aggregate_to_outlets(walker_fline_rec, walker_catchment_rec, outlets)
+aggregated <- aggregate_to_outlets(flowpath = walker_fline_rec, divide = walker_catchment_rec, outlets = outlets)
 aggregated_fline <- aggregated$fline_sets
 aggregated_cat <- aggregated$cat_sets
 
@@ -107,7 +105,7 @@ outlets <- data.frame(ID = get_id(c("5329293", "5329303")),
                       type = c("outlet", "terminal"),
                       stringsAsFactors = FALSE)
 
-aggregated <- aggregate_to_outlets(walker_fline_rec, walker_catchment_rec, outlets)
+aggregated <- aggregate_to_outlets(flowpath = walker_fline_rec, divide = walker_catchment_rec, outlets = outlets)
 aggregated_fline <- aggregated$fline_sets
 aggregated_cat <- aggregated$cat_sets
 
@@ -206,8 +204,6 @@ test_that("new_hope aggregate", {
 
 test_that("new_hope aggregate", {
 
-  testthat::skip("this test needs to be fixed")
-  
   get_id <- function(mc) {
     ind <- match(mc, new_hope_catchment_rec$member_COMID)
     new_hope_catchment_rec$ID[ind]
@@ -230,7 +226,7 @@ test_that("new_hope aggregate", {
                                  "outlet", "outlet", "outlet", "terminal"),
                         stringsAsFactors = FALSE)
 
-  aggregated <- aggregate_to_outlets(new_hope_fline_rec, new_hope_catchment_rec, outlets)
+  aggregated <- aggregate_to_outlets(flowpath = new_hope_fline_rec, divide = new_hope_catchment_rec, outlets = outlets)
 
   fline_sets <- aggregated$fline_sets
   cat_sets <- aggregated$cat_sets
@@ -242,7 +238,7 @@ test_that("new_hope aggregate", {
                         type = c("outlet", "terminal"),
                         stringsAsFactors = FALSE)
 
-  aggregated <- aggregate_to_outlets(new_hope_fline_rec, new_hope_catchment_rec, outlets,
+  aggregated <- aggregate_to_outlets(flowpath = new_hope_fline_rec, divide = new_hope_catchment_rec, outlets = outlets,
                                      only_larger = FALSE)
 
   expect_true(get_id("8893780.2,8894326") %in% aggregated$cat_sets$ID,

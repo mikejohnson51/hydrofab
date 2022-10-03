@@ -2,8 +2,8 @@
 library(terra)
 extdata <- system.file("extdata", package = "hydrofab")
 
-# only for rebuilding
-extdata <- "inst/extdata/"
+# # only for rebuilding
+# extdata <- "inst/extdata/"
 
 new_hope_reference <- file.path(extdata, "new_hope_reference.gpkg")
 new_hope_refactor <- file.path(extdata, "new_hope_refactor.gpkg")
@@ -29,6 +29,10 @@ nhpgpkgref <- tempfile(fileext = ".gpkg")
 
 file.copy(file.path(extdata, "new_hope_refactor.gpkg"), nhpgpkgref)
 
+nhpgpkgcol <- tempfile(fileext = ".gpkg")
+
+file.copy(new_hope_collapse_temp, nhpgpkgcol)
+
 nhpgpkgrec <- tempfile(fileext = ".gpkg")
 
 file.copy(new_hope_reconcile_temp, nhpgpkgrec)
@@ -53,7 +57,7 @@ new_hope_catchment <- sf::read_sf(nhpgpkg, "CatchmentSP")
 new_hope_catchment <- sf::st_transform(new_hope_catchment, proj)
 new_hope_flowline <- sf::read_sf(nhpgpkg, "NHDFlowline_Network")
 new_hope_flowline <- sf::st_transform(new_hope_flowline, proj)
-new_hope_fline_ref <- sf::read_sf(nhpgpkgref)
+new_hope_fline_ref <- sf::read_sf(nhpgpkgcol)
 new_hope_fline_rec <- sf::read_sf(nhpgpkgrec)
 new_hope_catchment_rec <- sf::read_sf(nhpgpkgreccat)
 new_hope_events <- sf::read_sf(nhpgpkgev)
