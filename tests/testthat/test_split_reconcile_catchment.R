@@ -12,7 +12,7 @@ test_that("split_catchment_divide works", {
                                split_flines_meters = 2000,
                                collapse_flines_meters = 1,
                                collapse_flines_main_meters = 1,
-                               split_flines_cores = 2,
+                               split_flines_cores = 1,
                                out_refactored = tf,
                                out_reconciled = tr,
                                three_pass = TRUE,

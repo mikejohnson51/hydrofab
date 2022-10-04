@@ -79,7 +79,7 @@ test_that("assign global identifiers", {
                                    mapped_POI_layer = "mapped_POIs", 
                                    lookup_table_layer = "lookup_table", 
                                    catchment_network_layer = "catchment_network", 
-                                   overwrite = TRUE)
+                                   overwrite = TRUE, verbose = FALSE)
   
   expect_equal(seq((nrow(in1$flowpaths) + nrow(in2$flowpaths))), out$lookup$newID)
   

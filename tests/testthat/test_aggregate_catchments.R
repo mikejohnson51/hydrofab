@@ -4,9 +4,9 @@ Sys.setenv(TURN_OFF_SYS_MAPSHAPER = "YUP")
 
 test_that("walker aggregate runs", {
   
-source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
+source(system.file("extdata", "walker_data.R", package = "hydrofab"))
 
-  walker_catchment_rec <- hyRefactor::clean_geometry(
+  walker_catchment_rec <- hydrofab::clean_geometry(
     nhdplusTools:::check_valid(walker_catchment_rec), 
     keep = NULL, crs = 5070, sys = FALSE)
   
@@ -42,7 +42,7 @@ expect_true(length(dplyr::filter(aggregated_fline, ID == 31)$set[[1]]) == 2,
             "got the wrong number of flowpaths")
 
 aggregate_lookup_fline <- dplyr::select(sf::st_drop_geometry(aggregated$fline_sets), ID, set) %>%
-  hyRefactor:::unnest_flines() %>%
+  hydrofab:::unnest_flines() %>%
   dplyr::rename(aggregated_ID = ID, reconciled_ID = set)
 
 expect_true(!all(walker_fline_rec$ID %in% aggregate_lookup_fline$reconciled_ID), 
@@ -89,7 +89,7 @@ aggregated_cat <- aggregated$cat_sets
 expect_equal(sort(aggregated_cat$ID), sort(get_id(c("5329321", "5329385", "5329313", "5329843", "5329339.1", "5329339.3",
                                          "5329303"))))
 
-expect_true(length(filter(aggregated_cat, ID == 23)$set[[1]]) == 5, "got the wrong number in catchment set")
+expect_true(length(dplyr::filter(aggregated_cat, ID == 23)$set[[1]]) == 5, "got the wrong number in catchment set")
 
 outlets <- data.frame(ID = get_id(c("5329363", "5329303")),
                       type = c("outlet", "terminal"),
@@ -117,9 +117,9 @@ expect_true(length(aggregated_cat$set[[2]]) == 101, "got the wrong number in cat
 # nolint end
 })
 
-source(system.file("extdata", "new_hope_data.R", package = "hyRefactor"))
+source(system.file("extdata", "new_hope_data.R", package = "hydrofab"))
 
-new_hope_catchment_rec <- hyRefactor::clean_geometry(
+new_hope_catchment_rec <- hydrofab::clean_geometry(
   nhdplusTools:::check_valid(new_hope_catchment_rec), 
   keep = NULL, crs = 5070, sys = FALSE)
 
@@ -157,6 +157,7 @@ test_that("new_hope aggregate", {
   expect_true(fline_sets$ID[1] %in% fline_sets$set[[1]],
          "A small headwater that was a divergence should show up as such")
   
+  # Need to check what this went to
   expect_true(dplyr::filter(fline_sets, ID == 241)$toID == 335,
               "Something is off with topology")
 

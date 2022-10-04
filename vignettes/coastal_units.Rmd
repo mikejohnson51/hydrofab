@@ -1,5 +1,5 @@
 ---
-title: "Coastal Units with hyRefactor"
+title: "Coastal Units with hydrofab"
 author: "dblodgett@usgs.gov"
 output: rmarkdown::html_vignette
 always_allow_html: true
@@ -24,12 +24,12 @@ fdr_path <- "../../gfv2/workspace/data/fdrfac/NHDPlusCA/NHDPlus18/NHDPlusFdrFac1
 fac_path <- "../../gfv2/workspace/data/fdrfac/NHDPlusCA/NHDPlus18/NHDPlusFdrFac18c/fac/"
 ```
 
-This article demonstrates how to work with coastal catchments and small coastal basins in an hyRefactor workflow.
+This article demonstrates how to work with coastal catchments and small coastal basins in an hydrofab workflow.
 
 First, we use `nhdplusTools` to download and plot some data along the California coast.
 
 ```{r, plot}
-library(hyRefactor)
+library(hydrofab)
 
 temp_gpkg <- tempfile(fileext = ".gpkg")
 
@@ -62,13 +62,13 @@ sub <- lapply(nhdplusTools::subset_nhdplus(c(as.integer(flowline$nhdplus_comid),
 mapview::mapview(sub$NHDFlowline_Network) + 
   mapview::mapview(sub$CatchmentSP, color = "darkgrey", col.regions = "tan")
 ```
-Now that we have our subset ready to go, we'll need to get some flow direction and flow accumulation data to use with hyRefactor later on.
+Now that we have our subset ready to go, we'll need to get some flow direction and flow accumulation data to use with hydrofab later on.
 ```{r fdr_fac, eval=FALSE}
 fdr_dir = file.path(tempdir(check = TRUE), "fdr_fac")
 dir.create(fdr_dir, showWarnings = FALSE)
 
 if(!dir.exists(file.path(fdr_dir, "NHDPlusCA/"))) {
-  hyRefactor::download_fdr_fac(fdr_dir, regions = "18")
+  hydrofab::download_fdr_fac(fdr_dir, regions = "18")
 }
 
 fdr_path <- file.path(fdr_dir, "NHDPlusCA/NHDPlus18/NHDPlusFdrFac18c/fdr/")

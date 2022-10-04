@@ -1,6 +1,8 @@
 context("Test refactor wrapper")
 
-test_that("IO methods", {
+Sys.setenv(TURN_OFF_SYS_MAPSHAPER = "YUP")
+
+test_that("refactor wrapper", {
   
   source(system.file("extdata", "walker_data.R", package = "hydrofab"))
   
@@ -20,3 +22,5 @@ test_that("IO methods", {
   expect_true(nrow(refactor$flowpaths) == nrow(refactor$catchments), "failed wrapper")
 
 })
+
+Sys.unsetenv("TURN_OFF_SYS_MAPSHAPER")

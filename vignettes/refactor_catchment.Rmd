@@ -30,9 +30,9 @@ Before we can do anything with the catchments, we need to run the NHDPlus Refact
 ```{r refactor}
 library(sf)
 library(nhdplusTools)
-library(hyRefactor)
+library(hydrofab)
 
-source(system.file("extdata", "walker_data.R", package = "hyRefactor"))
+source(system.file("extdata", "walker_data.R", package = "hydrofab"))
 
 fac <- walker_fac@ptr$filenames
 fdr <- walker_fdr@ptr$filenames
@@ -193,16 +193,16 @@ Given these caveats, we can build a complete lookup table from source catchment 
 
 refactor_lookup <- dplyr::select(st_drop_geometry(flowline_rec), ID, member_COMID) %>%
   dplyr::mutate(member_COMID = strsplit(member_COMID, ",")) %>%
-  hyRefactor:::unnest_flines(col = "member_COMID") %>%
+  hydrofab:::unnest_flines(col = "member_COMID") %>%
   dplyr::mutate(NHDPlusV2_COMID = as.integer(member_COMID)) %>% # note as.integer truncates
   dplyr::rename(reconciled_ID = ID)
 
 aggregate_lookup_fline <- dplyr::select(st_drop_geometry(aggregated$fline_sets), ID, set) %>%
-  hyRefactor:::unnest_flines() %>%
+  hydrofab:::unnest_flines() %>%
   dplyr::rename(aggregated_flowline_ID = ID, reconciled_ID = set)
 
 aggregate_lookup_catchment <- dplyr::select(st_drop_geometry(aggregated$cat_sets), ID, set) %>%
-  hyRefactor:::unnest_flines() %>%
+  hydrofab:::unnest_flines() %>%
   dplyr::rename(aggregated_catchment_ID = ID, reconciled_ID = set)
 
 (lookup_table <- tibble::tibble(NHDPlusV2_COMID = input_ids) %>%

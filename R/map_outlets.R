@@ -28,7 +28,7 @@ map_outlet_ids <- function(source_outlets, reconciled) {
                        col = "integer_COMID")
   
   # finds IDs from reconciled that represent the passed-in COMID
-  # returns IDs in the hyRefactor ID space
+  # returns IDs in the hydrofab ID space
   find_ID <- function(COMID, rec) rec$ID[which(COMID == rec$integer_COMID)]
   
   # NOT COMID

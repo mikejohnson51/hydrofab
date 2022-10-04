@@ -30,7 +30,7 @@ test_that("union_linestrings_geos characterization", {
   l <- sf::read_sf(list.files(pattern = "union_line_test.gpkg", recursive = TRUE))
   
   f <- l %>%
-    hyRefactor:::drop_geometry() %>%
+    hydrofab:::drop_geometry() %>%
     dplyr::group_by(ID) %>%
     dplyr::summarise() %>%
     dplyr::ungroup()
