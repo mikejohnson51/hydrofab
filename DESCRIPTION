@@ -37,7 +37,8 @@ Suggests:
     mapview,
     rmarkdown,
     testthat,
-    tibble
+    tibble,
+    RSQLite
 Remotes: dblodgett-usgs/nhdplusTools
 License: CC0
 Encoding: UTF-8

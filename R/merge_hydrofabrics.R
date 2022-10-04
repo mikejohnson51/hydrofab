@@ -367,6 +367,9 @@ assign_global_terminal_identifiers = function(meta,
       if("aggregated_flowpath_ID" %in% names(lookup)) {
         lookup <- lookup %>%
           left_join(topo, by = c("aggregated_flowpath_ID" = "id"))
+      } else if("reconciled_ID" %in% names(lookup)) {
+        lookup <- lookup %>%
+          left_join(topo, by = c("reconciled_ID" = "id"))
       } else {
         lookup <- lookup %>%
           left_join(topo, by = c('aggregated_ID' = 'id')) %>%
