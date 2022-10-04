@@ -74,27 +74,27 @@ new_hope_pois <- sf::read_sf(nhpgpkgpoi, "mapped_POIs")
 # 
 # start_COMID <- 8897784
 # 
-# ref_hydrofab <- sapply(st_layers(source_ref)$name, 
+# ref_hydrofab <- sapply(st_layers(source_ref)$name,
 #                        function(x, y) {
 #                          o <- read_sf(y, x)
 #                          if(x != "POIs")
 #                            names(o) <- tolower(names(o))
 #                          o
-#                         }, 
+#                         },
 #                        y = source_ref)
 # 
 # ref_hydrofab$reference_flowline <- select(ref_hydrofab$reference_flowline, comid, tocomid, everything())
 # 
 # new_hope_subset <- nhdplusTools::get_sorted(ref_hydrofab$reference_flowline, outlets = start_COMID)
 # 
-# ref_hydrofab$reference_flowline <- filter(ref_hydrofab$reference_flowline, 
+# ref_hydrofab$reference_flowline <- filter(ref_hydrofab$reference_flowline,
 #                                                  comid %in% new_hope_subset$comid)
 # 
 # ref_hydrofab$reference_flowline <- nhdplusTools::make_standalone(ref_hydrofab$reference_flowline)
 # 
-# ref_hydrofab$reference_catchment <- filter(ref_hydrofab$reference_catchment, 
+# ref_hydrofab$reference_catchment <- filter(ref_hydrofab$reference_catchment,
 #                                                   featureid %in% new_hope_subset$comid)
-# ref_hydrofab$reference_network <- filter(ref_hydrofab$reference_network, 
+# ref_hydrofab$reference_network <- filter(ref_hydrofab$reference_network,
 #                                                 comid %in% new_hope_subset$comid)
 # 
 # ref_hydrofab$reference_network <- nhdplusTools::make_standalone(ref_hydrofab$reference_network)
@@ -104,7 +104,10 @@ new_hope_pois <- sf::read_sf(nhpgpkgpoi, "mapped_POIs")
 # ref_hydrofab$WB_03N <- filter(ref_hydrofab$WB_03N, comid %in% new_hope_subset$wbareacomi)
 # ref_hydrofab$POIs <- filter(ref_hydrofab$POIs, COMID %in% new_hope_subset$comid)
 # 
-# invisible(lapply(names(ref_hydrofab), 
+# # these three mess with some tests and need to be dropped.
+# ref_hydrofab$POIs <- ref_hydrofab$POIs[!ref_hydrofab$POIs$identifier %in% c(2978, 3842, 4349), ]
+# 
+# invisible(lapply(names(ref_hydrofab),
 #                  function(x, y, z) {
 #                    write_sf(y[[x]], z, x)
 #                    NULL
@@ -130,10 +133,10 @@ new_hope_pois <- sf::read_sf(nhpgpkgpoi, "mapped_POIs")
 # sub_fdr <- terra::rast(fdr_path)
 # 
 # proj <- terra::crs(sub_fac)
-#
+# 
 # outlets_POI <- ref_hydrofab$POIs %>%
-#   mutate(type = ifelse(!is.na(Type_Term), "terminal", "outlet")) 
-# event_POIs <- filter(ref_hydrofab$POIs, nexus == "1") 
+#   mutate(type = ifelse(!is.na(Type_Term), "terminal", "outlet"))
+# event_POIs <- filter(ref_hydrofab$POIs, nexus == "1")
 # 
 # events <- filter(events, COMID %in% ref_hydrofab$reference_flowline$COMID)
 # 
@@ -148,7 +151,7 @@ new_hope_pois <- sf::read_sf(nhpgpkgpoi, "mapped_POIs")
 #                  out_refactored = new_hope_collapse_temp,
 #                  out_reconciled = new_hope_reconcile_temp,
 #                  three_pass = TRUE,
-#                  events = events, 
+#                  events = events,
 #                  exclude_cats = c(outlets_POI$COMID),
 #                  purge_non_dendritic = FALSE,
 #                  warn = FALSE)
@@ -181,26 +184,26 @@ new_hope_pois <- sf::read_sf(nhpgpkgpoi, "mapped_POIs")
 # write_sf(cat_rec, new_hope_refactor, "refactored_divides")
 # 
 # refactor_lookup <- read_sf(
-#   hydrofab::generate_lookup_table(refactored_gpkg = new_hope_refactor, 
+#   hydrofab::generate_lookup_table(refactored_gpkg = new_hope_refactor,
 #                                                    reconciled_layer = "refactored_divides"),
 #   "lookup_table")
-#
-## TODO: plow into code
-## Join refactored to original NHD
+# 
+# # TODO: plow into code
+# # Join refactored to original NHD
 # refactored <- read_sf(new_hope_collapse_temp)
 # 
 # names(refactored) <- tolower(names(refactored))
 # 
 # refactored <- refactored %>%
 #   select(member_comid = comid, hydroseq, event_identifier, event_reachcode) %>%
-#   inner_join(select(st_drop_geometry(new_hope_subset), orig_comid = comid, hydroseq), by = "hydroseq") 
+#   inner_join(select(st_drop_geometry(new_hope_subset), orig_comid = comid, hydroseq), by = "hydroseq")
 # 
 # # Subset for events
 # refactored_events <- refactored %>%
 #   filter(!is.na(event_reachcode), !is.na(event_identifier))
 # 
 # outlet_events <- filter(outlets_POI, nexus == "1") %>%
-#   left_join(select(st_drop_geometry(refactored_events), member_comid, event_identifier, orig_comid), 
+#   left_join(select(st_drop_geometry(refactored_events), member_comid, event_identifier, orig_comid),
 #             by = c("COMID" = "orig_comid")) %>%
 #   filter(!is.na(member_comid)) %>%
 #   select(-event_identifier)
@@ -210,12 +213,12 @@ new_hope_pois <- sf::read_sf(nhpgpkgpoi, "mapped_POIs")
 # 
 # # get ref_COMId for other outlets
 # outlets_ref_COMID <- filter(outlets_POI, !identifier %in% outlet_events$identifier) %>%
-#   left_join(select(st_drop_geometry(refactored_outlets), member_comid, orig_comid), 
+#   left_join(select(st_drop_geometry(refactored_outlets), member_comid, orig_comid),
 #             by = c("COMID" = "orig_comid")) %>%
 #   group_by(COMID) %>%
 #   filter(member_comid == max(member_comid)) %>%
 #   rbind(outlet_events) %>%
-#   inner_join(select(refactor_lookup, member_COMID, reconciled_ID), 
+#   inner_join(select(refactor_lookup, member_COMID, reconciled_ID),
 #              by = c("member_comid" = "member_COMID")) %>%
 #   ungroup()
 # 
@@ -228,7 +231,7 @@ new_hope_pois <- sf::read_sf(nhpgpkgpoi, "mapped_POIs")
 #   outlets <- bind_rows(outlets,
 #                        data.frame(ID = missing_outlets,
 #                                   type = rep("terminal", length(missing_outlets))))
-#   
+# 
 #   # not needed for new hope
 #   # outlets <- outlets %>%
 #   #   left_join(select(st_drop_geometry(reconciled), ID, toID), by = "ID") %>%
