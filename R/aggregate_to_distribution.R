@@ -79,7 +79,7 @@ aggregate_to_distribution = function(gpkg = NULL,
   if (!is.null(outlets)) {
     network_list$flowpaths  = left_join(network_list$flowpaths, 
                                         outlets, 
-                                        by = 'ID')
+                                        by = 'id')
   } else {
     network_list$flowpaths$poi_id   = NA
   }
