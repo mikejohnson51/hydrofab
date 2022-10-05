@@ -50,16 +50,16 @@ poi_to_outlet = function(gpkg,
     pivot_longer(-c(poi_id, ID)) %>%
     filter(!is.na(value)) %>%
     mutate(type = gsub("Type_", "", name)) %>% 
-    select(ID, poi_id, type, value) %>% 
+    select(id = ID, poi_id, type, value) %>% 
     distinct()
   
-  dups = which(duplicated(nexus_locations$ID))
+  dups = which(duplicated(nexus_locations$id))
   
   if(length(dups) > 0){
     
    hyaggregate_log("WARN", glue("{length(dups)} flowpaths have multiple POI IDs. One is (randomly) being selected as flowpath outlet"))
     
-   nexus_locations =  group_by(nexus_locations, ID) %>% 
+   nexus_locations =  group_by(nexus_locations, id) %>% 
       slice(1) %>% 
       ungroup()
   

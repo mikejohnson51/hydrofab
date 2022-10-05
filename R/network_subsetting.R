@@ -1,3 +1,23 @@
+
+get_edges_terms = function(flowpaths) {
+  
+  fline = select(st_drop_geometry(flowpaths), id, toid)
+
+  mapview::mapview(ll$flowpaths) + ll$nexus
+  
+  obj2 =  data.frame(id = unique(fline$toid)) %>%
+    left_join(mutate(select(fline, id), toid = id), by = "id") %>%
+    mutate(toid = ifelse(is.na(.data$toid), 0, .data$toid)) %>%
+    mutate(id =  paste0(
+      ifelse(.data$id > term_cut, terminal_nexus_prefix, nexus_prefix),
+      .data$id
+    ),
+    toid = paste0(catchment_prefix, .data$toid))
+  
+  bind_rows(obj1, obj2)
+}
+
+
 #' Find ID from location
 #' @param gpkg path to a hydrofabric
 #' @param pt a spatial point (sf)
@@ -22,6 +42,9 @@ find_origin = function(gpkg, pt, catchment_name = "divides") {
 #' @importFrom nhdplusTools get_sorted
 #' @importFrom sf read_sf
 #' @importFrom dplyr filter
+
+# gpkg = '/Volumes/Transcend/ngen/CONUS-hydrofabric/v1.2/nextgen_01.gpkg'
+# origin = "wb-12886"
 
 subset_network = function(gpkg,
                           origin,
@@ -64,7 +87,7 @@ subset_network = function(gpkg,
     ll[['flowpaths']] = filter(ll[['flowpaths']], main_id == tmp$main_id)
   }
   
-  ll$flowpath_edge_list =  get_catchment_edges_terms(ll$flowpaths, catchment_prefix = 'wb-')
+  ll$flowpath_edge_list = ngen.hydrofab::get_catchment_edges_terms(ll$flowpaths, catchment_prefix = 'wb-')
   
   if(!is.null(attribute_layers)){
     for(i in 1:length(attribute_layers)){
