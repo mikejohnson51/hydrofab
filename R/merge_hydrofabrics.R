@@ -141,6 +141,7 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
                                       return_lookup             = TRUE,
                                       verbose                   = TRUE) {
 
+
   meta = network_metadata(gpkgs, flowpath_layer, divide_layer)
 
   lus = list()
@@ -209,9 +210,8 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
       
        meta$terminals[i] = sum(fl$toid == 0 | is.na(fl$toid))
        
-       write_sf(fl, meta$outfiles[i], flowpath_layer)
+       write_sf(fl, meta$outfiles[i], flowpath_layer, overwrite = TRUE)
       
-      rm(fl)
     } else {
       stop(flowpath_layer, " does not exist!")
     }
@@ -219,10 +219,14 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
     
     ## Divides ##
     if(layer_exists(meta$path[i], divide_layer)){
-      read_sf(meta$path[i], divide_layer) %>% 
+
+      dv = read_sf(meta$path[i], divide_layer) %>% 
+        update_topo(lu, vpu_topo)  %>% 
         renamer() %>%
-        update_topo(lu, vpu_topo) %>% 
-        write_sf(meta$outfiles[i], divide_layer)
+        update_topo(lu, vpu_topo)
+      
+      write_sf(dv, meta$outfiles[i], divide_layer, overwrite = TRUE)
+      
     } else {
       stop(divide_layer, " does not exist!")
     }
@@ -232,7 +236,7 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
       read_sf(meta$path[i], mapped_POI_layer) %>% 
         renamer() %>%
         update_topo(lu, vpu_topo) %>% 
-        write_sf(meta$outfiles[i], mapped_POI_layer)
+        write_sf(meta$outfiles[i], mapped_POI_layer, overwrite = TRUE)
     } else {
       stop(mapped_POI_layer, " does not exist!")
     }
@@ -243,7 +247,8 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
         renamer() %>% 
         update_topo(lu, vpu_topo)  %>% 
         rerenamer(lookup = TRUE) %>% 
-        write_sf(meta$outfiles[i], lookup_table_layer)
+        write_sf(meta$outfiles[i], lookup_table_layer, overwrite = TRUE)
+
     } else {
       stop(lookup_table_layer, " does not exist!")
     }
@@ -253,7 +258,7 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
       read_sf(meta$path[i], catchment_network_layer) %>% 
         renamer() %>%
         update_topo(lu, vpu_topo)  %>% 
-        write_sf(meta$outfiles[i], catchment_network_layer)
+        write_sf(meta$outfiles[i], catchment_network_layer, overwrite = TRUE)
       } else {
           stop(catchment_network_layer, " does not exist!")
       }
@@ -264,8 +269,10 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
   
   meta$cumcount_term = c(0, head(cumsum(meta$terminals), -1))
   
-  lookup = bind_rows(lus) %>% select(VPU, oldID, newID)
+  lookup = bind_rows(lus) %>% 
+    select(VPU, oldID, newID)
 
+  
   if(update_terminals){
     meta = assign_global_terminal_identifiers(meta, 
                                               flowpath_layer = flowpath_layer, 
@@ -323,11 +330,16 @@ assign_global_terminal_identifiers = function(meta,
        topo = select(fl, id, toid) %>% 
          st_drop_geometry()
        
-       terms = filter(topo, toid == 0) %>% 
-         mutate(tmp_id = 1:n()) %>% 
-         mutate(toid = tmp_id + term_add + meta$cumcount_term[i],
-                toid = as.integer(toid),
-                tmp_id = NULL)
+       terms = filter(topo, toid == 0)
+       
+       if(nrow(terms) > 0){
+         terms = terms %>% 
+           mutate(tmp_id = 1:n()) %>% 
+           mutate(toid = tmp_id + term_add + meta$cumcount_term[i],
+                  toid = as.integer(toid),
+                  tmp_id = NULL)
+       }
+    
        
        topo = filter(topo, !id %in% terms$id) %>% 
          bind_rows(terms)
@@ -349,50 +361,36 @@ assign_global_terminal_identifiers = function(meta,
       cat = read_sf(meta$outfiles[i], divide_layer) %>% 
         mutate(toid = NULL) %>% 
         left_join(st_drop_geometry(select(fl, id, toid)), by = 'id') %>% 
-        select(id, toid, everything()) %>% 
-        write_sf(meta$outfiles[i], divide_layer, overwrite = TRUE)
-      
-      rm(cat); rm(fl); gc()
+        select(id, toid, everything()) 
 
+      write_sf(cat, meta$outfiles[i], divide_layer, overwrite = TRUE)
+  
     } else {
       stop(divide_layer, " does not exist!")
     }
     
-  
-    ### lookup_table ###
-    if(layer_exists(meta$outfiles[i], lookup_table_layer)){
-      lookup <- read_sf(meta$outfiles[i], lookup_table_layer) %>% 
-        mutate(toID = NULL)
-      
-      if("aggregated_flowpath_ID" %in% names(lookup)) {
-        lookup <- lookup %>%
-          left_join(topo, by = c("aggregated_flowpath_ID" = "id"))
-      } else if("reconciled_ID" %in% names(lookup)) {
-        lookup <- lookup %>%
-          left_join(topo, by = c("reconciled_ID" = "id"))
-      } else {
-        lookup <- lookup %>%
-          left_join(topo, by = c('aggregated_ID' = 'id')) %>%
-          select(NHDPlusV2_COMID, NHDPlusV2_COMID_part,
-                 reconciled_ID, aggregated_ID,      
-                 toID, mainstem, POI_ID, POI_TYPE, POI_VALUE)
-      }
-      
-      write_sf(lookup, meta$outfiles[i], lookup_table_layer, overwrite = TRUE)
-      
-    } else {
-      stop(lookup_table_layer, " does not exist!")
-    }
+ 
+     ### lookup_table ###
+     if(layer_exists(meta$outfiles[i], lookup_table_layer)){
+       
+       lookup = read_sf(meta$outfiles[i], lookup_table_layer) %>% 
+         mutate(toID = NULL) %>% 
+         left_join(topo, by = c('aggregated_ID' = 'id')) %>% 
+         rename(toid = toID) %>% 
+         select(NHDPlusV2_COMID, NHDPlusV2_COMID_part,
+                reconciled_ID, aggregated_ID,      
+                toID, mainstem, POI_ID, POI_TYPE, POI_VALUE)
+       
+        write_sf(lookup, meta$outfiles[i], lookup_table_layer, overwrite = TRUE)
+        
+     } else {
+       stop(lookup_table_layer, " does not exist!")
+     }
      
      ### catchment_network ###
      if(layer_exists(meta$outfiles[i], catchment_network_layer)){
-       read_sf(meta$outfiles[i], catchment_network_layer) %>% 
-         mutate(toid = NULL) %>% 
-         renamer() %>%
-         left_join(topo, by = 'id') %>% 
-         select(id, toid, everything()) %>% 
-         rerenamer() %>%
-         write_sf(meta$outfiles[i], catchment_network_layer)
+        cn = select(st_drop_geometry(fl), id, toid, lengthkm, areasqkm, levelpathid)
+        write_sf(cn, meta$outfiles[i], catchment_network_layer, overwrite = TRUE)
      } else {
        stop(catchment_network_layer, " does not exist!")
      }
