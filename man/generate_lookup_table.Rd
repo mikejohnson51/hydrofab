@@ -2,18 +2,28 @@
 % Please edit documentation in R/poi_handlers.R
 \name{generate_lookup_table}
 \alias{generate_lookup_table}
-\title{Generate Lookup table for Aggregated Network}
+\title{Generate Lookup table for refactored or aggregated network}
 \usage{
-generate_lookup_table(gpkg = NULL, refactored_gpkg = NULL)
+generate_lookup_table(
+  gpkg = NULL,
+  refactored_gpkg = NULL,
+  reconciled_layer = "flowpaths"
+)
 }
 \arguments{
-\item{gpkg}{to current network. A look up table will be added here as a layer called "lookup_table"}
+\item{gpkg}{character path to gpkg containing aggregated network. Omit for 
+refactored network lookup table creation.}
 
-\item{refactored_fabric}{the gpkg for the corresponding VPU preceeding gpkg}
+\item{refactored_gpkg}{character path to the gpkg for the refactored network 
+used to create the aggregate network. If no aggregatedd gpkg is passed in, a 
+lookup table will be added to this gpkg.}
+
+\item{reconciled_layer}{character path layer name containing fully 
+reconciled flowpaths. Ignored for aggregated network lookup table creation.}
 }
 \value{
-file path
+file path to modified gpkg
 }
 \description{
-Generate Lookup table for Aggregated Network
+Generate Lookup table for refactored or aggregated network
 }
