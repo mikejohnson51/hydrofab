@@ -55,29 +55,32 @@ subset_network = function(gpkg,
     }
   }
   
-  tmp = read_sf(gpkg, flowpath_edgelist) 
+  tmp = read_sf(gpkg, flowpath_edgelist) %>% 
+    select(id, toid)
   
   tmp2 = filter(tmp, id == origin)
   
-  if(include_ds){
-    trace = get_sorted(tmp,  outlets = tmp2$toid)
-  } else {
-    trace = get_sorted(tmp,  outlets = tmp2$id)
-  }
-
-
+  trace = get_sorted(tmp,  outlets = origin) 
+ 
+  trace[nrow(trace), 'toid'] = 0
+  
   ids = unique(c(unlist(trace)))
   ll = list()
   
-
-  ll[['flowpaths']] = filter(read_sf(gpkg,  flowpath_name),  id %in% ids)
+  ll[['flowpaths']] = filter(read_sf(gpkg,  flowpath_name),  id %in% ids) %>% 
+    select(-toid) %>% 
+    left_join(trace, by = "id") 
+    
   
-  ll[['divides']]   = filter(read_sf(gpkg,  catchment_name),
-                             id %in% ll$flowpaths$realized_catchment)
+  ll[['divides']]   = suppressWarnings({
+    filter(read_sf(gpkg,  catchment_name), id %in% ll$flowpaths$realized_catchment) 
+  })
   
   if(nrow(ll[['divides']]) == 0){
     ll[['divides']]   = filter(read_sf(gpkg,  catchment_name), id %in% ids)
   }
+  
+  ll$divides$toid[ll$divides$toid == tmp2$toid] = 0
   
   if ("nexus" %in% st_layers(gpkg)$name) {
     ll[['nexus']]     = filter(read_sf(gpkg,  "nexus"), id %in% ids)
