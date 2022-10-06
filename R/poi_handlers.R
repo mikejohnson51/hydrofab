@@ -105,8 +105,7 @@ add_mapped_pois = function(network_list,
     st_cast("MULTILINESTRING")
   
   mapped_POIs = st_set_geometry(generate_mapped_pois,
-                                                 st_geometry(get_node(generate_mapped_pois,
-                                                                      position = "end" )))
+                                st_geometry(get_node(generate_mapped_pois, position = "end" )))
   
   
   hyaggregate_log("INFO", glue("Adding {nrow(mapped_POIs)} mapped POIs to output"))
@@ -155,8 +154,8 @@ add_mapped_pois = function(network_list,
 #' @importFrom sf read_sf st_drop_geometry write_sf
 #' @importFrom dplyr mutate select full_join left_join
 #' @importFrom tidyr unnest
-
-generate_lookup_table = function(gpkg = NULL,
+#' 
+add_lookup_table = function(gpkg = NULL,
                                  refactored_gpkg = NULL,
                                  reconciled_layer = "flowpaths") {
   
