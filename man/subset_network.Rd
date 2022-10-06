@@ -12,6 +12,7 @@ subset_network(
   catchment_name = "divides",
   mainstem = FALSE,
   attribute_layers = NULL,
+  include_ds = FALSE,
   export_gpkg = NULL,
   overwrite = FALSE,
   verbose = TRUE
@@ -22,13 +23,17 @@ subset_network(
 
 \item{origin}{the ID to begin navigation}
 
-\item{flowpath_edgelist}{layer name of flowpath edgelist in gpkg}
+\item{flowpath_edgelist}{layer name of flowpath edge list in gpkg}
 
 \item{flowpath_name}{layer name of flowpaths in gpkg}
 
-\item{catchment_name}{layer name of cathcments in gpkg}
+\item{catchment_name}{layer name of catchments in gpkg}
 
-\item{mainstem}{should only the mainstem flowpath be retruned (default = FALSE)}
+\item{mainstem}{should only the mainstem flowpath be returned (default = FALSE)}
+
+\item{attribute_layers}{layer name of additional tables to be subset}
+
+\item{include_ds}{should the feature downstream of the origin be included (default = FALSE)}
 
 \item{export_gpkg}{a path to write the data to. If NULL a list is returned}
 }
