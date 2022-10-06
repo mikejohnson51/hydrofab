@@ -216,6 +216,10 @@ write_hydrofabric = function(network_list,
     write_sf(network_list[['flowpath_edge_list']], outfile, 'flowpath_edge_list')
   }
   
+  if("lookup_table" %in% names_nl){
+    write_sf(network_list[['lookup_table']], outfile, 'lookup_table')
+  }
+  
   if("crosswalk" %in% names_nl){
     write_sf(network_list[['crosswalk']], outfile, 'crosswalk')
   }
