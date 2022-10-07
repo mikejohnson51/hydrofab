@@ -8,6 +8,14 @@ get_edges_terms = function(flowpaths) {
   fline
 }
 
+extract_prefix = function(input, col) {
+  
+  for (i in col) {
+    input[[i]] = gsub("(-).*", "\\1", input[[i]])
+  }
+  input
+}
+
 
 #' Find ID from location
 #' @param gpkg path to a hydrofabric
@@ -35,6 +43,28 @@ find_origin = function(gpkg, pt, catchment_name = "divides") {
 #' @importFrom nhdplusTools get_sorted
 #' @importFrom sf read_sf
 #' @importFrom dplyr filter
+#' 
+# gpkg             = '/Volumes/Transcend/ngen/CONUS-hydrofabric/calibration/uniform_01.gpkg'
+# 
+# c  = read_sf(gpkg, "lookup_table") %>%
+#   filter(POI_TYPE == "Gages") %>%
+#   filter(POI_VALUE %in% "01073000")
+# 
+# yy = subset_network(gpkg,
+#                origin = c$aggregated_ID)
+# 
+# mapview::mapview(yy$divides) + yy$flowpaths
+# # # 
+# gpkg             = '/Volumes/Transcend/ngen/CONUS-hydrofabric/calibration/nextgen_01.gpkg'
+# 
+# c  = read_sf(gpkg, "lookup_table") %>%
+#   filter(POI_TYPE == "Gages") %>%
+#   filter(POI_VALUE %in% "01073000")
+# 
+# xx = subset_network(gpkg,  origin = c$toid)
+# 
+# mapview::mapview(xx$divides) + xx$flowpaths + xx$nexus
+
 
 subset_network = function(gpkg,
                           origin,
@@ -43,11 +73,11 @@ subset_network = function(gpkg,
                           catchment_name    = 'divides',
                           mainstem = FALSE,
                           attribute_layers = NULL,
-                          include_ds = FALSE,
                           export_gpkg = NULL,
                           overwrite = FALSE,
                           verbose = TRUE) {
   
+
   
   if(!is.null(export_gpkg)){
     if(file.exists(export_gpkg) & !overwrite){
@@ -58,31 +88,62 @@ subset_network = function(gpkg,
   tmp = read_sf(gpkg, flowpath_edgelist) %>% 
     select(id, toid)
   
+  wb_prefix = extract_prefix(tmp, 'id')$id[1]
+  
+  if(wb_prefix == as.character(tmp$id[1])){
+    terminal = 0
+  } else {
+    terminal = paste0(wb_prefix, 0)
+  }
+  
+  tmp2 = filter(tmp, id == origin) 
+  
   trace = get_sorted(tmp,  outlets = origin) 
  
-  trace[nrow(trace), 'toid'] = 0
-  
+  if(!is.null(terminal)){
+    trace[nrow(trace), 'toid'] = terminal
+  } else {
+    trace =  trace[-nrow(trace),]
+  }
+ 
   ids = unique(c(unlist(trace)))
   
   ll = list()
-  ids_net = list()
   
   ll[['flowpaths']] = filter(read_sf(gpkg,  flowpath_name),  id %in% ids) %>% 
     select(-toid) %>% 
-    left_join(trace, by = "id") 
+    left_join(trace, by = "id") %>% 
+    mutate(toid = ifelse(is.na(toid), 0, toid))
   
   ll[['divides']]   = suppressWarnings({
     filter(read_sf(gpkg,  catchment_name), id %in% ll$flowpaths$realized_catchment) 
   })
   
+  
   if(nrow(ll[['divides']]) == 0){
     ll[['divides']]   = filter(read_sf(gpkg,  catchment_name), id %in% ids)
   }
+
+  #mapview::mapview(ll$flowpaths) + ll$divides
+
+  if(!is.null(terminal)){
+    ll$divides$toid[ll$divides$toid == tmp2$toid] = terminal
+  }
   
-  ll$divides$toid[ll$divides$toid == tmp2$toid] = 0
+  if (layer_exists(gpkg, "nexus")) {
+    ll[['nexus']]     = filter(read_sf(gpkg,  "nexus"), id %in% ids) %>% 
+      mutate(toid = NULL) %>% 
+      left_join(trace, by = "id")   %>% 
+      mutate(toid = ifelse(is.na(toid), 0, toid))
+  }
   
-  if ("nexus" %in% st_layers(gpkg)$name) {
-    ll[['nexus']]     = filter(read_sf(gpkg,  "nexus"), id %in% ids)
+  if (layer_exists(gpkg, "lookup_table")) {
+    #TODO: GROSS!!!!
+    ll[['lookup_table']]     = tryCatch({
+      filter(read_sf(gpkg,  "lookup_table"), id %in% ids) }, 
+      error = function(e){
+        filter(read_sf(gpkg,  "lookup_table"), aggregated_ID %in% ids) }
+      )
   }
 
   if (mainstem) {
@@ -94,17 +155,16 @@ subset_network = function(gpkg,
   
   if(!is.null(attribute_layers)){
     
-    ids = c(ll$divides$id, ll$flowpaths$id, ll$nexus$id)
+    all_ids = c(ll$divides$id, ll$flowpaths$id, ll$nexus$id)
     
     for(i in 1:length(attribute_layers)){
       if(layer_exists(gpkg, attribute_layers[i])){
         tmp = read_sf(gpkg, attribute_layers[i])
-        ll[[attribute_layers[i]]] = filter(tmp, id %in% ids)
+        ll[[attribute_layers[i]]] = filter(tmp, id %in% all_ids)
       }
     }
   }
   
-
   if (!is.null(export_gpkg)) {
     if (length(ll) > 0) {
       names = names(ll)
