@@ -2,8 +2,8 @@ citHeader("To cite hyReactor in publications, please use:")
 
 bibentry(bibtype = "Manual",
          author = personList(
-           as.person("David Blodgett"),
            as.person("Mike Johnson")
+           as.person("David Blodgett")
          ),
          title = "hydrofab: Hydrologic Network Refactoring Tools Based on HY_Features",
          publisher = "U.S. Geological Survey",
@@ -12,5 +12,5 @@ bibentry(bibtype = "Manual",
          institution = "U.S. Geological Survey",
          year = 2022,
          url = "https://github.com/NOAA-OWP/hydrofab",
-         textVersion = "Blodgett, D., Johnson, J.M., 2022, hydrofab: Hydrologic Network Refactoring Tools Based on HY_Features, https://github.com/NOAA-OWP/hydrofab"
+         textVersion = "Johnson, J.M., Blodgett, D., 2022, hydrofab: Hydrologic Network Refactoring Tools Based on HY_Features, https://github.com/NOAA-OWP/hydrofab"
 )

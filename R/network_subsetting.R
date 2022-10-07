@@ -58,8 +58,6 @@ subset_network = function(gpkg,
   tmp = read_sf(gpkg, flowpath_edgelist) %>% 
     select(id, toid)
   
-  tmp2 = filter(tmp, id == origin)
-  
   trace = get_sorted(tmp,  outlets = origin) 
  
   trace[nrow(trace), 'toid'] = 0
@@ -67,6 +65,7 @@ subset_network = function(gpkg,
   ids = unique(c(unlist(trace)))
   
   ll = list()
+  ids_net = list()
   
   ll[['flowpaths']] = filter(read_sf(gpkg,  flowpath_name),  id %in% ids) %>% 
     select(-toid) %>% 
@@ -94,19 +93,18 @@ subset_network = function(gpkg,
   ll$flowpath_edge_list = trace
   
   if(!is.null(attribute_layers)){
+    
+    ids = c(ll$divides$id, ll$flowpaths$id, ll$nexus$id)
+    
     for(i in 1:length(attribute_layers)){
       if(layer_exists(gpkg, attribute_layers[i])){
         tmp = read_sf(gpkg, attribute_layers[i])
-        ll[[attribute_layers[i]]] = filter(tmp, id %in% ll$divides$id )
+        ll[[attribute_layers[i]]] = filter(tmp, id %in% ids)
       }
     }
   }
   
-  if(layer_exists(gpkg, "flowpath_attributes")){
-    tmp = read_sf(gpkg, "flowpath_attributes")
-    ll[["flowpath_attributes"]] = filter(tmp, id %in% ll$flowpaths$id )
-  }
-  
+
   if (!is.null(export_gpkg)) {
     if (length(ll) > 0) {
       names = names(ll)
