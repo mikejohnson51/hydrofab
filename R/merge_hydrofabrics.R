@@ -61,7 +61,10 @@ build_new_id_table = function(x,
 
     id_type <- class(lu$id)
     
-    lu$member_comid <- paste(lu$nhdplusv2_comid, lu$nhdplusv2_comid_part, sep = ".")
+    if(!"member_comid" %in% names(lu)) {
+      # not sure we need to support this, but it's a thing in some files.
+      lu$member_comid <- paste(lu$nhdplusv2_comid, lu$nhdplusv2_comid_part, sep = ".") 
+    }
     
     lu <- select(lu, id, member_comid)
     
@@ -195,8 +198,15 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
    if(nrow(vpu_topo) > 0){
      hyaggregate_log("INFO", glue("Building Downstream VPU list for VPU-{vpu_topo$toVPUID[1]}..."), verbose)
      
+     tryCatch({
      ds_vpu  =  filter(meta, VPU %in% vpu_topo$toVPUID) %>% 
        build_new_id_table(flowpath_layer, divide_layer)
+     }, error = function(e) {
+       if(!any(meta$VPU %in% vpu_topo$toVPUID)) {
+         hyaggregate_log("FATAL", glue("missing data for VPU-{vpu_topo$toVPUID[1]}"), verbose)
+       }
+       stop(e)
+     })
      
      vpu_topo = filter(lu, grepl(paste(vpu_topo$COMID, collapse = "|"),
                                  lu$member_comid)) %>% 

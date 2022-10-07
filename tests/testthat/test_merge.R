@@ -93,6 +93,12 @@ test_that("assign global identifiers aggregated", {
   agg_gpkg_1 <- tempfile(fileext = "_01.gpkg")
   file.copy(new_hope_agg, agg_gpkg_1)
   
+  lu <- sf::read_sf(agg_gpkg_1, "lookup_table")
+  
+  lu$member_comid <- paste0(lu$NHDPlusV2_COMID, lu$NHDPlusV2_COMID_part)
+  
+  sf::write_sf(lu, agg_gpkg_1, "lookup_table")
+  
   agg_gpkg_2 <- tempfile(fileext = "_02.gpkg")
   file.copy(new_hope_agg, agg_gpkg_2)
   
@@ -168,6 +174,24 @@ test_that("assign global identifiers aggregated", {
   expect_equal(check_1$toid[check_1$id == new_id_2], 
                check_2_lu$aggregated_flowpath_ID[check_2_lu$NHDPlusV2_COMID == 20734041])
   
+  unlink(agg_gpkg_1)
+  unlink(agg_gpkg_2)
+  
+  agg_gpkg_1 <- tempfile(fileext = "_10U.gpkg")
+  agg_gpkg_2 <- tempfile(fileext = "_10L.gpkg")
+  
+  file.copy(new_hope_agg, agg_gpkg_1)
+  file.copy(new_hope_agg, agg_gpkg_2)
+  
+  expect_error(
+  out <- assign_global_identifiers(c(agg_gpkg_1, agg_gpkg_2), 
+                                   flowpath_layer = "flowpath", 
+                                   divide_layer = "divides", 
+                                   mapped_POI_layer = "mapped_POIs", 
+                                   lookup_table_layer = "lookup_table", 
+                                   flowpath_edge_list = "catchment_network", 
+                                   overwrite = TRUE, verbose = FALSE))
+
   unlink(agg_gpkg_1)
   unlink(agg_gpkg_2)
 })
