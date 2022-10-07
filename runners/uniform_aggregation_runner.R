@@ -8,56 +8,67 @@ vpus  <- c("01", "08", "10L", "15", "02",
 
 
 base = '/Volumes/Transcend/ngen/CONUS-hydrofabric/'
+outdir = glue('{base}calibration')
+dir.create(outdir)
 overwrite = TRUE
-cache = FALSE
+cache = TRUE
 
 ## TASK 1: build out uniform catchment distribution
 
-for(i in 2:length(vpus)){
+process = data.frame(vpus = vpus, outfiles = glue("{outdir}/uniform_{vpus}.gpkg"))
+
+process = process[1,]
+
+unlink(process$outfiles)
+
+for(i in 1:nrow(process)){
   
-  VPU = vpus[i]
-  message(VPU)
+  VPU = process$vpus[i]
   
   refactored_gpkg = get_hydrofabric(VPU = VPU, 
                                     type = "refactor",
                                     dir = glue("{base}refactor"),
-                                    overwrite = FALSE)
+                                    overwrite = overwrite)
   
   reference_gpkg = get_hydrofabric(VPU = VPU, 
                                    type = "reference",
                                    dir = glue("{base}reference"),
-                                   overwrite = FALSE)
+                                   overwrite = overwrite)
   
   gpkg = aggregate_to_distribution(
     gpkg            = refactored_gpkg,
-    outfile         = glue("{base}uniform/uniform_{VPU}.gpkg"),
+    outfile         = process$outfiles[i],
     outlets         = poi_to_outlet(gpkg = refactored_gpkg, verbose = FALSE),
     overwrite = overwrite,
-    log = TRUE, cache = cache) 
-  
+    log = TRUE, 
+    cache = FALSE
+  ) 
+
   gpkg = add_nonnetwork_divides(gpkg, reference_gpkg = reference_gpkg) 
   
-  gpkg = generate_lookup_table(gpkg, refactored_gpkg)
+  gpkg = add_lookup_table(gpkg, refactored_gpkg)
   
-  gpkg = generate_catchment_network(gpkg)
+  gpkg = add_flowpath_edge_list(gpkg)
   
 }
 
 
 ## TASK 2: Assign Globally Unique Identifiers
 
-gpkgs = list.files('/Volumes/Transcend/ngen/CONUS-hydrofabric/uniform', full.name = TRUE, pattern = "gpkg$")
+process = process %>% 
+  mutate(global = glue("{dirname(outfiles)}/{gsub('uniform', 'global_uniform', basename(outfiles))}"))
 
-meta = assign_global_identifiers(gpkgs = gpkgs, overwrite = TRUE)
+unlink(process$global)
+
+meta = assign_global_identifiers(gpkgs = process$outfiles, outfiles = process$global)
 
 write_parquet(meta$lookup, file.path(dirname(gpkgs[1]), "lookp_table.parquet"))
 
 
-
 ## TASK 3: Upload to ScienceBase
 
-for(i in 1:length(gpkgs)){
-  sbtools::item_append_files(sb_id("uniform"), gpkgs[i])
-  message(basename(gpkgs[i]))
-}
+# for(i in 1:length(gpkgs)){
+#   sbtools::item_append_files(sb_id("uniform"), gpkgs[i])
+#   message(basename(gpkgs[i]))
+# }
 
