@@ -1,3 +1,14 @@
+
+get_edges_terms = function(flowpaths) {
+  
+  fline = select(st_drop_geometry(flowpaths), id, toid)
+  
+  fline = mutate(fline, toid = ifelse(toid %in% id, toid, 0))
+
+  fline
+}
+
+
 #' Find ID from location
 #' @param gpkg path to a hydrofabric
 #' @param pt a spatial point (sf)
@@ -13,10 +24,12 @@ find_origin = function(gpkg, pt, catchment_name = "divides") {
 #' Subset the upstream portion of a network
 #' @param gpkg path to a hydrofabric
 #' @param origin the ID to begin navigation
-#' @param flowpath_edgelist layer name of flowpath edgelist in gpkg
+#' @param flowpath_edgelist layer name of flowpath edge list in gpkg
 #' @param flowpath_name layer name of flowpaths in gpkg
-#' @param catchment_name layer name of cathcments in gpkg
-#' @param  mainstem should only the mainstem flowpath be retruned (default = FALSE)
+#' @param catchment_name layer name of catchments in gpkg
+#' @param mainstem should only the mainstem flowpath be returned (default = FALSE)
+#' @param attribute_layers layer name of additional tables to be subset
+#' @param include_ds should the feature downstream of the origin be included (default = FALSE)
 #' @param export_gpkg a path to write the data to. If NULL a list is returned
 #' @export
 #' @importFrom nhdplusTools get_sorted
@@ -30,6 +43,7 @@ subset_network = function(gpkg,
                           catchment_name    = 'divides',
                           mainstem = FALSE,
                           attribute_layers = NULL,
+                          include_ds = FALSE,
                           export_gpkg = NULL,
                           overwrite = FALSE,
                           verbose = TRUE) {
@@ -41,30 +55,43 @@ subset_network = function(gpkg,
     }
   }
   
-  tmp = read_sf(gpkg, flowpath_edgelist)
+  tmp = read_sf(gpkg, flowpath_edgelist) %>% 
+    select(id, toid)
+  
   tmp2 = filter(tmp, id == origin)
-  trace = get_sorted(tmp,  outlets = tmp2$toid)
-  trace = trace[trace$id != tmp2$toid,]
+  
+  trace = get_sorted(tmp,  outlets = origin) 
+ 
+  trace[nrow(trace), 'toid'] = 0
+  
+  ids = unique(c(unlist(trace)))
   
   ll = list()
   
-  ids = c(trace$id, trace$toid)
+  ll[['flowpaths']] = filter(read_sf(gpkg,  flowpath_name),  id %in% ids) %>% 
+    select(-toid) %>% 
+    left_join(trace, by = "id") 
   
-  ll[['flowpaths']] = filter(read_sf(gpkg,  flowpath_name),  id %in% ids)
+  ll[['divides']]   = suppressWarnings({
+    filter(read_sf(gpkg,  catchment_name), id %in% ll$flowpaths$realized_catchment) 
+  })
   
-  ll[['divides']]   = filter(read_sf(gpkg,  catchment_name),
-                             id %in% ll$flowpaths$realized_catchment)
-  
-  if ("nexus" %in% st_layers(gpkg)$name) {
-    ll[['nexus']]     = filter(read_sf(gpkg,  "nexus"), id %in% ll$divides$toid)
+  if(nrow(ll[['divides']]) == 0){
+    ll[['divides']]   = filter(read_sf(gpkg,  catchment_name), id %in% ids)
   }
   
+  ll$divides$toid[ll$divides$toid == tmp2$toid] = 0
+  
+  if ("nexus" %in% st_layers(gpkg)$name) {
+    ll[['nexus']]     = filter(read_sf(gpkg,  "nexus"), id %in% ids)
+  }
+
   if (mainstem) {
     tmp = filter(ll$flowpaths, id == origin)
     ll[['flowpaths']] = filter(ll[['flowpaths']], main_id == tmp$main_id)
   }
   
-  ll$flowpath_edge_list =  get_catchment_edges_terms(ll$flowpaths, catchment_prefix = 'wb-')
+  ll$flowpath_edge_list = trace
   
   if(!is.null(attribute_layers)){
     for(i in 1:length(attribute_layers)){

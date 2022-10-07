@@ -79,7 +79,7 @@ aggregate_to_distribution = function(gpkg = NULL,
   if (!is.null(outlets)) {
     network_list$flowpaths  = left_join(network_list$flowpaths, 
                                         outlets, 
-                                        by = 'ID')
+                                        by = 'id')
   } else {
     network_list$flowpaths$poi_id   = NA
   }
@@ -114,8 +114,10 @@ aggregate_to_distribution = function(gpkg = NULL,
     cache_file = cache_file
   )
   
-  network_list = add_mapped_pois(network_list, gpkg, verbose)
-
+  network_list = add_mapped_pois(network_list, refactored_gpkg = gpkg, verbose)
+  network_list$divides = network_list$catchments
+  network_list$catchments = NULL
+  
   if (!is.null(outfile)) {
     hyaggregate_log("INFO", "")
     write_hydrofabric(

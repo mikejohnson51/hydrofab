@@ -6,10 +6,11 @@
 #' @importFrom dplyr select 
 
 
-generate_catchment_network = function(gpkg){
-  gf = read_hydrofabric(gpkg)
-  cn = select(st_drop_geometry(gf$flowpaths), id, toid, lengthkm, areasqkm, levelpathid )
-  write_sf(cn, gpkg, "catchment_network")
+add_flowpath_edge_list = function(gpkg){
+  
+  gf = read_hydrofabric(gpkg, realization = "flowpaths")
+  cn = select(st_drop_geometry(gf[[1]]), id, toid)
+  write_sf(cn, gpkg, "flowpath_edge_list")
   return(gpkg)
 }
 
@@ -50,16 +51,16 @@ poi_to_outlet = function(gpkg,
     pivot_longer(-c(poi_id, ID)) %>%
     filter(!is.na(value)) %>%
     mutate(type = gsub("Type_", "", name)) %>% 
-    select(ID, poi_id, type, value) %>% 
+    select(id = ID, poi_id, type, value) %>% 
     distinct()
   
-  dups = which(duplicated(nexus_locations$ID))
+  dups = which(duplicated(nexus_locations$id))
   
   if(length(dups) > 0){
     
    hyaggregate_log("WARN", glue("{length(dups)} flowpaths have multiple POI IDs. One is (randomly) being selected as flowpath outlet"))
     
-   nexus_locations =  group_by(nexus_locations, ID) %>% 
+   nexus_locations =  group_by(nexus_locations, id) %>% 
       slice(1) %>% 
       ungroup()
   
@@ -105,8 +106,7 @@ add_mapped_pois = function(network_list,
     st_cast("MULTILINESTRING")
   
   mapped_POIs = st_set_geometry(generate_mapped_pois,
-                                                 st_geometry(get_node(generate_mapped_pois,
-                                                                      position = "end" )))
+                                st_geometry(get_node(generate_mapped_pois, position = "end" )))
   
   
   hyaggregate_log("INFO", glue("Adding {nrow(mapped_POIs)} mapped POIs to output"))
@@ -155,8 +155,8 @@ add_mapped_pois = function(network_list,
 #' @importFrom sf read_sf st_drop_geometry write_sf
 #' @importFrom dplyr mutate select full_join left_join
 #' @importFrom tidyr unnest
-
-generate_lookup_table = function(gpkg = NULL,
+#' 
+add_lookup_table = function(gpkg = NULL,
                                  refactored_gpkg = NULL,
                                  reconciled_layer = "flowpaths") {
   

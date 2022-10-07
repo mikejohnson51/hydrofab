@@ -69,7 +69,7 @@ build_new_id_table = function(x,
     
     lu <- data.frame(id = as(names(lu), id_type), 
                      member_comid = I(unname(lu)))
-    
+
     lu <- pack_set(lu, "member_comid")
     
     fl <- left_join(fl, lu, by = "id")
@@ -79,7 +79,6 @@ build_new_id_table = function(x,
   
   data.frame(oldID = sort(div$id)) %>% 
     mutate(newID = 1:length(unique(div$id)) + x$cumcount_div,
-           #newID = ifelse(oldID < 0, newID * -1, newID),
            newID = ifelse(oldID == 0, 0, newID),
            VPU = x$VPU) %>% 
     left_join(fl, by = "oldID")
@@ -153,7 +152,7 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
                                       mapped_POI_layer          = "mapped_POIs",
                                       divide_layer              = "divides",
                                       lookup_table_layer        = "lookup_table",
-                                      catchment_network_layer   = "catchment_network",
+                                      flowpath_edge_list        = "flowpath_edge_list",
                                       overwrite                 = FALSE,
                                       update_terminals          = TRUE,
                                       term_add                  = 1e9,
@@ -240,7 +239,6 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
     if(layer_exists(meta$path[i], divide_layer)){
 
       dv = read_sf(meta$path[i], divide_layer) %>% 
-        update_topo(lu, vpu_topo)  %>% 
         renamer() %>%
         update_topo(lu, vpu_topo)
       
@@ -252,34 +250,38 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
     
     ### mapped_POIs ###
     if(layer_exists(meta$path[i], mapped_POI_layer)){
+      
       read_sf(meta$path[i], mapped_POI_layer) %>% 
         renamer() %>%
         update_topo(lu, vpu_topo) %>% 
         write_sf(meta$outfiles[i], mapped_POI_layer, overwrite = TRUE)
+      
     } else {
       stop(mapped_POI_layer, " does not exist!")
     }
     
     ### lookup_table ###
     if(layer_exists(meta$path[i], lookup_table_layer)){
+      
       read_sf(meta$path[i], lookup_table_layer) %>% 
         renamer() %>% 
         update_topo(lu, vpu_topo)  %>% 
         rerenamer(lookup = TRUE) %>% 
         write_sf(meta$outfiles[i], lookup_table_layer, overwrite = TRUE)
+      
 
     } else {
       stop(lookup_table_layer, " does not exist!")
     }
 
     ### catchment_network ###
-     if(layer_exists(meta$path[i], catchment_network_layer)){
-      read_sf(meta$path[i], catchment_network_layer) %>% 
+     if(layer_exists(meta$path[i], flowpath_edge_list)){
+      read_sf(meta$path[i], flowpath_edge_list) %>%
         renamer() %>%
-        update_topo(lu, vpu_topo)  %>% 
-        write_sf(meta$outfiles[i], catchment_network_layer, overwrite = TRUE)
+        update_topo(lu, vpu_topo)  %>%
+        write_sf(meta$outfiles[i], flowpath_edge_list, overwrite = TRUE)
       } else {
-          stop(catchment_network_layer, " does not exist!")
+          stop(flowpath_edge_list, " does not exist!")
       }
 
     hyaggregate_log("INFO", glue("Finished VPU-{meta$VPU[i]}!"), verbose)
@@ -291,13 +293,12 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
   lookup = bind_rows(lus) %>% 
     select(VPU, oldID, newID)
 
-  
   if(update_terminals){
     meta = assign_global_terminal_identifiers(meta, 
                                               flowpath_layer = flowpath_layer, 
                                               divide_layer = divide_layer,
                                               lookup_table_layer   = lookup_table_layer,
-                                              catchment_network_layer   = catchment_network_layer,
+                                              flowpath_edge_list   = flowpath_edge_list,
                                               term_add = term_add,
                                               verbose = verbose
     )
@@ -333,7 +334,7 @@ assign_global_terminal_identifiers = function(meta,
                                               flowpath_layer = "flowpaths",
                                               divide_layer   = "divides",
                                               lookup_table_layer   = "lookup_table",
-                                              catchment_network_layer   = "catchment_network",
+                                              flowpath_edge_list   = "flowpath_edge_list",
                                               verbose = TRUE,
                                               term_add = 1e9){
   
@@ -394,10 +395,10 @@ assign_global_terminal_identifiers = function(meta,
        
        lookup = read_sf(meta$outfiles[i], lookup_table_layer) %>% 
          mutate(toID = NULL) %>% 
-         left_join(topo, by = c('aggregated_ID' = 'id')) %>% 
+         left_join(topo, by = c('aggregated_flowpath_ID' = 'id')) %>% 
          rename(toid = toID) %>% 
          select(NHDPlusV2_COMID, NHDPlusV2_COMID_part,
-                reconciled_ID, aggregated_ID,      
+                reconciled_ID, aggregated_flowpath_ID,      
                 toID, mainstem, POI_ID, POI_TYPE, POI_VALUE)
        
         write_sf(lookup, meta$outfiles[i], lookup_table_layer, overwrite = TRUE)
@@ -405,15 +406,15 @@ assign_global_terminal_identifiers = function(meta,
      } else {
        stop(lookup_table_layer, " does not exist!")
      }
-     
-     ### catchment_network ###
-     if(layer_exists(meta$outfiles[i], catchment_network_layer)){
-        cn = select(st_drop_geometry(fl), id, toid, lengthkm, areasqkm, levelpathid)
-        write_sf(cn, meta$outfiles[i], catchment_network_layer, overwrite = TRUE)
+
+     ## catchment_network ###
+     if(layer_exists(meta$outfiles[i], flowpath_edge_list)){
+        cn = select(st_drop_geometry(fl), id, toid)
+        write_sf(cn, meta$outfiles[i], flowpath_edge_list, overwrite = TRUE)
      } else {
-       stop(catchment_network_layer, " does not exist!")
+       stop(flowpath_edge_list, " does not exist!")
      }
-     
+
      hyaggregate_log("INFO", glue("Finished VPU-{meta$VPU[i]}!"), verbose)
 
   }
