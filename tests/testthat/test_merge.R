@@ -1,16 +1,6 @@
 source(system.file("extdata/new_hope_data.R", package = "hydrofab"))
 
-remove_gpkg_table <- function(db, table) {
-  con <- RSQLite::dbConnect(RSQLite::SQLite(), db)
-  
-  on.exit(RSQLite::dbDisconnect(con))
-  
-  o <- RSQLite::dbRemoveTable(con, table)
-  
-  o <- RSQLite::dbSendQuery(con, sprintf("DELETE FROM gpkg_contents where table_name='%s';", table))
-  
-  RSQLite::dbClearResult(o)
-}
+Sys.setenv("hydrofab_verbose" = "false")
 
 refac_gpkg_1 <- tempfile(fileext = "_01.gpkg")
 
@@ -30,7 +20,7 @@ file.copy(new_hope_agg, agg_gpkg_1)
 
 test_that("generate lookup table agg", {
   
-  remove_gpkg_table(agg_gpkg_1, "lookup_table")
+  sf::st_delete(agg_gpkg_1, "lookup_table", quiet = TRUE)
   
   expect_false("lookup_table" %in% sf::st_layers(agg_gpkg_1)$name)
   
@@ -60,7 +50,8 @@ test_that("assign global identifiers", {
                             mapped_POI_layer = "mapped_POIs", 
                             lookup_table_layer = "lookup_table", 
                             catchment_network_layer = "catchment_network", 
-                            overwrite = TRUE)
+                            overwrite = TRUE, 
+                            verbose = FALSE)
   
   expect_equal(names(out), c("meta", "lookup"))
 

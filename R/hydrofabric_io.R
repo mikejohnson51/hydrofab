@@ -75,7 +75,7 @@ read_hydrofabric = function(gpkg = NULL,
                             flowpaths = NULL,
                             realization  =  "all",
                             crs = NULL,
-                            verbose = TRUE){
+                            verbose = Sys.getenv("hydrofab_verbose") != "false"){
   
   out = list()
   
