@@ -394,12 +394,20 @@ assign_global_terminal_identifiers = function(meta,
      if(layer_exists(meta$outfiles[i], lookup_table_layer)){
        
        lookup = read_sf(meta$outfiles[i], lookup_table_layer) %>% 
-         mutate(toID = NULL) %>% 
-         left_join(topo, by = c('aggregated_flowpath_ID' = 'id')) %>% 
-         rename(toid = toID) %>% 
-         select(NHDPlusV2_COMID, NHDPlusV2_COMID_part,
-                reconciled_ID, aggregated_flowpath_ID,      
-                toID, mainstem, POI_ID, POI_TYPE, POI_VALUE)
+         renamer() %>%
+         mutate(toid = NULL) %>% 
+         left_join(topo, by = "id") %>% 
+         rename(toid = toID)
+       
+       if("POI_ID" %in% names(lookup)) {
+         lookup <- select(lookup, NHDPlusV2_COMID, NHDPlusV2_COMID_part,
+                          reconciled_ID, aggregated_flowpath_ID = id,      
+                          toID, mainstem, POI_ID, POI_TYPE, POI_VALUE)
+       } else {
+         lookup <- select(lookup, NHDPlusV2_COMID, 
+                          reconciled_ID = id, 
+                          member_COMID = member_comid)
+       }
        
         write_sf(lookup, meta$outfiles[i], lookup_table_layer, overwrite = TRUE)
         
@@ -424,13 +432,20 @@ assign_global_terminal_identifiers = function(meta,
 
 #' @importFrom dplyr rename any_of
 renamer <- function(x) {
-  rename(x, any_of(c(id = "aggregated_ID", 
-                     id = "ID", 
-                     toid = "toID",
-                     member_comid = "member_COMID",
-                     id = "aggregated_flowpath_ID",
-                     did = "aggregated_divide_ID",
-                     levelpathid = "LevelPathID")))
+  
+  rules <- c(id = "aggregated_ID", 
+             id = "ID", 
+             toid = "toID",
+             member_comid = "member_COMID",
+             id = "aggregated_flowpath_ID",
+             did = "aggregated_divide_ID",
+             levelpathid = "LevelPathID")
+  
+  if(sum(c("reconciled_ID", "aggregated_ID", "aggregated_flowpath_ID") %in% names(x)) < 2) {
+    rules <- c(rules, id = "reconciled_ID")
+  }
+  
+  rename(x, any_of(rules))
 }
 
 rerenamer <- function(x, agg = FALSE, lookup = FALSE) {
