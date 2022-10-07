@@ -11,7 +11,7 @@ assign_global_terminal_identifiers(
   flowpath_layer = "flowpaths",
   divide_layer = "divides",
   lookup_table_layer = "lookup_table",
-  catchment_network_layer = "catchment_network",
+  flowpath_edge_list = "flowpath_edge_list",
   verbose = TRUE,
   term_add = 1e+09
 )
@@ -21,14 +21,14 @@ assign_global_terminal_identifiers(
 
 \item{lookup_table_layer}{the layer name containing flowpaths}
 
-\item{catchment_network_layer}{the layer name containing flowpaths}
-
 \item{verbose}{emit messages}
 
 \item{term_add}{a numeric value to add to the terminal ids to facilitate 
 easy discovery, and to avoid conflict with know IDs}
 
 \item{gpkgs}{a metadata data.frame resulting from `assign_global_identifiers`}
+
+\item{catchment_network_layer}{the layer name containing flowpaths}
 }
 \value{
 data.frame

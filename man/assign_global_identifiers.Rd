@@ -13,7 +13,7 @@ assign_global_identifiers(
   mapped_POI_layer = "mapped_POIs",
   divide_layer = "divides",
   lookup_table_layer = "lookup_table",
-  catchment_network_layer = "catchment_network",
+  flowpath_edge_list = "flowpath_edge_list",
   overwrite = FALSE,
   update_terminals = TRUE,
   term_add = 1e+09,
@@ -34,11 +34,11 @@ assign_global_identifiers(
 
 \item{lookup_table_layer}{the layer name containing flowpaths}
 
-\item{catchment_network_layer}{the layer name containing flowpaths}
-
 \item{overwrite}{overwrite existing files?}
 
 \item{verbose}{emit messages}
+
+\item{catchment_network_layer}{the layer name containing flowpaths}
 }
 \value{
 a data.frame

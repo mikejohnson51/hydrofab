@@ -65,12 +65,12 @@ subset_network = function(gpkg,
   trace[nrow(trace), 'toid'] = 0
   
   ids = unique(c(unlist(trace)))
+  
   ll = list()
   
   ll[['flowpaths']] = filter(read_sf(gpkg,  flowpath_name),  id %in% ids) %>% 
     select(-toid) %>% 
     left_join(trace, by = "id") 
-    
   
   ll[['divides']]   = suppressWarnings({
     filter(read_sf(gpkg,  catchment_name), id %in% ll$flowpaths$realized_catchment) 

@@ -6,10 +6,11 @@
 #' @importFrom dplyr select 
 
 
-generate_catchment_network = function(gpkg){
-  gf = read_hydrofabric(gpkg)
-  cn = select(st_drop_geometry(gf$flowpaths), id, toid, lengthkm, areasqkm, levelpathid )
-  write_sf(cn, gpkg, "catchment_network")
+add_flowpath_edge_list = function(gpkg){
+  
+  gf = read_hydrofabric(gpkg, realization = "flowpaths")
+  cn = select(st_drop_geometry(gf[[1]]), id, toid)
+  write_sf(cn, gpkg, "flowpath_edge_list")
   return(gpkg)
 }
 
