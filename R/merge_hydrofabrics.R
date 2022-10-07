@@ -42,7 +42,8 @@ network_metadata = function(gpkgs,
 
 build_new_id_table = function(x, 
                               flowpath_layer = "flowpaths",
-                              divide_layer   = "divides"){
+                              divide_layer   = "divides",
+                              lookup_table_layer = "lookup_table"){
   
   div = read_sf(x$path, divide_layer) %>%
     renamer()
@@ -51,12 +52,34 @@ build_new_id_table = function(x,
     st_drop_geometry() %>%
     renamer()
   
-  if("set" %in% names(fl)) {
-    fl <- select(fl, oldID = id, set)
-  } else {
-    fl = select(fl, oldID = id, member_comid)
-  }
+  # need to get member_comid for each flowpath out of the lookup table
+  if(!"member_comid" %in% names(fl)) {
+    lu <- read_sf(x$path, lookup_table_layer) %>% 
+      renamer() 
     
+    names(lu) <- tolower(names(lu))
+
+    id_type <- class(lu$id)
+    
+    if(!"member_comid" %in% names(lu)) {
+      # not sure we need to support this, but it's a thing in some files.
+      lu$member_comid <- paste(lu$nhdplusv2_comid, lu$nhdplusv2_comid_part, sep = ".") 
+    }
+    
+    lu <- select(lu, id, member_comid)
+    
+    lu <- split(lu$member_comid, lu$id)
+    
+    lu <- data.frame(id = as(names(lu), id_type), 
+                     member_comid = I(unname(lu)))
+
+    lu <- pack_set(lu, "member_comid")
+    
+    fl <- left_join(fl, lu, by = "id")
+  }
+  
+  fl = select(fl, oldID = id, member_comid)
+  
   data.frame(oldID = sort(div$id)) %>% 
     mutate(newID = 1:length(unique(div$id)) + x$cumcount_div,
            newID = ifelse(oldID == 0, 0, newID),
@@ -168,22 +191,29 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
     
    hyaggregate_log("INFO", glue("Processing VPU-{meta$VPU[i]}..."), verbose)
    
-   lu = build_new_id_table(x = meta[i,], flowpath_layer, divide_layer)
+   lu = build_new_id_table(x = meta[i,], flowpath_layer, divide_layer, lookup_table_layer)
   
    vpu_topo = filter(vpu_topo_all, VPUID == meta$VPU[i]) 
    
    if(nrow(vpu_topo) > 0){
      hyaggregate_log("INFO", glue("Building Downstream VPU list for VPU-{vpu_topo$toVPUID[1]}..."), verbose)
      
+     tryCatch({
      ds_vpu  =  filter(meta, VPU %in% vpu_topo$toVPUID) %>% 
        build_new_id_table(flowpath_layer, divide_layer)
+     }, error = function(e) {
+       if(!any(meta$VPU %in% vpu_topo$toVPUID)) {
+         hyaggregate_log("FATAL", glue("missing data for VPU-{vpu_topo$toVPUID[1]}"), verbose)
+       }
+       stop(e)
+     })
      
      vpu_topo = filter(lu, grepl(paste(vpu_topo$COMID, collapse = "|"),
                                  lu$member_comid)) %>% 
        mutate(member_comid = strsplit(member_comid, split = ",")) %>% 
        unnest('member_comid') %>% 
-       filter(member_comid %in% vpu_topo$COMID) %>% 
        mutate(member_comid = as.integer(member_comid)) %>% 
+       filter(member_comid %in% vpu_topo$COMID) %>% 
        select(ID = newID, COMID = member_comid) %>% 
        left_join(vpu_topo, by = "COMID")
      
@@ -191,8 +221,8 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
                                      ds_vpu$member_comid)) %>% 
        mutate(member_comid = strsplit(member_comid, split = ",")) %>% 
        unnest('member_comid') %>% 
-       filter(member_comid %in% vpu_topo$toCOMID) %>% 
        mutate(member_comid = as.integer(member_comid)) %>% 
+       filter(member_comid %in% vpu_topo$toCOMID) %>% 
        select(toID = newID, toCOMID = member_comid) %>% 
        left_join(vpu_topo, by = "toCOMID")
     }
@@ -374,12 +404,20 @@ assign_global_terminal_identifiers = function(meta,
      if(layer_exists(meta$outfiles[i], lookup_table_layer)){
        
        lookup = read_sf(meta$outfiles[i], lookup_table_layer) %>% 
-         mutate(toID = NULL) %>% 
-         left_join(topo, by = c('aggregated_flowpath_ID' = 'id')) %>% 
-         rename(toid = toID) %>% 
-         select(NHDPlusV2_COMID, NHDPlusV2_COMID_part,
-                reconciled_ID, aggregated_flowpath_ID,      
-                toID, mainstem, POI_ID, POI_TYPE, POI_VALUE)
+         renamer() %>%
+         mutate(toid = NULL) %>% 
+         left_join(topo, by = "id") %>% 
+         rename(toid = toID)
+       
+       if("POI_ID" %in% names(lookup)) {
+         lookup <- select(lookup, NHDPlusV2_COMID, NHDPlusV2_COMID_part,
+                          reconciled_ID, aggregated_flowpath_ID = id,      
+                          toID, mainstem, POI_ID, POI_TYPE, POI_VALUE)
+       } else {
+         lookup <- select(lookup, NHDPlusV2_COMID, 
+                          reconciled_ID = id, 
+                          member_COMID = member_comid)
+       }
        
         write_sf(lookup, meta$outfiles[i], lookup_table_layer, overwrite = TRUE)
         
@@ -404,13 +442,20 @@ assign_global_terminal_identifiers = function(meta,
 
 #' @importFrom dplyr rename any_of
 renamer <- function(x) {
-  rename(x, any_of(c(id = "aggregated_ID", 
-                     id = "ID", 
-                     toid = "toID",
-                     member_comid = "member_COMID",
-                     id = "aggregated_flowpath_ID",
-                     did = "aggregated_divide_ID",
-                     levelpathid = "LevelPathID")))
+  
+  rules <- c(id = "aggregated_ID", 
+             id = "ID", 
+             toid = "toID",
+             member_comid = "member_COMID",
+             id = "aggregated_flowpath_ID",
+             did = "aggregated_divide_ID",
+             levelpathid = "LevelPathID")
+  
+  if(sum(c("reconciled_ID", "aggregated_ID", "aggregated_flowpath_ID") %in% names(x)) < 2) {
+    rules <- c(rules, id = "reconciled_ID")
+  }
+  
+  rename(x, any_of(rules))
 }
 
 rerenamer <- function(x, agg = FALSE, lookup = FALSE) {

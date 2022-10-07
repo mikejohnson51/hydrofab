@@ -201,8 +201,8 @@ add_lookup_table = function(gpkg = NULL,
   
   if(!"poi_id" %in% names(nl$flowpaths)) {
     nl$flowpaths <- left_join(nl$flowpaths, 
-                              select(outlets, ID, poi_id),
-                              by = c("id" = "ID"))
+                              select(outlets, id, poi_id),
+                              by = "id")
   }
   
   outlets <- outlets %>% 
