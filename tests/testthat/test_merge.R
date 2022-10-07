@@ -83,4 +83,38 @@ test_that("assign global identifiers", {
   
   expect_equal(seq((nrow(in1$flowpaths) + nrow(in2$flowpaths))), out$lookup$newID)
   
+  agg_gpkg_3 <- tempfile(fileext = "_14.gpkg")
+  agg_gpkg_4 <- tempfile(fileext = "_15.gpkg")
+  
+  file.copy(agg_gpkg_1, agg_gpkg_3)
+  file.copy(agg_gpkg_1, agg_gpkg_4)
+  
+  # VPUID toVPUID    COMID  toCOMID
+  # 1    14      15 20734037 20734041
+  # 2    14      15 18267749 20734041
+  
+  lu <- sf::read_sf(agg_gpkg_3, "lookup_table")
+  
+  lu$NHDPlusV2_COMID[1] <- 20734037
+  lu$NHDPlusV2_COMID[500] <- 18267749
+  
+  sf::write_sf(lu, agg_gpkg_3, "lookup_table")
+  
+  lu <- sf::read_sf(agg_gpkg_4, "lookup_table")
+  
+  lu$NHDPlusV2_COMID[1] <- 20734041
+  
+  sf::write_sf(lu, agg_gpkg_4, "lookup_table")
+  
+  out <- assign_global_identifiers(c(agg_gpkg_3, agg_gpkg_4), 
+                                   flowpath_layer = "flowpath", 
+                                   divide_layer = "divides", 
+                                   mapped_POI_layer = "mapped_POIs", 
+                                   lookup_table_layer = "lookup_table", 
+                                   catchment_network_layer = "catchment_network", 
+                                   overwrite = TRUE, verbose = FALSE)
+  
+  
 })
+
+

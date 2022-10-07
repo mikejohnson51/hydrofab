@@ -42,7 +42,8 @@ network_metadata = function(gpkgs,
 
 build_new_id_table = function(x, 
                               flowpath_layer = "flowpaths",
-                              divide_layer   = "divides"){
+                              divide_layer   = "divides",
+                              lookup_table_layer = "lookup_table"){
   
   div = read_sf(x$path, divide_layer) %>%
     renamer()
@@ -51,12 +52,30 @@ build_new_id_table = function(x,
     st_drop_geometry() %>%
     renamer()
   
-  if("set" %in% names(fl)) {
-    fl <- select(fl, oldID = id, set)
-  } else {
-    fl = select(fl, oldID = id, member_comid)
-  }
+  # need to get member_comid for each flowpath out of the lookup table
+  if(!"member_comid" %in% names(fl)) {
+    lu <- read_sf(x$path, lookup_table_layer) %>% 
+      renamer() 
     
+    names(lu) <- tolower(names(lu))
+
+    id_type <- class(lu$id)
+    
+    lu$member_comid <- paste(lu$nhdplusv2_comid, lu$nhdplusv2_comid_part, sep = ".")
+    
+    lu <- select(lu, id, member_comid)
+    
+    lu <- split(lu$member_comid, lu$id)
+    
+    lu <- data.frame(id = as(names(lu), id_type), 
+                     member_comid = I(unname(lu)))
+    
+    lu <- pack_set(lu, "member_comid")
+    
+    fl <- left_join(fl, lu, by = "id")
+  }
+  
+  fl = select(fl, oldID = id, member_comid)
   
   data.frame(oldID = sort(div$id)) %>% 
     mutate(newID = 1:length(unique(div$id)) + x$cumcount_div,
@@ -169,7 +188,7 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
     
    hyaggregate_log("INFO", glue("Processing VPU-{meta$VPU[i]}..."), verbose)
    
-   lu = build_new_id_table(x = meta[i,], flowpath_layer, divide_layer)
+   lu = build_new_id_table(x = meta[i,], flowpath_layer, divide_layer, lookup_table_layer)
   
    vpu_topo = filter(vpu_topo_all, VPUID == meta$VPU[i]) 
    
@@ -183,8 +202,8 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
                                  lu$member_comid)) %>% 
        mutate(member_comid = strsplit(member_comid, split = ",")) %>% 
        unnest('member_comid') %>% 
-       filter(member_comid %in% vpu_topo$COMID) %>% 
        mutate(member_comid = as.integer(member_comid)) %>% 
+       filter(member_comid %in% vpu_topo$COMID) %>% 
        select(ID = newID, COMID = member_comid) %>% 
        left_join(vpu_topo, by = "COMID")
      
@@ -192,8 +211,8 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
                                      ds_vpu$member_comid)) %>% 
        mutate(member_comid = strsplit(member_comid, split = ",")) %>% 
        unnest('member_comid') %>% 
-       filter(member_comid %in% vpu_topo$toCOMID) %>% 
        mutate(member_comid = as.integer(member_comid)) %>% 
+       filter(member_comid %in% vpu_topo$toCOMID) %>% 
        select(toID = newID, toCOMID = member_comid) %>% 
        left_join(vpu_topo, by = "toCOMID")
     }

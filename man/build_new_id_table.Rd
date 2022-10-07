@@ -4,7 +4,12 @@
 \alias{build_new_id_table}
 \title{Build a new ID lookup table}
 \usage{
-build_new_id_table(x, flowpath_layer = "flowpaths", divide_layer = "divides")
+build_new_id_table(
+  x,
+  flowpath_layer = "flowpaths",
+  divide_layer = "divides",
+  lookup_table_layer = "lookup_table"
+)
 }
 \arguments{
 \item{flowpath_layer}{the layer name containing flowpaths}
