@@ -8,16 +8,17 @@ vpus  <- c("01", "08", "10L", "15", "02",
 
 
 base = '/Volumes/Transcend/ngen/CONUS-hydrofabric/'
-outdir = glue('{base}calibration')
+outdir = glue('{base}pre-release')
 dir.create(outdir)
 overwrite = TRUE
-cache = TRUE
+cache = FALSE
 
 ## TASK 1: build out uniform catchment distribution
 
-process = data.frame(vpus = vpus, outfiles = glue("{outdir}/uniform_{vpus}.gpkg"))
+process = data.frame(vpus = vpus,  outfiles = glue("{outdir}/uniform_{vpus}.gpkg")) %>% 
+  mutate(global = glue("{dirname(outfiles)}/{gsub('uniform', 'global_uniform', basename(outfiles))}"))
 
-process = process[1,]
+#process = process[1,]
 
 unlink(process$outfiles)
 
@@ -55,15 +56,9 @@ for(i in 1:nrow(process)){
 
 ## TASK 2: Assign Globally Unique Identifiers
 
-process = process %>% 
-  mutate(global = glue("{dirname(outfiles)}/{gsub('uniform', 'global_uniform', basename(outfiles))}"))
-
 unlink(process$global)
 
 meta = assign_global_identifiers(gpkgs = process$outfiles, outfiles = process$global)
-
-write_parquet(meta$lookup, file.path(dirname(gpkgs[1]), "lookp_table.parquet"))
-
 
 ## TASK 3: Upload to ScienceBase
 
@@ -72,3 +67,7 @@ write_parquet(meta$lookup, file.path(dirname(gpkgs[1]), "lookp_table.parquet"))
 #   message(basename(gpkgs[i]))
 # }
 
+
+
+r = read_sf("/Users/mjohnson/Downloads/infastructure.gpkg", "open_roads")
+table(r$ff)
