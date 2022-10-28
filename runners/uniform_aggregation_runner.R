@@ -10,7 +10,7 @@ vpus  <- c("01", "08", "10L", "15", "02",
 base = '/Volumes/Transcend/ngen/CONUS-hydrofabric/'
 outdir = glue('{base}pre-release')
 dir.create(outdir)
-overwrite = TRUE
+overwrite = FALSE
 cache = FALSE
 
 ## TASK 1: build out uniform catchment distribution
@@ -18,9 +18,9 @@ cache = FALSE
 process = data.frame(vpus = vpus,  outfiles = glue("{outdir}/uniform_{vpus}.gpkg")) %>% 
   mutate(global = glue("{dirname(outfiles)}/{gsub('uniform', 'global_uniform', basename(outfiles))}"))
 
-#process = process[1,]
+process = process[1,]
 
-unlink(process$outfiles)
+#unlink(process$outfiles)
 
 for(i in 1:nrow(process)){
   
