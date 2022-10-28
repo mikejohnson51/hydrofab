@@ -190,17 +190,20 @@ write_hydrofabric = function(network_list,
                              outfile,
                              catchment_name = "divides",
                              flowpath_name  = "flowpaths",
-                             verbose = TRUE){
+                             verbose = TRUE, enforce_dm = TRUE){
   
   hyaggregate_log("SUCCESS", glue("Writing {flowpath_name} & {catchment_name} to {outfile}"), verbose)
 
   names_nl = names(network_list)
+  
+  if(!enforce_dm){
   
   write_sf(network_list[[flowpath_name]], outfile, flowpath_name)
   
   write_sf(network_list[[catchment_name]], outfile, catchment_name)
 
   if("mapped_POIs" %in% names_nl){
+    
     write_sf(network_list[['mapped_POIs']], outfile, 'mapped_POIs')
   }
   
@@ -224,7 +227,60 @@ write_hydrofabric = function(network_list,
     write_sf(network_list[['crosswalk']], outfile, 'crosswalk')
   }
   
-  return(outfile)
+  return(outfile) 
+  
+  } else {
+    
+    ## HF DM
+    fp_dm  = c('id', "toid", "mainstem", "lengthkm", "tot_drainage_areasqkm", "order", "hydroseq", "areasqkm", "divide_id", "geometry")
+    div_dm = c('divide_id', 'id', 'toid', 'areasqkm', 'divide_type', 'geometry')
+    
+    lu_dm  = c('id', 'hf_source', 'hf_id', 'hf_id_part', 'mainstem', "poi_id", "poi_type", "poi_value", "divide_id" )
+    poi_dm = c("poi_id", "id", "geometry")
+    
+    net_dm = c('id', 'toid', 'divide_id', 'poi_id', 'lengthkm', 'areasqkm', 'tot_drainage_areasqkm', 'mainstem')
+    wb_dm  = c('wb_id', 'wb_area', 'wb_source', 'geometry')
+    ## Ngen Specific
+    nex_dm = c('id', 'toid', 'poi_id', 'type')
+    
+    if("WB" %in% names(network_list)){
+      lu = c(lu_dm, "wb_id")
+      net_dm = c(net_dm, "wb_id")
+    }
+    
+    
+   write_dm_model = function(data, dm, outfile, layer_name){
+     names = names(data)
+     bad   = dm[!dm %in% names]
+     
+     if(length(bad) > 0){
+       stop("Need extra parameters in ", layer_name, ": ", paste(bad, collapse = ", "), call.  = FALSE)
+     } else {
+       write_sf(data, outfile, layer_name)
+     }
+   }
+      
+   write_dm_model(data = network_list[[flowpath_name]], dm = fp_dm, outfile, "flowpaths") 
+   write_dm_model(data = network_list[[catchment_name]], dm = div_dm, outfile, "divides") 
+   write_dm_model(data = network_list$lookup_table, dm = lu_dm, outfile, "lookup_table")
+   write_dm_model(data = network_list$POIs, dm = poi_dm, outfile, "POIs") 
+   write_dm_model(data = network_list$network, dm = net_dm, outfile, "network")
+   
+   if("WB" %in% names(network_list)){
+    write_dm_model(data = network_list$WB, dm = wb_dm, outfile, "WB")
+   }
+   
+   write_dm_model(data = network_list$nexus, dm = nex_dm, outfile, "nexus")
+    
+   left_overs = names_nl[!names_nl %in% c(flowpath_name, catchment_name, "lookup_table", "POIs", "network", "WB", "nexus")]
+   
+   if(length(left_overs) > 0){
+     lapply(1:length(left_overs), function(x){ write_sf(network_list[[left_overs[x]]], outfile, left_overs[x])})
+   }
+    
+    return(outfile) 
+    
+  }
 }
 
 #' pack set

@@ -68,7 +68,7 @@ find_origin = function(gpkg, pt, catchment_name = "divides") {
 
 subset_network = function(gpkg,
                           origin,
-                          flowpath_edgelist = 'flowpath_edge_list',
+                          flowpath_edgelist = 'network',
                           flowpath_name     = 'flowpaths',
                           catchment_name    = 'divides',
                           mainstem = FALSE,
