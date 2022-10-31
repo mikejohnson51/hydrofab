@@ -188,46 +188,18 @@ get_hydrofabric = function(VPU = "01",
 
 write_hydrofabric = function(network_list,
                              outfile,
-                             catchment_name = "divides",
-                             flowpath_name  = "flowpaths",
                              verbose = TRUE, enforce_dm = TRUE){
   
-  hyaggregate_log("SUCCESS", glue("Writing {flowpath_name} & {catchment_name} to {outfile}"), verbose)
+  hyaggregate_log("SUCCESS", glue("Writing {length(network_list)} layers to {outfile}"), verbose)
 
   names_nl = names(network_list)
   
   if(!enforce_dm){
+    if(length(names_nl) > 0){
+      lapply(1:length(names_nl), function(x){ write_sf(network_list[[names_nl[x]]], outfile, names_nl[x])})
+    }
   
-  write_sf(network_list[[flowpath_name]], outfile, flowpath_name)
-  
-  write_sf(network_list[[catchment_name]], outfile, catchment_name)
-
-  if("mapped_POIs" %in% names_nl){
-    
-    write_sf(network_list[['mapped_POIs']], outfile, 'mapped_POIs')
-  }
-  
-  if("flowpath_attributes" %in% names_nl){
-    write_sf(network_list[['flowpath_attributes']], outfile, 'flowpath_attributes')
-  }
-  
-  if("nexus" %in% names_nl){
-    write_sf(network_list[['nexus']], outfile, 'nexus')
-  }
-  
-  if("flowpath_edge_list" %in% names_nl){
-    write_sf(network_list[['flowpath_edge_list']], outfile, 'flowpath_edge_list')
-  }
-  
-  if("lookup_table" %in% names_nl){
-    write_sf(network_list[['lookup_table']], outfile, 'lookup_table')
-  }
-  
-  if("crosswalk" %in% names_nl){
-    write_sf(network_list[['crosswalk']], outfile, 'crosswalk')
-  }
-  
-  return(outfile) 
+    return(outfile) 
   
   } else {
     

@@ -38,10 +38,10 @@ aggregate_to_distribution = function(gpkg = NULL,
                                      outfile = NULL,
                                      log = TRUE,
                                      overwrite = FALSE,
-                                     cache = FALSE,
+                                     cache = TRUE,
                                      verbose = TRUE) {
-  if (cache &
-      is.null(outfile)) {
+  
+  if (cache &  is.null(outfile)) {
     stop("cache cannot be written if outfile is NULL")
   }
   
@@ -84,16 +84,19 @@ aggregate_to_distribution = function(gpkg = NULL,
     network_list$flowpaths$poi_id   = NA
   }
   
-
-  network_list <-
-    drop_extra_features(prepare_network(network_list), verbose)
+  network_list <- drop_extra_features(prepare_network(network_list), verbose)
   
   if (cache) {
-    write_hydrofabric(network_list,
+    tmp = list()
+    tmp$base_catchments = network_list$catchments
+    tmp$base_flowpaths = network_list$flowpaths
+    
+    write_hydrofabric(tmp,
                       cache_file,
-                      "base_catchments",
-                      "base_flowpaths",
-                      verbose)
+                      verbose, 
+                      enforce_dm = FALSE)
+    
+    rm(tmp)
   }
   
   network_list = aggregate_along_mainstems(

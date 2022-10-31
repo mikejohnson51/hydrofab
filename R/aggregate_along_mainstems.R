@@ -72,11 +72,17 @@ aggregate_along_mainstems = function(network_list,
                   verbose)
   
   if(!is.null(cache_file)) {
-    write_hydrofabric(v,
+    
+    tmp = list()
+    tmp$aggregate_along_mainstems_catchment = v$catchments
+    tmp$aggregate_along_mainstems_flowpath = v$flowpaths
+
+    write_hydrofabric(tmp,
                       cache_file,
-                      "aggregate_along_mainstems_catchment",
-                      "aggregate_along_mainstems_flowpath",
-                      verbose)
+                      verbose, 
+                      enforce_dm = FALSE)
+    
+    rm(tmp)
   }
   
   return(v)
