@@ -55,7 +55,6 @@ for(i in 1:nrow(process)){
   # enforce_hydro_dm
   
   # Flowpaths
-  
   tmp = list()
   
   tmp$flowpaths = network_list$flowpaths %>% 
@@ -76,7 +75,6 @@ for(i in 1:nrow(process)){
     st_as_sf()
   
   #  network
-  
   tmp$network = network_list$flowpaths %>% 
     select(id, toid, poi_id, mainstem = levelpathid,
            lengthkm, areasqkm, tot_drainage_areasqkm) %>% 
@@ -84,9 +82,6 @@ for(i in 1:nrow(process)){
   
   gpkg = add_lookup_table(gpkg, refactored_gpkg)
 
-  
-  
-  
 }
 
 

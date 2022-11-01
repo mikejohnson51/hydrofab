@@ -26,8 +26,6 @@
 #' @importFrom nhdplusTools get_sorted calculate_total_drainage_area get_streamorder
 #' @importFrom logger log_appender appender_file appender_console
 
-
-
 aggregate_to_distribution = function(gpkg = NULL,
                                      flowpath = NULL,
                                      divide = NULL,
