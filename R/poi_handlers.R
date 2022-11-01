@@ -94,49 +94,36 @@ poi_to_outlet = function(gpkg,
 #' @export
 #' @importFrom dplyr filter select mutate mutate_at vars group_by ungroup slice right_join starts_with
 #' @importFrom tidyr pivot_longer 
-#' @importFrom sf st_cast st_set_geometry st_geometry st_drop_geometry
 #' @importFrom nhdplusTools get_node
 
 add_mapped_pois = function(network_list, 
+                           type = c('HUC12', 'Gages', 'TE', 'NID', 'WBIn', 'WBOut'),
                            refactored_gpkg = NULL, 
                            verbose = TRUE){
-  
-  generate_mapped_pois = filter(network_list$flowpaths, !is.na(poi_id)) %>%
-    select(id, poi_id) %>%
-    st_cast("MULTILINESTRING")
-  
-  mapped_POIs = st_set_geometry(generate_mapped_pois,
-                                st_geometry(get_node(generate_mapped_pois, position = "end" )))
-  
-  
-  hyaggregate_log("INFO", glue("Adding {nrow(mapped_POIs)} mapped POIs to output"))
-  
+
   if(!is.null(refactored_gpkg)){
     
-    mapped_POIs = read_sf(refactored_gpkg, "mapped_POIs") %>%
-      st_drop_geometry()  %>%
-      select(ID, identifier, starts_with("Type_")) %>%
-      mutate_at(vars(matches("Type_")), as.character) %>%
-      mutate(poi_id = as.character(identifier),
-             identifier = NULL) %>%
-      group_by(ID, poi_id) %>%
-      ungroup() %>%
-      pivot_longer(-c(poi_id, ID)) %>%
-      filter(!is.na(value)) %>%
-      filter(poi_id %in% mapped_POIs$poi_id) %>%
-      mutate(type = gsub("Type_", "", name),
-             name = NULL) %>% 
-      select(poi_id, value, type) %>% 
-      group_by(poi_id) %>% 
-      mutate(value = paste(unique(value), collapse = ","),
-             type = paste(unique(type), collapse = ",")) %>% 
-      slice(1) %>% 
-      ungroup() %>% 
-      right_join(mapped_POIs, by = "poi_id")
+      pois= read_sf(refactored_gpkg, "mapped_POIs") %>% 
+        rename(poi_id = identifier)
+      
+      pois = pois %>% 
+        filter(poi_id %in% as.numeric(network_list$flowpaths$poi_id)) %>% 
+        st_drop_geometry() %>% 
+        select(poi_id, paste0("Type_", type)) %>%
+        mutate_at(vars(matches("Type_")), as.character) %>%
+        group_by(poi_id) %>%
+        ungroup() %>%
+        pivot_longer(-c(poi_id)) %>%
+        filter(!is.na(value)) %>%
+        mutate(type = gsub("Type_", "", name)) %>% 
+        select(poi_id, type, value) %>% 
+        filter(type %in% !!type) %>% 
+        distinct() %>% 
+        left_join(select(pois, poi_id), by = "poi_id")
+      
+    }
 
-  }
-  
-  network_list$mapped_POIs = mapped_POIs
+  network_list$mapped_POIs = pois
   
   return(network_list)
   

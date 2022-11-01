@@ -10,17 +10,19 @@ vpus  <- c("01", "08", "10L", "15", "02",
 base = '/Volumes/Transcend/ngen/CONUS-hydrofabric/'
 outdir = glue('{base}pre-release')
 dir.create(outdir)
-overwrite = TRUE
+overwrite = FALSE
 cache = FALSE
 
 ## TASK 1: build out uniform catchment distribution
 
-process = data.frame(vpus = vpus,  outfiles = glue("{outdir}/uniform_{vpus}.gpkg")) %>% 
-  mutate(global = glue("{dirname(outfiles)}/{gsub('uniform', 'global_uniform', basename(outfiles))}"))
+process = data.frame(vpus = vpus,  outfiles = glue("{outdir}/uniform/uniform_{vpus}.gpkg")) %>% 
+  mutate(global = glue("{gsub('uniform', 'global_uniform', outfiles)}"))
 
-#process = process[1,]
+dir.create(dirname(process$outfiles[1]), showWarnings = FALSE)
+dir.create(dirname(process$global[1]), showWarnings = FALSE)
+process = process[1,]
 
-unlink(process$outfiles)
+#unlink(process$outfiles)
 
 for(i in 1:nrow(process)){
   
@@ -40,17 +42,46 @@ for(i in 1:nrow(process)){
     gpkg            = refactored_gpkg,
     outfile         = process$outfiles[i],
     outlets         = poi_to_outlet(gpkg = refactored_gpkg, verbose = FALSE),
-    overwrite = overwrite,
+    overwrite = TRUE,
     log = TRUE, 
     cache = FALSE
   ) 
 
   gpkg = add_nonnetwork_divides(gpkg, reference_gpkg = reference_gpkg) 
-  
+
   gpkg = add_lookup_table(gpkg, refactored_gpkg)
   
-  gpkg = add_flowpath_edge_list(gpkg)
+  # Mon Oct 31 14:47:00 2022 ------------------------------
+  # enforce_hydro_dm
   
+  # Flowpaths
+  tmp = list()
+  
+  tmp$flowpaths = network_list$flowpaths %>% 
+    select(id, toid, mainstem = levelpathid, 
+           lengthkm, areasqkm, tot_drainage_areasqkm, 
+           order, hydroseq) %>% 
+    mutate(divide_id = id)
+  
+  # Divides
+  
+  tmp$divides = network_list$divides %>% 
+    select(id, toid, areasqkm) %>% 
+    mutate(divide_type = "network")
+  
+  # POIs
+  tmp$POIs = network_list$mapped_POIs %>% 
+    select(id, geometry) %>% 
+    st_as_sf()
+  
+  #  network
+  tmp$network = network_list$flowpaths %>% 
+    select(id, toid, poi_id, mainstem = levelpathid,
+           lengthkm, areasqkm, tot_drainage_areasqkm) %>% 
+    st_drop_geometry()
+  
+  gpkg = add_lookup_table(gpkg, refactored_gpkg)
+
 }
 
 

@@ -3,23 +3,22 @@ build_headwater_collapse = function(network_list,
                                     min_length_km  = 1) {
   
   touch_id <-  define_touch_id(flowpaths = network_list$flowpaths) %>% 
-    filter(type == "jun") %>% 
-    filter(id != touches)
-  
+    #filter(type == "jun") %>% 
+    filter(id != touches) %>% 
+    select(-toid)
   
   # bad fps are those that are both hw and too small or too large
-  df =  mutate(
-    network_list$flowpaths,
+  df = left_join(network_list$flowpaths,  touch_id, by = "id") %>% 
+  mutate(
     inflow = ifelse(id %in% touch_id$touches, TRUE, FALSE),
     hw = ifelse(!id %in% toid, TRUE, FALSE),
-    hw = ifelse(hw & !inflow, TRUE, FALSE),
+    hw = ifelse(hw & !inflow,  TRUE, FALSE),
     small = areasqkm < min_area_sqkm | lengthkm < min_length_km
   ) %>% 
     filter(hw, small) %>% 
     st_drop_geometry() %>% 
-    select(id, becomes = toid, member_comid, poi_id) %>% 
+    select(id, becomes = touches, member_comid, poi_id) %>% 
     filter(becomes != 0)
-  
   
   df$mC1 = network_list$flowpaths$member_comid[match(df$id, network_list$flowpaths$id)]
   df$mC2 = network_list$flowpaths$member_comid[match(df$becomes, network_list$flowpaths$id)]
@@ -85,11 +84,16 @@ collapse_headwaters2 = function(network_list,
   hyaggregate_log("SUCCESS", glue("Collapsed {start - nrow(network_list$flowpaths)} features."), verbose)
   
   if (!is.null(cache_file)) {
-    write_hydrofabric(network_list,
+    tmp = list()
+    tmp$collapse_headwaters_catchments = network_list$catchments
+    tmp$collapse_headwaters_flowpaths = network_list$flowpaths
+    
+    write_hydrofabric(tmp,
                       cache_file,
-                      "collapse_headwaters_catchments",
-                      "collapse_headwaters_flowpaths",
-                      verbose)
+                      verbose, 
+                      enforce_dm = FALSE)
+    
+    rm(tmp)
   }
   
   return(network_list)

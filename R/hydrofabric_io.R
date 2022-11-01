@@ -188,46 +188,21 @@ get_hydrofabric = function(VPU = "01",
 
 write_hydrofabric = function(network_list,
                              outfile,
-                             catchment_name = "divides",
-                             flowpath_name  = "flowpaths",
                              verbose = TRUE, enforce_dm = TRUE){
   
-  hyaggregate_log("SUCCESS", glue("Writing {flowpath_name} & {catchment_name} to {outfile}"), verbose)
+  hyaggregate_log("SUCCESS", glue("Writing {length(network_list)} layers to {outfile}"), verbose)
 
   names_nl = names(network_list)
   
   if(!enforce_dm){
+    if(length(names_nl) > 0){
+      lapply(1:length(names_nl), function(x){ 
+        print(x)
+        write_sf(network_list[[names_nl[x]]], outfile, names_nl[x])
+      })
+    }
   
-  write_sf(network_list[[flowpath_name]], outfile, flowpath_name)
-  
-  write_sf(network_list[[catchment_name]], outfile, catchment_name)
-
-  if("mapped_POIs" %in% names_nl){
-    
-    write_sf(network_list[['mapped_POIs']], outfile, 'mapped_POIs')
-  }
-  
-  if("flowpath_attributes" %in% names_nl){
-    write_sf(network_list[['flowpath_attributes']], outfile, 'flowpath_attributes')
-  }
-  
-  if("nexus" %in% names_nl){
-    write_sf(network_list[['nexus']], outfile, 'nexus')
-  }
-  
-  if("flowpath_edge_list" %in% names_nl){
-    write_sf(network_list[['flowpath_edge_list']], outfile, 'flowpath_edge_list')
-  }
-  
-  if("lookup_table" %in% names_nl){
-    write_sf(network_list[['lookup_table']], outfile, 'lookup_table')
-  }
-  
-  if("crosswalk" %in% names_nl){
-    write_sf(network_list[['crosswalk']], outfile, 'crosswalk')
-  }
-  
-  return(outfile) 
+    return(outfile) 
   
   } else {
     
@@ -260,8 +235,8 @@ write_hydrofabric = function(network_list,
      }
    }
       
-   write_dm_model(data = network_list[[flowpath_name]], dm = fp_dm, outfile, "flowpaths") 
-   write_dm_model(data = network_list[[catchment_name]], dm = div_dm, outfile, "divides") 
+   write_dm_model(data = network_list$flowpaths, dm = fp_dm, outfile, "flowpaths") 
+   write_dm_model(data = network_list$divides, dm = div_dm, outfile, "divides") 
    write_dm_model(data = network_list$lookup_table, dm = lu_dm, outfile, "lookup_table")
    write_dm_model(data = network_list$POIs, dm = poi_dm, outfile, "POIs") 
    write_dm_model(data = network_list$network, dm = net_dm, outfile, "network")
@@ -270,9 +245,12 @@ write_hydrofabric = function(network_list,
     write_dm_model(data = network_list$WB, dm = wb_dm, outfile, "WB")
    }
    
-   write_dm_model(data = network_list$nexus, dm = nex_dm, outfile, "nexus")
+   if("nexus" %in% names(network_list)){
+     write_dm_model(data = network_list$nexus, dm = nex_dm, outfile, "nexus")
+   }
+   
     
-   left_overs = names_nl[!names_nl %in% c(flowpath_name, catchment_name, "lookup_table", "POIs", "network", "WB", "nexus")]
+   left_overs = names_nl[!names_nl %in% c("flowpaths", "divides", "lookup_table", "POIs", "network", "WB", "nexus")]
    
    if(length(left_overs) > 0){
      lapply(1:length(left_overs), function(x){ write_sf(network_list[[left_overs[x]]], outfile, left_overs[x])})

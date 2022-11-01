@@ -6,24 +6,18 @@
 A hydrofabric consists of a flowpath, catchment,
 and topology layer written to a self contained geopackage}
 \usage{
-write_hydrofabric(
-  network_list,
-  outfile,
-  catchment_name = "divides",
-  flowpath_name = "flowpaths",
-  verbose = TRUE
-)
+write_hydrofabric(network_list, outfile, verbose = TRUE, enforce_dm = TRUE)
 }
 \arguments{
 \item{network_list}{a list containing flowpaths and catchments}
 
 \item{outfile}{a file (gpkg) where layers should be written}
 
+\item{verbose}{should messages be emitted?}
+
 \item{catchment_name}{the layer name for divides}
 
 \item{flowpath_name}{the layer name for flowpaths}
-
-\item{verbose}{should messages be emitted?}
 }
 \value{
 file path

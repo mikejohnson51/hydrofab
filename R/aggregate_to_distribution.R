@@ -26,8 +26,6 @@
 #' @importFrom nhdplusTools get_sorted calculate_total_drainage_area get_streamorder
 #' @importFrom logger log_appender appender_file appender_console
 
-
-
 aggregate_to_distribution = function(gpkg = NULL,
                                      flowpath = NULL,
                                      divide = NULL,
@@ -38,10 +36,10 @@ aggregate_to_distribution = function(gpkg = NULL,
                                      outfile = NULL,
                                      log = TRUE,
                                      overwrite = FALSE,
-                                     cache = FALSE,
+                                     cache = TRUE,
                                      verbose = TRUE) {
-  if (cache &
-      is.null(outfile)) {
+  
+  if (cache &  is.null(outfile)) {
     stop("cache cannot be written if outfile is NULL")
   }
   
@@ -84,16 +82,19 @@ aggregate_to_distribution = function(gpkg = NULL,
     network_list$flowpaths$poi_id   = NA
   }
   
-
-  network_list <-
-    drop_extra_features(prepare_network(network_list), verbose)
+  network_list <- drop_extra_features(prepare_network(network_list), verbose)
   
   if (cache) {
-    write_hydrofabric(network_list,
+    tmp = list()
+    tmp$base_catchments = network_list$catchments
+    tmp$base_flowpaths = network_list$flowpaths
+    
+    write_hydrofabric(tmp,
                       cache_file,
-                      "base_catchments",
-                      "base_flowpaths",
-                      verbose)
+                      verbose, 
+                      enforce_dm = FALSE)
+    
+    rm(tmp)
   }
   
   network_list = aggregate_along_mainstems(
@@ -114,23 +115,23 @@ aggregate_to_distribution = function(gpkg = NULL,
     cache_file = cache_file
   )
   
-  network_list = add_mapped_pois(network_list, refactored_gpkg = gpkg, verbose)
+  network_list = add_mapped_pois(network_list, refactored_gpkg = gpkg, verbose = verbose)
+
   network_list$divides = network_list$catchments
   network_list$catchments = NULL
   
+
   if (!is.null(outfile)) {
-    hyaggregate_log("INFO", "")
-    write_hydrofabric(
+    outfile = write_hydrofabric(
       network_list,
       outfile,
-      catchment_name  = "divides",
-      flowpath_name   = "flowpaths",
-      verbose = verbose)
+      verbose = verbose, 
+      enforce_dm = FALSE)
     
     return(outfile)
     
   } else {
-    network_list
+    tmp
   }
   
 }

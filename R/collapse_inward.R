@@ -10,23 +10,23 @@ define_touch_id = function(flowpaths, term_cut = 1e9){
   
   tmp =  st_cast(flowpaths, "MULTILINESTRING")
   
-  ends = tmp  %>%
-    nhdplusTools::rename_geometry('geometry') %>%
-   
-    mutate(geometry = nhdplusTools::get_node(., "end")$geometry)
+  ends = rename_geometry(tmp, 'geometry') %>%
+    mutate(geometry = get_node(., "end")$geometry)
   
   starts_ends = bind_rows(get_node(tmp, "start"), get_node(tmp, "end"))
   
   emap     = st_intersects(ends, starts_ends)
   tmp$type = ifelse(lengths(emap) > 1, "nex", "jun")
   tmp$type = ifelse(tmp$toid > term_cut, "term", tmp$type)
+
   
-  ends2 = left_join(st_drop_geometry(select(ends, id)), st_drop_geometry(select(tmp, id, type)), by = "id")
+  ends2 = left_join(st_drop_geometry(select(ends, id)), st_drop_geometry(select(tmp, id, toid, type)), by = "id")
   
   tmap = st_intersects(ends, tmp)
   
   data.frame(
     id            = rep(ends2$id, times = lengths(tmap)),
+    toid          = rep(ends2$toid, times = lengths(tmap)),
     type          = rep(ends2$type, times = lengths(tmap)),
     touches       = tmp$id[unlist(tmap)],
     touches_toID  = tmp$toid[unlist(tmap)]
@@ -151,7 +151,7 @@ collapse_headwaters = function(network_list,
 
   start <- nrow(network_list$flowpaths)
   
-  mapping_table <- build_collapse_table(network_list, min_area_sqkm, min_length_km)
+  mapping_table <- build_collapse_table(network_list, min_area_sqkm, min_length_km) 
   
   count = 0
   
@@ -179,21 +179,18 @@ collapse_headwaters = function(network_list,
     
     network_list  = prepare_network(network_list = list(flowpaths = fl, catchments = cat))
 
-    filter(fl, !(fl$toid %in% fl$id | fl$toid > term_cut | fl$toid == 0))
-    
-    filter(fl, id == 48486)
-    
     mapping_table = build_collapse_table(network_list, min_area_sqkm, min_length_km)
+    
   }
   
   hyaggregate_log("SUCCESS", glue("Collapsed {start - nrow(network_list$flowpaths)} features."), verbose)
 
   if (!is.null(cache_file)) {
-    write_hydrofabric(network_list,
-                      cache_file,
-                      "collapse_headwaters_catchments",
-                      "collapse_headwaters_flowpaths",
-                      verbose)
+    tmp = list()
+    tmp$collapse_headwaters_catchments = network_list$catchments
+    tmp$collapse_headwaters_flowpaths = network_list$flowpaths
+    write_hydrofabric(tmp, cache_file, enforce_dm = FALSE)
+    rm(tmp)
   }
   
   return(network_list)
