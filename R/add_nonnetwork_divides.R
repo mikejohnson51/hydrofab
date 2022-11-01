@@ -62,8 +62,6 @@ add_nonnetwork_divides = function(gpkg = NULL,
   divdes = clean_geometry(divides, "id", keep = NULL, sys = FALSE) %>% 
     select(id, toid, areasqkm, type)
   
-
-
   write_sf(divides, gpkg, catchment_name, overwrite = TRUE)
   
   return(gpkg)

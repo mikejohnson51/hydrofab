@@ -15,7 +15,7 @@ aggregate_to_distribution(
   outfile = NULL,
   log = TRUE,
   overwrite = FALSE,
-  cache = FALSE,
+  cache = TRUE,
   verbose = TRUE
 )
 }

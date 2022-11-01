@@ -7,12 +7,11 @@
 subset_network(
   gpkg,
   origin,
-  flowpath_edgelist = "flowpath_edge_list",
+  flowpath_edgelist = "network",
   flowpath_name = "flowpaths",
   catchment_name = "divides",
   mainstem = FALSE,
   attribute_layers = NULL,
-  include_ds = FALSE,
   export_gpkg = NULL,
   overwrite = FALSE,
   verbose = TRUE
@@ -33,9 +32,9 @@ subset_network(
 
 \item{attribute_layers}{layer name of additional tables to be subset}
 
-\item{include_ds}{should the feature downstream of the origin be included (default = FALSE)}
-
 \item{export_gpkg}{a path to write the data to. If NULL a list is returned}
+
+\item{include_ds}{should the feature downstream of the origin be included (default = FALSE)}
 }
 \description{
 Subset the upstream portion of a network

@@ -117,23 +117,23 @@ aggregate_to_distribution = function(gpkg = NULL,
     cache_file = cache_file
   )
   
-  network_list = add_mapped_pois(network_list, refactored_gpkg = gpkg, verbose)
+  network_list = add_mapped_pois(network_list, refactored_gpkg = gpkg, verbose = verbose)
+
   network_list$divides = network_list$catchments
   network_list$catchments = NULL
   
+
   if (!is.null(outfile)) {
-    hyaggregate_log("INFO", "")
-    write_hydrofabric(
+    outfile = write_hydrofabric(
       network_list,
       outfile,
-      catchment_name  = "divides",
-      flowpath_name   = "flowpaths",
-      verbose = verbose)
+      verbose = verbose, 
+      enforce_dm = FALSE)
     
     return(outfile)
     
   } else {
-    network_list
+    tmp
   }
   
 }

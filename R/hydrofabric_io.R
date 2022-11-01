@@ -196,7 +196,10 @@ write_hydrofabric = function(network_list,
   
   if(!enforce_dm){
     if(length(names_nl) > 0){
-      lapply(1:length(names_nl), function(x){ write_sf(network_list[[names_nl[x]]], outfile, names_nl[x])})
+      lapply(1:length(names_nl), function(x){ 
+        print(x)
+        write_sf(network_list[[names_nl[x]]], outfile, names_nl[x])
+      })
     }
   
     return(outfile) 
@@ -232,8 +235,8 @@ write_hydrofabric = function(network_list,
      }
    }
       
-   write_dm_model(data = network_list[[flowpath_name]], dm = fp_dm, outfile, "flowpaths") 
-   write_dm_model(data = network_list[[catchment_name]], dm = div_dm, outfile, "divides") 
+   write_dm_model(data = network_list$flowpaths, dm = fp_dm, outfile, "flowpaths") 
+   write_dm_model(data = network_list$divides, dm = div_dm, outfile, "divides") 
    write_dm_model(data = network_list$lookup_table, dm = lu_dm, outfile, "lookup_table")
    write_dm_model(data = network_list$POIs, dm = poi_dm, outfile, "POIs") 
    write_dm_model(data = network_list$network, dm = net_dm, outfile, "network")
@@ -242,9 +245,12 @@ write_hydrofabric = function(network_list,
     write_dm_model(data = network_list$WB, dm = wb_dm, outfile, "WB")
    }
    
-   write_dm_model(data = network_list$nexus, dm = nex_dm, outfile, "nexus")
+   if("nexus" %in% names(network_list)){
+     write_dm_model(data = network_list$nexus, dm = nex_dm, outfile, "nexus")
+   }
+   
     
-   left_overs = names_nl[!names_nl %in% c(flowpath_name, catchment_name, "lookup_table", "POIs", "network", "WB", "nexus")]
+   left_overs = names_nl[!names_nl %in% c("flowpaths", "divides", "lookup_table", "POIs", "network", "WB", "nexus")]
    
    if(length(left_overs) > 0){
      lapply(1:length(left_overs), function(x){ write_sf(network_list[[left_overs[x]]], outfile, left_overs[x])})

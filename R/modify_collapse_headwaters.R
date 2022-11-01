@@ -88,7 +88,7 @@ collapse_headwaters2 = function(network_list,
     tmp$collapse_headwaters_catchments = network_list$catchments
     tmp$collapse_headwaters_flowpaths = network_list$flowpaths
     
-    write_hydrofabric(network_list,
+    write_hydrofabric(tmp,
                       cache_file,
                       verbose, 
                       enforce_dm = FALSE)
