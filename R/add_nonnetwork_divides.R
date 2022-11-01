@@ -59,10 +59,9 @@ add_nonnetwork_divides = function(gpkg = NULL,
     divides = bind_rows(divides, non_network_divides) 
   } 
   
-  divides = clean_geometry(divides, "id", keep = NULL, sys = FALSE) %>% 
-    select(id, toid, areasqkm, divide_type)
+  divides = #clean_geometry(divides, "id", keep = NULL, sys = FALSE) %>% 
+    select(divides, id, toid, areasqkm, divide_type)
   
-
   write_sf(divides, gpkg, catchment_name, overwrite = TRUE)
   
   return(gpkg)

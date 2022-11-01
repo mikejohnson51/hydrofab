@@ -14,7 +14,18 @@ make_hf_gpkg_from_aggregate = function(gpkg){
 
   tmp = list()
   tmp$lookup = NULL
-  nl  = read_hydrofabric(gpkg)
+
+  nl$flowpaths = left_join(nl$flowpaths, select(st_drop_geometry(nl$catchments), id, divide_type), by = 
+                         "id") %>% 
+    mutate(network_type = ifelse(is.na(divide_type), "connector", divide_type), divide_type = NULL) 
+
+  
+  seed_network = rbind(select(st_drop_geometry(nl$flowpaths), id, toid, network_type),
+        select(st_drop_geometry(nl$catchments), id, toid, network_type = divide_type)) %>% 
+    filter(!duplicated(.)) %>% 
+    mutate(has_flowline  = ifelse(network_type %in% c("coastal", "internal"), FALSE, TRUE),
+           has_divide  = ifelse(network_type %in% c("connector"), FALSE, TRUE))
+ 
   
   member_ids = grep("member", names(nl$flowpaths), value = TRUE)
   
@@ -71,8 +82,8 @@ make_hf_gpkg_from_aggregate = function(gpkg){
   
   
   tmp$POIs = left_join(tmp$POIs, distinct(select(tmp$lookup_table, id, poi_id)), by = "poi_id")
-  # Divides
   
+  # Divides
   tmp$divides = nl$catchments %>% 
     select(divide_id = id, toid, areasqkm, network_type = divide_type) %>% 
     mutate(has_flowline = network_type == "network") %>% 
@@ -81,12 +92,12 @@ make_hf_gpkg_from_aggregate = function(gpkg){
 
   #  network
 
-  tmp$network = nl$flowpaths %>% 
-    select(id, toid, poi_id, mainstem = levelpathid, 
-           lengthkm, areasqkm, tot_drainage_areasqkm, has_divide) %>% 
-    full_join(select(st_drop_geometry(tmp$divides), divide_id, id, has_flowline, network_type), by = "id") %>% 
-    st_drop_geometry()
-  
+  tmp$network = seed_network %>% 
+    mutate(divide_id = ifelse(network_type == "connector", NA, id)) %>% 
+    left_join(select(st_drop_geometry(nl$flowpaths), id, poi_id, mainstem = levelpathid, 
+                     lengthkm, areasqkm, 
+                     tot_drainage_areasqkm)) 
+
   write_hydrofabric(tmp, gpkg, TRUE, enforce_dm = TRUE)
 
 }
