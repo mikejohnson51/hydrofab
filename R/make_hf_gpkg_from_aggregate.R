@@ -1,10 +1,8 @@
-
 #' Convert Aggregate Output to HF gpkg
 #' This is a temporary function as changes get pushed upstream
 #' @param gpkg gpkg file path
-#' @return
+#' @return file.path
 #' @export
-#' @examples
 
 make_hf_gpkg_from_aggregate = function(gpkg){
   
