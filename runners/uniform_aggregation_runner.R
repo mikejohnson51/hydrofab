@@ -20,6 +20,7 @@ process = data.frame(vpus = vpus,  outfiles = glue("{outdir}/uniform/uniform_{vp
 
 dir.create(dirname(process$outfiles[1]), showWarnings = FALSE)
 dir.create(dirname(process$global[1]), showWarnings = FALSE)
+
 process = process[1,]
 
 #unlink(process$outfiles)
@@ -54,33 +55,10 @@ for(i in 1:nrow(process)){
   # Mon Oct 31 14:47:00 2022 ------------------------------
   # enforce_hydro_dm
   
-  # Flowpaths
-  tmp = list()
+  gpkg = make_hf_dm(gpkg)
+
   
-  tmp$flowpaths = network_list$flowpaths %>% 
-    select(id, toid, mainstem = levelpathid, 
-           lengthkm, areasqkm, tot_drainage_areasqkm, 
-           order, hydroseq) %>% 
-    mutate(divide_id = id)
-  
-  # Divides
-  
-  tmp$divides = network_list$divides %>% 
-    select(id, toid, areasqkm) %>% 
-    mutate(divide_type = "network")
-  
-  # POIs
-  tmp$POIs = network_list$mapped_POIs %>% 
-    select(id, geometry) %>% 
-    st_as_sf()
-  
-  #  network
-  tmp$network = network_list$flowpaths %>% 
-    select(id, toid, poi_id, mainstem = levelpathid,
-           lengthkm, areasqkm, tot_drainage_areasqkm) %>% 
-    st_drop_geometry()
-  
-  gpkg = add_lookup_table(gpkg, refactored_gpkg)
+  #gpkg = add_lookup_table(gpkg, refactored_gpkg)
 
 }
 
