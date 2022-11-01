@@ -38,7 +38,7 @@ for(i in 1:nrow(process)){
                                    type = "reference",
                                    dir = glue("{base}reference"),
                                    overwrite = overwrite)
-  
+
   gpkg = aggregate_to_distribution(
     gpkg            = refactored_gpkg,
     outfile         = process$outfiles[i],
@@ -48,10 +48,9 @@ for(i in 1:nrow(process)){
     cache = FALSE
   ) 
 
-  gpkg = add_nonnetwork_divides(gpkg, reference_gpkg = reference_gpkg) 
+  gpkg = add_nonnetwork_divides(gpkg, 
+                                reference_gpkg = reference_gpkg) 
 
-  gpkg = add_lookup_table(gpkg, refactored_gpkg)
-  
   # Mon Oct 31 14:47:00 2022 ------------------------------
   # enforce_hydro_dm
   
@@ -76,7 +75,3 @@ meta = assign_global_identifiers(gpkgs = process$outfiles, outfiles = process$gl
 #   message(basename(gpkgs[i]))
 # }
 
-
-
-r = read_sf("/Users/mjohnson/Downloads/infastructure.gpkg", "open_roads")
-table(r$ff)

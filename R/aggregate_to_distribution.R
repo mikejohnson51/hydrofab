@@ -73,7 +73,9 @@ aggregate_to_distribution = function(gpkg = NULL,
                                   flowpaths = flowpath,
                                   crs = 5070)
   
-  # Add outlets
+  network_list = add_network_type(network_list)
+
+   # Add outlets
   if (!is.null(outlets)) {
     network_list$flowpaths  = left_join(network_list$flowpaths, 
                                         outlets, 
@@ -82,7 +84,8 @@ aggregate_to_distribution = function(gpkg = NULL,
     network_list$flowpaths$poi_id   = NA
   }
   
-  network_list <- drop_extra_features(prepare_network(network_list), verbose)
+
+  network_list <- prepare_network(network_list)
   
   if (cache) {
     tmp = list()
@@ -116,10 +119,6 @@ aggregate_to_distribution = function(gpkg = NULL,
   )
   
   network_list = add_mapped_pois(network_list, refactored_gpkg = gpkg, verbose = verbose)
-
-  network_list$divides = network_list$catchments
-  network_list$catchments = NULL
-  
 
   if (!is.null(outfile)) {
     outfile = write_hydrofabric(

@@ -196,25 +196,33 @@ write_hydrofabric = function(network_list,
   
   if(!enforce_dm){
     if(length(names_nl) > 0){
-      lapply(1:length(names_nl), function(x){ 
-        print(x)
-        write_sf(network_list[[names_nl[x]]], outfile, names_nl[x])
-      })
+    for(i in 1:length(names_nl)){
+      write_sf(network_list[[names_nl[i]]], outfile, names_nl[i], overwrite = TRUE)
     }
+  }
   
     return(outfile) 
   
   } else {
     
     ## HF DM
-    fp_dm  = c('id', "toid", "mainstem", "lengthkm", "tot_drainage_areasqkm", "order", "hydroseq", "areasqkm", "divide_id", "geometry")
-    div_dm = c('divide_id', 'id', 'toid', 'areasqkm', 'divide_type', 'geometry')
+    fp_dm  = c('id', "toid", "mainstem", "lengthkm", "tot_drainage_areasqkm", 
+               "order", "hydroseq", "areasqkm", "divide_id", "geometry", "has_divide")
     
-    lu_dm  = c('id', 'hf_source', 'hf_id', 'hf_id_part', 'mainstem', "poi_id", "poi_type", "poi_value", "divide_id" )
+    div_dm = c('divide_id', 'id', 'toid', 'areasqkm', 'network_type', 'geometry', 'has_flowline')
+    
+    lu_dm  = c('id', 'hf_source', 'hf_id', 'hf_id_part', 'mainstem', 
+               "poi_id", "poi_type", "poi_value", 
+               "divide_id")
+    
     poi_dm = c("poi_id", "id", "geometry")
     
-    net_dm = c('id', 'toid', 'divide_id', 'poi_id', 'lengthkm', 'areasqkm', 'tot_drainage_areasqkm', 'mainstem')
+    net_dm = c('id', 'toid', 'divide_id', 'poi_id', 
+               'lengthkm', 'areasqkm', 'tot_drainage_areasqkm', 'mainstem',
+               "has_flowline", 'has_divide', "network_type")
+    
     wb_dm  = c('wb_id', 'wb_area', 'wb_source', 'geometry')
+    
     ## Ngen Specific
     nex_dm = c('id', 'toid', 'poi_id', 'type')
     
