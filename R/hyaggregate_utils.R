@@ -11,7 +11,7 @@
 
 prepare_network = function(network_list) {
   
-  names(network_list$flowpaths)  = tolower(names(network_list$flowpaths))
+  names(network_list$flowpaths )  = tolower(names(network_list$flowpaths))
   names(network_list$catchments) = tolower(names(network_list$catchments))
 
   if(any(duplicated(network_list$catchments))){
@@ -42,8 +42,9 @@ prepare_network = function(network_list) {
   # Add area and length measures to the network list
   network_list = add_measures(network_list$flowpaths, network_list$catchments)
   
-  if (!any(is.na(network_list$flowpaths$areasqkm))) {
-    network_list$flowpaths$tot_drainage_areasqkm = calculate_total_drainage_area(st_drop_geometry(
+  network_list$flowpaths = mutate(network_list$flowpaths, areasqkm = ifelse(is.na(areasqkm), 0, areasqkm))
+    
+  network_list$flowpaths$tot_drainage_areasqkm = calculate_total_drainage_area(st_drop_geometry(
       select(
         network_list$flowpaths,
         ID = id,
@@ -51,7 +52,6 @@ prepare_network = function(network_list) {
         area = areasqkm
       )
     ))
-  }
 
   network_list$flowpaths$order = network_list$flowpaths %>%
     st_drop_geometry() %>%

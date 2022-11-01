@@ -1,3 +1,23 @@
+add_network_type = function(network_list, verbose = TRUE){
+  
+  network_list$flowpaths = network_list$flowpaths %>% 
+    mutate(has_divide = id %in% network_list$catchments$id) %>% 
+    filter(!duplicated(.))
+  
+  network_list$catchments = network_list$catchments %>% 
+    mutate(has_flowpath = id %in% network_list$flowpaths$id) %>% 
+    filter(!duplicated(.))
+  
+  if(verbose){
+    message("Has Divide")
+    print(table(network_list$flowpaths$has_divide))
+    message("\nHas Flowpath")
+    print(table(network_list$catchments$has_flowpath))
+  }
+  
+  network_list
+}  
+
 #' Aggregate along network mainstems
 #' @description Given a set of ideal catchment sizes, plus the
 #' minimum allowable catchment size and segment length, aggregate the network along mainstems.
@@ -67,6 +87,8 @@ aggregate_along_mainstems = function(network_list,
   
   v = aggregate_sets(network_list, index_table)
   
+  v = add_network_type(v, verbose = verbose)
+
   hyaggregate_log("SUCCESS",
                   glue("Merged to idealized catchment size of {ideal_size_sqkm} sqkm: {nrow(network_list$flowpaths) - nrow(v$flowpaths)} features removed"),
                   verbose)
@@ -341,7 +363,6 @@ aggregate_sets = function(network_list, index_table) {
     rename_geometry("geometry")
   
   flowpaths_out  = filter(index_table, n > 1) %>%
-    #chagned to inner_join from left_join!
     inner_join(network_list$flowpaths, by = "id") %>%
     st_as_sf() %>%
     select(set) %>%
@@ -354,14 +375,12 @@ aggregate_sets = function(network_list, index_table) {
   ####
   
   single_catchments = filter(index_table, n == 1) %>%
-    #changed to inner_join from left_join!
     inner_join(network_list$catchments, by = "id") %>%
     st_as_sf() %>%
     select(set) %>%
     rename_geometry("geometry")
   
   catchments_out  = filter(index_table, n != 1) %>%
-    #changed to inner_join from left_join!
     inner_join(network_list$catchments, by = "id") %>%
     st_as_sf() %>%
     select(set) %>%

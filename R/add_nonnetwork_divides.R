@@ -43,7 +43,7 @@ add_nonnetwork_divides = function(gpkg = NULL,
     st_transform(st_crs(out_nl$catchments)) %>%
     rename(id = ID) %>%
     mutate(areasqkm = add_areasqkm(.),
-           type     = ifelse(id < 0, "internal", "coastal"),
+           divide_type     = ifelse(id < 0, "internal", "coastal"),
            toid = id) %>%
     rename_geometry("geometry") %>% 
     filter(!id %in% out_nl$catchments$id)
@@ -51,16 +51,16 @@ add_nonnetwork_divides = function(gpkg = NULL,
   hyaggregate_log("INFO", glue("{nrow(non_network_divides)} non network divides found"), verbose)
   
   divides = out_nl$catchments %>%
-    mutate(type = "network") %>%
-    select(id, toid, areasqkm, type) %>%
+    mutate(divide_type = "network") %>%
+    select(id, toid, areasqkm, divide_type) %>%
     rename_geometry("geometry") 
   
   if(nrow(non_network_divides) > 0){
     divides = bind_rows(divides, non_network_divides) 
   } 
   
-  divdes = clean_geometry(divides, "id", keep = NULL, sys = FALSE) %>% 
-    select(id, toid, areasqkm, type)
+  divides = #clean_geometry(divides, "id", keep = NULL, sys = FALSE) %>% 
+    select(divides, id, toid, areasqkm, divide_type)
   
   write_sf(divides, gpkg, catchment_name, overwrite = TRUE)
   

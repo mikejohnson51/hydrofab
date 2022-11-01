@@ -81,6 +81,8 @@ collapse_headwaters2 = function(network_list,
     mapping_table = build_headwater_collapse(network_list, min_area_sqkm, min_length_km)
   }
   
+  network_list = add_network_type(network_list, verbose )
+  
   hyaggregate_log("SUCCESS", glue("Collapsed {start - nrow(network_list$flowpaths)} features."), verbose)
   
   if (!is.null(cache_file)) {
