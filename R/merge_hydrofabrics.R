@@ -4,7 +4,7 @@
 #' @param flowpath_layer the layer name containing flowpaths
 #' @param divide_layer the layer name containing divides
 #' @return a data.frame with the file.path, file name, VPU,flowpath count, 
-#' divides count, cumulative flowpath count and cummulative divdies count
+#' divides count, cumulative flowpath count and cumulative divides count
 #' @export
 #' @importFrom dplyr mutate
 #' @importFrom sf st_layers
@@ -80,8 +80,8 @@ build_new_id_table = function(x,
   
   fl = select(fl, oldID = id, member_comid)
   
-  data.frame(oldID = sort(div$id)) %>% 
-    mutate(newID = 1:length(unique(div$id)) + x$cumcount_div,
+  data.frame(oldID = sort(c(fl$oldID, div$id[!div$id %in% fl$oldID]))) %>% 
+    mutate(newID = 1:length(unique(fl$oldID)) + max(x$cumcount_fl, x$cumcount_div),
            newID = ifelse(oldID == 0, 0, newID),
            VPU = x$VPU) %>% 
     left_join(fl, by = "oldID")

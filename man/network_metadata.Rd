@@ -16,7 +16,7 @@ network_metadata(gpkgs, flowpath_layer = "flowpaths", divide_layer = "divides")
 }
 \value{
 a data.frame with the file.path, file name, VPU,flowpath count, 
-divides count, cumulative flowpath count and cummulative divdies count
+divides count, cumulative flowpath count and cumulative divides count
 }
 \description{
 Capture Network Metadata
