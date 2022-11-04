@@ -21,11 +21,11 @@ process = data.frame(vpus = vpus,  outfiles = glue("{outdir}/uniform/uniform_{vp
 dir.create(dirname(process$outfiles[1]), showWarnings = FALSE)
 dir.create(dirname(process$global[1]), showWarnings = FALSE)
 
-process = process[3,]
+#process = process[3,]
 
-#unlink(process$outfiles)
+unlink(process$outfiles)
+i = 1
 
-outfile = "data/test10L.gpkg"
 
 for(i in 1:nrow(process)){
   
@@ -41,20 +41,22 @@ for(i in 1:nrow(process)){
                                    dir = glue("{base}reference"),
                                    overwrite = overwrite)
 
+  hl = hl_to_outlet(gpkg = refactored_gpkg, verbose = FALSE) %>% 
+    mutate(hl_position = "outflow")
+  
   gpkg = aggregate_to_distribution(
     gpkg            = refactored_gpkg,
-    outfile         = outfile, #process$outfiles[i],
-    outlets         = poi_to_outlet(gpkg = refactored_gpkg, verbose = FALSE),
+    outfile         = process$outfiles[i],
+    hydrolocations         = hl,
     overwrite = TRUE,
-    log = TRUE, 
-    cache = FALSE
+    log       = TRUE, 
+    cache     = FALSE
   ) 
-
+  
   gpkg = add_nonnetwork_divides(gpkg, reference_gpkg = reference_gpkg) 
-
+  
   # Mon Oct 31 14:47:00 2022 ------------------------------
   # enforce_hydro_dm
-  
   gpkg = make_hf_gpkg_from_aggregate(gpkg)
 
 }

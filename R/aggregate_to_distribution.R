@@ -29,7 +29,7 @@
 aggregate_to_distribution = function(gpkg = NULL,
                                      flowpath = NULL,
                                      divide = NULL,
-                                     outlets = NULL,
+                                     hydrolocations = NULL,
                                      ideal_size_sqkm = 10,
                                      min_length_km = 1,
                                      min_area_sqkm  = 3,
@@ -76,9 +76,21 @@ aggregate_to_distribution = function(gpkg = NULL,
   network_list = add_network_type(network_list)
 
    # Add outlets
-  if (!is.null(outlets)) {
+  if (!is.null(hydrolocations)) {
+    
+    outflows = select(hydrolocations, id, hl_id, hl_position) %>% 
+      st_drop_geometry() %>% 
+      filter(hl_position == "outflow") %>% 
+      distinct() %>% 
+      # Thu Nov  3 12:40:38 2022 ------------------------------
+        # Why is this needed? 
+        # https://code.usgs.gov/wma/nhgf/reference-hydrofabric/-/issues/114
+      group_by(id) %>% 
+      slice(1) %>% 
+      ungroup()
+
     network_list$flowpaths  = left_join(network_list$flowpaths, 
-                                        outlets, 
+                                        outflows, 
                                         by = 'id')
   } else {
     network_list$flowpaths$poi_id   = NA
@@ -109,7 +121,6 @@ aggregate_to_distribution = function(gpkg = NULL,
     cache_file = cache_file
   )
 
-
   network_list  = collapse_headwaters2(
     network_list,
     min_area_sqkm,
@@ -117,9 +128,25 @@ aggregate_to_distribution = function(gpkg = NULL,
     verbose = verbose,
     cache_file = cache_file
   )
-  
-  network_list = add_mapped_pois(network_list, refactored_gpkg = gpkg, verbose = verbose)
 
+ tmp =  network_list$flowpaths %>% 
+    st_drop_geometry() %>%
+    select(id, hl_id) %>% 
+    filter(!is.na(hl_id)) %>% 
+    mutate(hl_id = as.integer(hl_id)) %>% 
+    left_join(select(hydrolocations, -id), 
+              by = "hl_id") %>% 
+   st_as_sf() %>% 
+   rename_geometry("geometry")
+ 
+ network_list$hydrolocations_lookup = 
+   st_drop_geometry(tmp) %>% 
+   select(hl_id, id, hl_reference, hl_link, hl_position)
+ 
+ network_list$hydrolocations = 
+   select(tmp, hl_id, id, hl_position) %>% 
+   distinct()
+ 
   if (!is.null(outfile)) {
     outfile = write_hydrofabric(
       network_list,

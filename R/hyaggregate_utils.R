@@ -11,7 +11,7 @@
 
 prepare_network = function(network_list) {
   
-  names(network_list$flowpaths )  = tolower(names(network_list$flowpaths))
+  names(network_list$flowpaths)  = tolower(names(network_list$flowpaths))
   names(network_list$catchments) = tolower(names(network_list$catchments))
 
   if(any(duplicated(network_list$catchments))){
@@ -31,10 +31,14 @@ prepare_network = function(network_list) {
   }
   
   if(any(duplicated(network_list$flowpaths$id))){
-    n = sum(duplicated(network_list$flowpaths))
+    n = sum(duplicated(network_list$flowpaths$id))
     hyaggregate_log("WARN", glue("Dropping {n} duplicate flowpaths."))
   }
   
+  
+  filter(network_list$flowpaths, duplicated(id))
+  
+  filter(network_list$flowpaths, id == 10002801)
   
   # Add a hydrosequence to the flowpaths
   network_list$flowpaths = add_hydroseq(flowpaths = network_list$flowpaths)

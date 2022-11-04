@@ -48,30 +48,30 @@ aggregate_along_mainstems = function(network_list,
   
   tmp = network_list$flowpaths %>% 
     st_drop_geometry() %>% 
-    select(id = toid, poi_un = poi_id) %>% 
+    select(id = toid, hl_un = hl_id) %>% 
     st_drop_geometry() %>% 
     distinct() %>% 
-    filter(!is.na(poi_un)) %>% 
+    filter(!is.na(hl_un)) %>% 
     group_by(id) %>% 
     slice(n = 1) %>% 
     ungroup()
   
   fline = network_list$flowpaths %>% 
     st_drop_geometry() %>% 
-    mutate(poi_dn = poi_id) %>% 
+    mutate(hl_dn = hl_id) %>% 
     left_join(tmp, by = "id") %>% 
     distinct() 
   
   index_table = fline %>%
     group_by(.data$levelpathid) %>%
     arrange(.data$hydroseq) %>%
-    mutate(poi_un = ifelse(poi_un %in% poi_dn, NA, poi_un)) %>% 
+    mutate(hl_un = ifelse(hl_un %in% hl_dn, NA, hl_un)) %>% 
     mutate(
       ind = cs_group(
         .data$areasqkm,
         .data$lengthkm,
-        .data$poi_dn,
-        .data$poi_un,
+        .data$hl_dn,
+        .data$hl_un,
         ideal_size_sqkm,
         min_area_sqkm,
         min_length_km
@@ -83,7 +83,7 @@ aggregate_along_mainstems = function(network_list,
     ungroup() %>%
     select(set, id, toid, levelpathid,
            hydroseq, member_comid,
-           poi_id, n)
+           hl_id, n)
   
   v = aggregate_sets(network_list, index_table)
   
@@ -334,16 +334,16 @@ aggregate_sets = function(network_list, index_table) {
   set_topo = index_table %>%
     group_by(set) %>%
     mutate(member_comid  = paste(.data$member_comid, collapse = ","),
-           poi_id  = paste(.data$poi_id[!is.na(.data$poi_id)], collapse = ","),
-           poi_id  = ifelse(.data$poi_id == "", NA, .data$poi_id)) %>%
+           hl_id  = paste(.data$hl_id[!is.na(.data$hl_id)], collapse = ","),
+           hl_id  = ifelse(.data$hl_id == "", NA, .data$hl_id)) %>%
     arrange(hydroseq) %>%
     # mutate(id_new = id[1], toid_new = toid[n()]) %>%
-    select(set, id, toid, levelpathid, poi_id,
+    select(set, id, toid, levelpathid, hl_id,
            hydroseq, member_comid) %>%
     ungroup()
   
   set_topo_fin = left_join(select(set_topo, set, id = toid, hydroseq,
-                                  levelpathid, poi_id, member_comid),
+                                  levelpathid, hl_id, member_comid),
                            select(set_topo, toset = set, id),
                            by = "id") %>%
     group_by(set) %>%
@@ -351,7 +351,7 @@ aggregate_sets = function(network_list, index_table) {
     filter(set != toset) %>%
     slice_min(hydroseq) %>%
     ungroup() %>%
-    select(set, toset, levelpathid, poi_id, member_comid)
+    select(set, toset, levelpathid, hl_id, member_comid)
   
   ####
   
