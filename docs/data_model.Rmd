@@ -13,76 +13,75 @@ library(sf)
 
 ```{r, echo = FALSE}
 hf_dm = list(
-hydrolocation_lookup = data.frame(
-  hl_id      = integer(1L),
-  id         = integer(1L),
-  hl_reference  = character(1L),
-  hl_link  = character(1L),
-  hl_position  = character(1L)
-),
-
-network_lookup = data.frame(
-  id         = integer(1L),
-  hf_source  = integer(1),
-  hf_id      = numeric(1L),
-  hf_id_part = integer(1L),
-  mainstem   = integer(1L),
-  wb_id      = integer(1L),
-  divide_id  = integer(1L)
-),
-
-flowlines = data.frame(
-  id = integer(1L),
-  toid = integer(1L),
-  mainstem = integer(1L),
-  lengthkm = numeric(1L),
-  tot_drainage_areasqkm = numeric(1L),
-  order = numeric(1L),
-  hydroseq = numeric(1L),
-  areasqkm = numeric(1L),
-  divide_id = integer(1L),
-  geometry = numeric(1L),
-  has_divide = logical(1)
-),
-
-
-hydrolocations = data.frame(
-  hl_id = integer(1L),
-  id     = integer(1L),
-  geometry = numeric(1L)
-),
-
-divides = data.frame(
-  divide_id = integer(1L),
-  id   = integer(1L),
-  toid = integer(1L),
-  areasqkm = numeric(1L),
-  network_type = character(1L),
-  geometry = numeric(1L),
-  has_flowline = logical(1)
-),
-
-network = data.frame(
-  id = integer(1L),
-  toid = integer(1L),
-  divide_id = integer(1L),
-  wb_id = integer(1L),
-  hl_id = integer(1L),
-  lengthkm = numeric(1L),
-  areasqkm = numeric(1L),
-  tot_drainage_areasqkm = numeric(1L),
-  mainstem = numeric(1L),
-  has_flowline = logical(1),
-  has_divide = logical(1),
-  network_type = character(1L)
-),
-
-WB = data.frame(
-  wb_id = integer(1L),
-  wb_area = numeric(1L),
-  wb_source = numeric(1L),
-  geometry = numeric(1L)
-)
+  hydrolocation_lookup = data.frame(
+    hl_id      = integer(1L),
+    id         = integer(1L),
+    hl_reference  = character(1L),
+    hl_link  = character(1L),
+    hl_position  = character(1L)
+  ),
+  
+  network_lookup = data.frame(
+    id         = integer(1L),
+    hf_source  = integer(1),
+    hf_id      = numeric(1L),
+    hf_id_part = integer(1L),
+    mainstem   = integer(1L),
+    wb_id      = integer(1L),
+    divide_id  = integer(1L)
+  ),
+  
+  flowlines = data.frame(
+    id = integer(1L),
+    toid = integer(1L),
+    mainstem = integer(1L),
+    lengthkm = numeric(1L),
+    tot_drainage_areasqkm = numeric(1L),
+    order = numeric(1L),
+    hydroseq = numeric(1L),
+    areasqkm = numeric(1L),
+    divide_id = integer(1L),
+    geometry = numeric(1L),
+    has_divide = logical(1)
+  ),
+  
+  hydrolocations = data.frame(
+    hl_id = integer(1L),
+    id     = integer(1L),
+    geometry = numeric(1L)
+  ),
+  
+  divides = data.frame(
+    divide_id = integer(1L),
+    id   = integer(1L),
+    toid = integer(1L),
+    areasqkm = numeric(1L),
+    network_type = character(1L),
+    geometry = numeric(1L),
+    has_flowline = logical(1)
+  ),
+  
+  network = data.frame(
+    id = integer(1L),
+    toid = integer(1L),
+    divide_id = integer(1L),
+    wb_id = integer(1L),
+    hl_id = integer(1L),
+    lengthkm = numeric(1L),
+    areasqkm = numeric(1L),
+    tot_drainage_areasqkm = numeric(1L),
+    mainstem = numeric(1L),
+    has_flowline = logical(1),
+    has_divide = logical(1),
+    network_type = character(1L)
+  ),
+  
+  WB = data.frame(
+    wb_id = integer(1L),
+    wb_area = numeric(1L),
+    wb_source = numeric(1L),
+    geometry = numeric(1L)
+  )
 )
 
 usethis::use_data(hf_dm, overwrite = TRUE)
