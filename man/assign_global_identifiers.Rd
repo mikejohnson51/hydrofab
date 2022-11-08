@@ -4,20 +4,17 @@
 \alias{assign_global_identifiers}
 \title{Update Hydrofabric Identifiers
 For a given set of hydrofabric geopackages, update the ID and toID values to 
-be gloablaly unique.}
+be globally unique.}
 \usage{
 assign_global_identifiers(
   gpkgs = NULL,
   outfiles = NULL,
   flowpath_layer = "flowpaths",
-  mapped_POI_layer = "mapped_POIs",
   divide_layer = "divides",
-  lookup_table_layer = "lookup_table",
-  flowpath_edge_list = "flowpath_edge_list",
+  network_layer = "network",
   overwrite = FALSE,
-  update_terminals = TRUE,
   term_add = 1e+09,
-  return_lookup = TRUE,
+  modifications = NULL,
   verbose = TRUE
 )
 }
@@ -28,17 +25,15 @@ assign_global_identifiers(
 
 \item{flowpath_layer}{the layer name containing flowpaths}
 
-\item{mapped_POI_layer}{the layer name containing flowpaths}
-
 \item{divide_layer}{the layer name containing divides}
 
-\item{lookup_table_layer}{the layer name containing flowpaths}
+\item{network_layer}{the name of layer containing the hydrologic network}
 
 \item{overwrite}{overwrite existing files?}
 
-\item{verbose}{emit messages}
+\item{term_add}{value to be added to all terminal IDs}
 
-\item{catchment_network_layer}{the layer name containing flowpaths}
+\item{verbose}{emit messages}
 }
 \value{
 a data.frame
@@ -46,5 +41,5 @@ a data.frame
 \description{
 Update Hydrofabric Identifiers
 For a given set of hydrofabric geopackages, update the ID and toID values to 
-be gloablaly unique.
+be globally unique.
 }
