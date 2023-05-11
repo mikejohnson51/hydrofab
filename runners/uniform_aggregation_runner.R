@@ -40,10 +40,10 @@ for(i in 17:nrow(process)){
                                    type = "reference",
                                    dir = glue("{base}/01_reference"),
                                    overwrite = FALSE)
-
+  
   hl = hl_to_outlet(gpkg = refactored_gpkg, verbose = FALSE) %>% 
-     mutate(hl_position = "outflow")
-    
+    mutate(hl_position = "outflow")
+  
   gpkg = aggregate_to_distribution(
     gpkg                   = refactored_gpkg,
     vpu = process$vpus[i],
@@ -58,7 +58,7 @@ for(i in 17:nrow(process)){
   gpkg = add_nonnetwork_divides(gpkg, 
                                 huc12 = cw,
                                 reference_gpkg = reference_gpkg) 
-
+  
 }
 
 ## TASK 2: Assign Globally Unique Identifiers

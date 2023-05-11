@@ -20,3 +20,4 @@ Dockerfile
 ^docs$
 ^pkgdown$
 runners
+dead

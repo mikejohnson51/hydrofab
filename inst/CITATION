@@ -1,4 +1,4 @@
-citHeader("To cite hyReactor in publications, please use:")
+citHeader("To cite hydrofab in publications, please use:")
 
 bibentry(bibtype = "Manual",
          author = personList(
