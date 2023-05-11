@@ -44,7 +44,7 @@ remotes::install_github("NOAA-OWP/hydrofab")
 ## Introduction 
 
 This package is based around the same concepts as [nhdplusTools](https://usgs-r.github.io/nhdplusTools/) and uses its utilities extensively. It is the creation of merging the 
-previous `hyRefactor` and `hyAggregate` packages in an attempt to provide a common software stack of fabricating hydrofabrics.
+previous `hyRefactor` and `hyAggregate` packages in an attempt to provide a common software stack for fabricating hydrofabrics.
 
 ### Refactoring and Aggregating
 
@@ -58,37 +58,15 @@ distribution,
 The concept of aggregating as intended here includes **aggregating** catchments into groups based on existing network topology and defined criteria. Two primary use cases are offered:
 
 1. Aggregating to a set of defined outlet locations
-2. Aggregating to a uniform catchment size with enforced minimum areas and lengths.
+2. Merging catchments to a uniform size with enforced minimum areas and lengths.
 
 This type of functionality is especially relevant to modeling applications that
 need specific modeling unit characteristics but wish to preserve the network as
 much as possible for interoperability with other applications 
 
 
-### Check notes:
-
-In addition to typical R package, a Dockerfile is included in this repository. Once built, it can be run with the following command.
-
-```
-docker build -t hydrofab_test .
-
-# Linux/Mac
-
-docker run --rm -it -v $PWD:/src hydrofab_test /bin/bash -c "cp -r /src/* /check/ && cp /src/.Rbuildignore /check/ && cd /check && Rscript -e 'devtools::build(vignettes = FALSE)' && R CMD check --as-cran ../hydrofab_*"
-
-# Windows
-docker run --rm -it -v %cd%:/src hydrofab_test /bin/bash -c "cp -r /src/* /check/ && cp /src/.Rbuildignore /check/ && cd /check && Rscript -e 'devtools::build(vignettes = FALSE)' && R CMD check --as-cran ../hydrofab_"
-```
-
 ## Disclaimer
 
-This information is preliminary or provisional and is subject to revision. It is being provided to meet the need for timely best science. The information has not received final approval by the U.S. Geological Survey (USGS) and is provided on the condition that neither the USGS nor the U.S. Government shall be held liable for any damages resulting from the authorized or unauthorized use of the information.
-
-From: https://www2.usgs.gov/fsp/fsp_disclaimers.asp#5
-
-This software is in the public domain because it contains materials that originally came from the U.S. Geological Survey, an agency of the United States Department of Interior. For more information, see the [official USGS copyright policy](https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits "official USGS copyright policy")
-
-Although this software program has been used by the USGS, no warranty, expressed or implied, is made by the USGS or the U.S. Government as to the accuracy and functioning of the program and related program material nor shall the fact of distribution constitute any such warranty, and no responsibility is assumed by the USGS in connection therewith.
-This software is provided "AS IS."
+These data are preliminary or provisional and are subject to revision. They are being provided to meet the need for timely best science. The data have not received final approval by the National Oceanic and Atmospheric Administration (NOAA) or the U.S. Geological Survey (USGS) and are provided on the condition that neither NOAA, the USGS, nor the U.S. Government shall be held liable for any damages resulting from the authorized or unauthorized use of the data.
 
 

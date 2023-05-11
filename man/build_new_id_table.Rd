@@ -8,7 +8,6 @@ build_new_id_table(
   meta,
   index,
   network_layer = "network",
-  network_lookup = "network_lookup",
   term_add = 1e+09,
   modifications = NULL
 )

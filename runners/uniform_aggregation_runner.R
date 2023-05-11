@@ -76,6 +76,9 @@ meta = assign_global_identifiers(gpkgs = process$outfiles,
                                  modifications = topo_modifications)
 
 
+for(i in 1:nrow(process)){
+    try(append_style(process$global[i], layer_names = c("flowpaths", "divides", "hydrolocations")), silent = TRUE)
+ }
 
 
 ## TASK 3: Upload to ScienceBase
