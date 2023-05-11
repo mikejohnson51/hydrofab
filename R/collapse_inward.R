@@ -19,8 +19,9 @@ define_touch_id = function(flowpaths, term_cut = 1e9){
   tmp$type = ifelse(lengths(emap) > 1, "nex", "jun")
   tmp$type = ifelse(tmp$toid > term_cut, "term", tmp$type)
 
-  
-  ends2 = left_join(st_drop_geometry(select(ends, id)), st_drop_geometry(select(tmp, id, toid, type)), by = "id")
+  ends2 = left_join(st_drop_geometry(select(ends, id)), 
+                    st_drop_geometry(select(tmp, id, toid, type)), 
+                    by = "id")
   
   tmap = st_intersects(ends, tmp)
   

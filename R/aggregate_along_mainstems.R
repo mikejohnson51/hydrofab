@@ -53,7 +53,7 @@ aggregate_along_mainstems = function(network_list,
     distinct() %>% 
     filter(!is.na(hl_un)) %>% 
     group_by(id) %>% 
-    slice(n = 1) %>% 
+    slice(1) %>% 
     ungroup()
   
   fline = network_list$flowpaths %>% 
@@ -333,11 +333,10 @@ aggregate_sets = function(network_list, index_table) {
   
   set_topo = index_table %>%
     group_by(set) %>%
-    mutate(member_comid  = paste(.data$member_comid, collapse = ","),
-           hl_id  = paste(.data$hl_id[!is.na(.data$hl_id)], collapse = ","),
-           hl_id  = ifelse(.data$hl_id == "", NA, .data$hl_id)) %>%
+    mutate(member_comid  = paste(member_comid, collapse = ","),
+           hl_id  = paste(hl_id[!is.na(hl_id)], collapse = ","),
+           hl_id  = ifelse(hl_id == "", NA, hl_id)) %>%
     arrange(hydroseq) %>%
-    # mutate(id_new = id[1], toid_new = toid[n()]) %>%
     select(set, id, toid, levelpathid, hl_id,
            hydroseq, member_comid) %>%
     ungroup()
@@ -385,10 +384,11 @@ aggregate_sets = function(network_list, index_table) {
     st_as_sf() %>%
     select(set) %>%
     union_polygons('set') %>%
-    rename_geometry("geometry") %>%
+    mutate(areasqkm = add_areasqkm(.)) %>% 
+    clean_geometry2(ID = "set") %>% 
     bind_rows(single_catchments) %>%
     left_join(set_topo_fin, by = "set") %>%
-    select(id = set, toid = toset)
+    select(id = set, toid = toset) 
   
   catchments_out$toid = ifelse(is.na(catchments_out$toid), 0, catchments_out$toid)
   

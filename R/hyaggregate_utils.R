@@ -35,36 +35,15 @@ prepare_network = function(network_list) {
     hyaggregate_log("WARN", glue("Dropping {n} duplicate flowpaths."))
   }
   
-  
-  filter(network_list$flowpaths, duplicated(id))
-  
-  filter(network_list$flowpaths, id == 10002801)
-  
   # Add a hydrosequence to the flowpaths
   network_list$flowpaths = add_hydroseq(flowpaths = network_list$flowpaths)
-  
   # Add area and length measures to the network list
   network_list = add_measures(network_list$flowpaths, network_list$catchments)
-  
   network_list$flowpaths = mutate(network_list$flowpaths, areasqkm = ifelse(is.na(areasqkm), 0, areasqkm))
-    
-  network_list$flowpaths$tot_drainage_areasqkm = calculate_total_drainage_area(st_drop_geometry(
-      select(
-        network_list$flowpaths,
-        ID = id,
-        toID = toid,
-        area = areasqkm
-      )
-    ))
-
-  network_list$flowpaths$order = network_list$flowpaths %>%
-    st_drop_geometry() %>%
-    flush_prefix(c("id", "toid")) %>%
-    select(ID = id, toID = toid) %>%
-    get_streamorder()
+  network_list$flowpaths$order = get_streamorder(st_drop_geometry(select(network_list$flowpaths, ID = id, toID = toid)))
+  network_list$flowpaths$tot_drainage_area = calculate_total_drainage_area(select(network_list$flowpaths, ID = id, toID = toid, area = areasqkm))
   
   check_network_validity(network_list)
-  
 }
 
 #' Check Network Validity

@@ -23,7 +23,7 @@ add_flowpath_edge_list = function(gpkg){
 #' @export
 #' @importFrom sf read_sf st_drop_geometry
 #' @importFrom dplyr mutate_at vars mutate group_by ungroup filter distinct slice
-#' @importFrom tidyr pivot_longer
+#' @importFrom tidyr pivot_longer separate_longer_delim
 
 hl_to_outlet = function(gpkg,
                         type = c('HUC12', 'Gages', 'TE', 'NID', 'WBIn', 'WBOut'),
@@ -36,15 +36,18 @@ hl_to_outlet = function(gpkg,
     stop(bad_ids, " are not valid POI types. Only ", paste(valid_types, collapse = ", "), " are valid")
   }
   
-  if(is.null(type)){
-    type = valid_types
-  }
+  if(is.null(type)){ type = valid_types }
   
   hl  = read_sf(gpkg, "mapped_POIs") %>% 
-    mutate(hl_id = as.integer(identifier))
+    mutate(hl_id = as.integer(identifier)) %>% 
+    select(ID, hl_id, paste0("Type_", type)) %>%
+    mutate_at(vars(matches("Type_")), as.character) %>% 
+    mutate(nas = rowSums(is.na(.))) %>% 
+    filter(nas != length(type))
   
-  
-  nexus_locations = st_drop_geometry(hl) %>% 
+  xx = select(hl, hl_id) %>% group_by(hl_id) %>% slice(1) %>% ungroup()
+             
+  nexus_locations = st_drop_geometry(hl) %>%
     select(ID, hl_id, paste0("Type_", type)) %>%
     mutate_at(vars(matches("Type_")), as.character) %>%
     group_by(ID, hl_id) %>%
@@ -53,8 +56,9 @@ hl_to_outlet = function(gpkg,
     filter(!is.na(value)) %>%
     mutate(hl_reference = gsub("Type_", "", name)) %>% 
     select(id = ID, hl_id, hl_reference, hl_link = value) %>% 
-    distinct() %>% 
-    left_join(select(hl, hl_id), by = "hl_id")
+    distinct(hl_id, hl_reference, hl_link, .keep_all = TRUE) %>% 
+    left_join(xx, by = "hl_id", relationship = "many-to-many") %>% 
+    separate_longer_delim(hl_link,  delim = ",")
   
   hyaggregate_log("INFO", glue("{length(unique(nexus_locations$hl_id))} distinct POIs found."), verbose)
   

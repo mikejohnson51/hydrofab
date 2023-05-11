@@ -6,6 +6,7 @@
 \usage{
 aggregate_to_distribution(
   gpkg = NULL,
+  vpu = NULL,
   flowpath = NULL,
   divide = NULL,
   hydrolocations = NULL,

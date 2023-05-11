@@ -91,6 +91,7 @@ read_hydrofabric = function(gpkg = NULL,
     if(inherits(flowpaths, "sf")){  out[["flowpaths"]]   <- flowpaths }
   } else {
     
+    gpkg = normalizePath(gpkg)
     hyaggregate_log(level = "INFO", message = glue("\n--- Read in data from {gpkg} ---\n"), verbose)
     
     if(is.null(flowpaths) & realization != "catchments"){
@@ -112,13 +113,13 @@ read_hydrofabric = function(gpkg = NULL,
     
     if(!is.null(flowpaths)){
       if(layer_exists(gpkg, flowpaths)){
-        out[["flowpaths"]] <- renamer(read_sf(gpkg, flowpaths))
+        out[["flowpaths"]] <- read_sf(gpkg, flowpaths)
       }
     }
     
     if(!is.null(catchments)){
       if(layer_exists(gpkg, catchments)){
-        out[["catchments"]] <- renamer(read_sf(gpkg, catchments))
+        out[["catchments"]] <- read_sf(gpkg, catchments)
       }
     }
   }
@@ -149,7 +150,7 @@ read_hydrofabric = function(gpkg = NULL,
 #' @importFrom nhdplusTools get_boundaries
 #' @importFrom dplyr filter slice_min
 #' @importFrom jsonlite fromJSON
-#' @importFrom httr GET write_disk
+#' @importFrom httr GET write_disk progress
 
 get_hydrofabric = function(VPU = "01",
                            type = "refactor",
@@ -175,7 +176,7 @@ get_hydrofabric = function(VPU = "01",
     
     find = slice_max(filter(xx$files, grepl(VPU, xx$files$name)), dateUploaded)
     
-    httr::GET(find$url, httr::write_disk(outfile, overwrite = TRUE))
+    httr::GET(find$url, httr::write_disk(outfile, overwrite = TRUE), httr::progress())
     
     return(outfile)
   }
@@ -221,20 +222,35 @@ write_hydrofabric = function(network_list,
     
     
    write_dm_model = function(data, dm, outfile, layer_name){
-     names = names(data)
-     bad   = dm[!dm %in% names]
      
-     if(length(bad) > 0){
-       stop("Need extra parameters in ", layer_name, ": ", paste(bad, collapse = ", "), call.  = FALSE)
+     if(is.null(data)){
+       NULL
      } else {
-       write_sf(data, outfile, layer_name)
+       names = names(data)
+       bad   = dm[!dm %in% names]
+       
+       if(length(bad) > 0){
+         stop("Need extra parameters in ", layer_name, ": ", paste(bad, collapse = ", "), call.  = FALSE)
+       } else {
+         write_sf(data, outfile, layer_name)
+       }
      }
+     
    }
    
-   write_dm_model(data = network_list$flowpaths, dm = names(hf_dm$flowlines), outfile, "flowpaths") 
-   write_dm_model(data = network_list$divides,   dm = names(hf_dm$divides), outfile, "divides") 
+   write_dm_model(data = network_list$flowpaths, 
+                  dm = names(hf_dm$flowlines), 
+                  outfile, 
+                  "flowpaths") 
+   write_dm_model(data = network_list$divides,   
+                  dm = names(hf_dm$divides), 
+                  outfile, 
+                  "divides") 
    
-   write_dm_model(data = network_list$hydrolocations, dm = names(hf_dm$hydrolocations), outfile, "hydrolocations") 
+   write_dm_model(data = network_list$hydrolocations, 
+                  dm = names(hf_dm$hydrolocations), 
+                  outfile, 
+                  "hydrolocations") 
    write_dm_model(data = network_list$hydrolocations_lookup, dm = names(hf_dm$hydrolocation_lookup), outfile, "hydrolocations_lookup") 
    
    write_dm_model(data = network_list$network, 

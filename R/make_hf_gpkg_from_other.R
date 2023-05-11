@@ -75,6 +75,7 @@ make_hf_gpkg_from_uniform_aggregate = function(gpkg){
 
   # Divides
   nl$divides = nl$catchments %>% 
+    st_cast("POLYGON")
     select(divide_id = id, toid, areasqkm, network_type = divide_type) %>% 
     mutate(has_flowline = network_type == "network") %>% 
     left_join(select(st_drop_geometry(nl$flowpaths), id, divide_id), by = "divide_id") %>% 

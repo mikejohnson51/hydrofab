@@ -46,13 +46,12 @@ network_metadata = function(gpkgs,
 
 build_new_id_table = function(meta,
                               index, 
-                              network_layer =  "network", 
-                              network_lookup = "network_lookup",
+                              network_layer =  "network",
                               term_add = 1e9,
                               modifications = NULL){
   
   network = read_sf(meta$path[index], network_layer) %>% 
-    select(id, toid, divide_id, toid)
+    select(id, toid, divide_id, hf_id)
   
   if(index == 1){
     term_add = 0 + term_add
@@ -60,9 +59,9 @@ build_new_id_table = function(meta,
     term_add = meta$cumcount_terminals[index] + term_add
   }
  
-  unqiue_ids = sort(unique(unlist(network)))
+  unqiue_ids = sort(unique(unlist(select(network, -hf_id))))
   
-  terminals = filter(network, toid == 0) %>% 
+  terminals = filter(distinct(select(network, id, toid)), toid == 0 | is.na(toid)) %>% 
     mutate(terminal_id = term_add + 1:n()) %>% 
     select(oldID = id, terminal_id)
   
@@ -73,8 +72,7 @@ build_new_id_table = function(meta,
   
   if(!is.null(modifications)){
 
-    lookup = read_sf(meta$path[index], network_lookup) %>% 
-      filter(hf_id_part == 1) %>% 
+    lookup = network %>% 
       select(id, hf_id) %>%
       inner_join(modifications, by = "hf_id")
     
@@ -82,7 +80,9 @@ build_new_id_table = function(meta,
   
   }
   
-   df$terminals = sum(network$toid == 0 | is.na(network$toid))
+   df = distinct(df)
+  
+   df$terminals = nrow(terminals)
    
    return(df)
 
@@ -104,6 +104,10 @@ update_network_identifiers = function(x, lookup, term_add = 1e9, connections  = 
   
   if("id" %in% names(x)){
     x$id = lookup$newID[match(x$id, lookup$oldID)]
+  }
+  
+  if("ds_id" %in% names(x)){
+    x$ds_id = lookup$newID[match(x$ds_id, lookup$oldID)]
   }
   
   if("divide_id" %in% names(x)){
@@ -195,6 +199,7 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
   ) %>%  
     bind_rows()
 
+
   if(nrow(filter(ll, !is.na(terminal_id))) != sum(meta$terminals)){
     hyaggregate_log("FATAL", glue("Some terminal not found."), verbose)
   }
@@ -206,7 +211,7 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
   conn = filter(ll, !is.na(connection)) %>% 
     arrange(connection) %>% 
     select(newID, connection, type) %>% 
-    pivot_wider(connection, names_from = type, values_from = newID) %>% 
+    pivot_wider(id_cols = connection, names_from = type, values_from = newID) %>% 
     select(connection, from, to)
   
   for(i in 1:nrow(meta)){
@@ -214,8 +219,7 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
     lookup =  filter(ll, unit == i)
     
     for(j in 1:length(lyrs)){
-     tmp = 
-     
+      
      hyaggregate_log("INFO", glue("Processing Unit {i}/{nrow(meta)} -- {lyrs[j]} ({j}/{length(lyrs)})"), verbose)
      
      update_network_identifiers(x = read_sf(gpkgs[i], lyrs[j]), lookup, term_add = term_add, connections = conn) %>% 
@@ -223,48 +227,3 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
     }  
   }
 }
-
-
-#' renamer <- function(x) {
-#'   
-#'   rules <- c(id = "aggregated_ID", 
-#'              id = "ID", 
-#'              toid = "toID",
-#'              member_comid = "member_COMID",
-#'              id = "aggregated_flowpath_ID",
-#'              did = "aggregated_divide_ID",
-#'              levelpathid = "LevelPathID")
-#'   
-#'   if(sum(c("reconciled_ID", "aggregated_ID", "aggregated_flowpath_ID") %in% names(x)) < 2) {
-#'     rules <- c(rules, id = "reconciled_ID")
-#'   }
-#'   
-#'   rename(x, any_of(rules))
-#' }
-#' 
-#' rerenamer <- function(x, agg = FALSE, lookup = FALSE) {
-#'   if(agg) {
-#'     check <- c(aggregated_ID = "id",
-#'                toID = "toid",
-#'                member_COMID = "member_comid")
-#'   } else if(lookup) {
-#'     check <- c(aggregated_flowpath_ID = "id",
-#'                aggregated_divide_ID = "did")
-#'   } else {
-#'     check <- c(ID = "id", 
-#'                toID = "toid")
-#'   }
-#'   rename(x, any_of(check))
-#' }
-#' 
-#' # TODO: replace read_sf calls with these.
-#' hy_read <- function(x, layer, scheme = NULL) {
-#'   # if inherits, data.frame, return
-#'   # try to read gpkg layer
-#'   # rename if scheme is specified
-#' }
-#' 
-#' hy_write <- function(x, gpkg, layer, scheme = NULL) {
-#'   # rename if scheme is specified
-#'   # write out
-#' }
