@@ -14,28 +14,27 @@ datasets from a consistent reference fabric. Some of these are being
 built at [ngen.hydrofab](https://github.com/mikejohnson51/ngen.hydrofab)
 and [gfv2.0](https://code.usgs.gov/wma/nhgf/gfv2.0)
 
-![Fabricating
-Hydrofabrics](https://media1.giphy.com/media/Kd5uWrNKjhRGfopdHJ/giphy.gif?cid=ecf05e476u6oq5neboo6x6lk5gngbz2yuh5st0sxplbmczft&rid=giphy.gif)
-
 ## Installation
 
 You can install the development version of hydrofab like so:
 
-    install.packages("remotes")
-    remotes::install_github("mikejohnson51/hydrofab")
+``` r
+install.packages("remotes")
+remotes::install_github("mikejohnson51/hydrofab")
+```
 
 Soon to be …
 
-    install.packages("remotes")
-    remotes::install_github("NOAA-OWP/hydrofab")
+``` r
+remotes::install_github("NOAA-OWP/hydrofab")
+```
 
 ## Introduction
 
 This package is based around the same concepts as
-[nhdplusTools](https://usgs-r.github.io/nhdplusTools/) and uses its
-utilities extensively. It is the creation of merging the previous
-`hyRefactor` and `hyAggregate` packages in an attempt to provide a
-common software stack for fabricating hydrofabrics.
+[nhdplusTools](https://usgs-r.github.io/nhdplusTools/) and merges the
+previous `hyRefactor` and `hyAggregate` packages in an attempt to
+provide a common software stack for fabricating hydrofabrics.
 
 ### Refactoring and Aggregating
 
@@ -57,6 +56,15 @@ This type of functionality is especially relevant to modeling
 applications that need specific modeling unit characteristics but wish
 to preserve the network as much as possible for interoperability with
 other applications
+
+<img src="man/figures/logos.png" width="1800" style="display: block; margin: auto;" />
+
+## Questions:
+
+<a href = "mailto:mike.johnson@noaa.gov?subject=Nexgen Hydrofabric Questions">
+Mike Johnson</a> (NOAA Hydrofabric Lead),
+<a href = "mailto:dblodgett@usgs.gov?subject=Nexgen Hydrofabric Questions">
+David L. Blodgett </a> (Hydroinformatics Lead, USGS WMA)
 
 ## Disclaimer
 
