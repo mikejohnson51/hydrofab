@@ -5,7 +5,12 @@
 \title{Capture Network Metadata
 This function assumes  that files are names *_{VPU}.gpkg}
 \usage{
-network_metadata(gpkgs, flowpath_layer = "flowpaths", divide_layer = "divides")
+network_metadata(
+  gpkgs,
+  flowpath_layer = "flowpaths",
+  divide_layer = "divides",
+  network_layer = "network"
+)
 }
 \arguments{
 \item{gpkgs}{a vector of file.paths to attribute}
@@ -13,10 +18,11 @@ network_metadata(gpkgs, flowpath_layer = "flowpaths", divide_layer = "divides")
 \item{flowpath_layer}{the layer name containing flowpaths}
 
 \item{divide_layer}{the layer name containing divides}
+
+\item{network_layer}{the name of layer containing the hydrologic network}
 }
 \value{
-a data.frame with the file.path, file name, VPU,flowpath count, 
-divides count, cumulative flowpath count and cummulative divdies count
+data.frame
 }
 \description{
 Capture Network Metadata

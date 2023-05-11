@@ -11,7 +11,7 @@
 
 prepare_network = function(network_list) {
   
-  names(network_list$flowpaths )  = tolower(names(network_list$flowpaths))
+  names(network_list$flowpaths)  = tolower(names(network_list$flowpaths))
   names(network_list$catchments) = tolower(names(network_list$catchments))
 
   if(any(duplicated(network_list$catchments))){
@@ -31,36 +31,19 @@ prepare_network = function(network_list) {
   }
   
   if(any(duplicated(network_list$flowpaths$id))){
-    n = sum(duplicated(network_list$flowpaths))
+    n = sum(duplicated(network_list$flowpaths$id))
     hyaggregate_log("WARN", glue("Dropping {n} duplicate flowpaths."))
   }
   
-  
   # Add a hydrosequence to the flowpaths
   network_list$flowpaths = add_hydroseq(flowpaths = network_list$flowpaths)
-  
   # Add area and length measures to the network list
   network_list = add_measures(network_list$flowpaths, network_list$catchments)
-  
   network_list$flowpaths = mutate(network_list$flowpaths, areasqkm = ifelse(is.na(areasqkm), 0, areasqkm))
-    
-  network_list$flowpaths$tot_drainage_areasqkm = calculate_total_drainage_area(st_drop_geometry(
-      select(
-        network_list$flowpaths,
-        ID = id,
-        toID = toid,
-        area = areasqkm
-      )
-    ))
-
-  network_list$flowpaths$order = network_list$flowpaths %>%
-    st_drop_geometry() %>%
-    flush_prefix(c("id", "toid")) %>%
-    select(ID = id, toID = toid) %>%
-    get_streamorder()
+  network_list$flowpaths$order = get_streamorder(st_drop_geometry(select(network_list$flowpaths, ID = id, toID = toid)))
+  network_list$flowpaths$tot_drainage_area = calculate_total_drainage_area(select(network_list$flowpaths, ID = id, toID = toid, area = areasqkm))
   
   check_network_validity(network_list)
-  
 }
 
 #' Check Network Validity

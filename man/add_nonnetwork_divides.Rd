@@ -10,6 +10,7 @@ area must be reintroduced from the reference dataset.}
 add_nonnetwork_divides(
   gpkg = NULL,
   divides = NULL,
+  huc12 = NULL,
   reference_gpkg = NULL,
   verbose = TRUE
 )
@@ -17,13 +18,13 @@ add_nonnetwork_divides(
 \arguments{
 \item{gpkg}{a path to a gpkg}
 
+\item{huc12}{huc12 to COMID crosswalk}
+
 \item{reference_gpkg}{A path to the reference VPU geopackage (see get_hydrofabric(..., type = "reference"))}
 
 \item{verbose}{Should messages be emitted?}
 
 \item{divide}{If gpkg is NULL, then an sf data.frame, otherwise a the layer name. See details.}
-
-\item{flowpath}{If gpkg is NULL, then an sf data.frame, otherwise a the layer name. See details.}
 }
 \value{
 gpkg path

@@ -54,7 +54,14 @@ layer_exists = function(gpkg, name){
 #' @importFrom glue glue
 
 hyaggregate_log = function(level, message, verbose = TRUE){
-  if(verbose){ log_level(level, message) }
+  if(verbose){ 
+    
+    tryCatch({
+      log_level(level, message)
+    }, error = function(e){message(message)},
+      warning = function(w){message(warning)}
+    )
+  }
 }
 
 #' Read Catchments and Flowpaths from Geopackage
@@ -84,7 +91,8 @@ read_hydrofabric = function(gpkg = NULL,
     if(inherits(flowpaths, "sf")){  out[["flowpaths"]]   <- flowpaths }
   } else {
     
-    hyaggregate_log("INFO", glue("\n--- Read in data from {gpkg} ---\n"), verbose)
+    gpkg = normalizePath(gpkg)
+    hyaggregate_log(level = "INFO", message = glue("\n--- Read in data from {gpkg} ---\n"), verbose)
     
     if(is.null(flowpaths) & realization != "catchments"){
       flowpaths = grep("flowpath|flowline", st_layers(gpkg)$name, value = TRUE)
@@ -105,13 +113,13 @@ read_hydrofabric = function(gpkg = NULL,
     
     if(!is.null(flowpaths)){
       if(layer_exists(gpkg, flowpaths)){
-        out[["flowpaths"]] <- renamer(read_sf(gpkg, flowpaths))
+        out[["flowpaths"]] <- read_sf(gpkg, flowpaths)
       }
     }
     
     if(!is.null(catchments)){
       if(layer_exists(gpkg, catchments)){
-        out[["catchments"]] <- renamer(read_sf(gpkg, catchments))
+        out[["catchments"]] <- read_sf(gpkg, catchments)
       }
     }
   }
@@ -142,7 +150,7 @@ read_hydrofabric = function(gpkg = NULL,
 #' @importFrom nhdplusTools get_boundaries
 #' @importFrom dplyr filter slice_min
 #' @importFrom jsonlite fromJSON
-#' @importFrom httr GET write_disk
+#' @importFrom httr GET write_disk progress
 
 get_hydrofabric = function(VPU = "01",
                            type = "refactor",
@@ -168,7 +176,7 @@ get_hydrofabric = function(VPU = "01",
     
     find = slice_max(filter(xx$files, grepl(VPU, xx$files$name)), dateUploaded)
     
-    httr::GET(find$url, httr::write_disk(outfile, overwrite = TRUE))
+    httr::GET(find$url, httr::write_disk(outfile, overwrite = TRUE), httr::progress())
     
     return(outfile)
   }
@@ -204,61 +212,66 @@ write_hydrofabric = function(network_list,
     return(outfile) 
   
   } else {
-    
-    ## HF DM
-    fp_dm  = c('id', "toid", "mainstem", "lengthkm", "tot_drainage_areasqkm", 
-               "order", "hydroseq", "areasqkm", "divide_id", "geometry", "has_divide")
-    
-    div_dm = c('divide_id', 'id', 'toid', 'areasqkm', 'network_type', 'geometry', 'has_flowline')
-    
-    lu_dm  = c('id', 'hf_source', 'hf_id', 'hf_id_part', 'mainstem', 
-               "poi_id", "poi_type", "poi_value", 
-               "divide_id")
-    
-    poi_dm = c("poi_id", "id", "geometry")
-    
-    net_dm = c('id', 'toid', 'divide_id', 'poi_id', 
-               'lengthkm', 'areasqkm', 'tot_drainage_areasqkm', 'mainstem',
-               "has_flowline", 'has_divide', "network_type")
-    
-    wb_dm  = c('wb_id', 'wb_area', 'wb_source', 'geometry')
-    
-    ## Ngen Specific
-    nex_dm = c('id', 'toid', 'poi_id', 'type')
-    
-    if("WB" %in% names(network_list)){
-      lu = c(lu_dm, "wb_id")
-      net_dm = c(net_dm, "wb_id")
+
+    if(!"WB" %in% names(network_list)){
+     for(i in 1:length(hf_dm)){
+       hf_dm[[names(hf_dm)[i]]] = select(hf_dm[[names(hf_dm)[i]]],
+                                         -any_of("wb_id"))
+     }
     }
     
     
    write_dm_model = function(data, dm, outfile, layer_name){
-     names = names(data)
-     bad   = dm[!dm %in% names]
      
-     if(length(bad) > 0){
-       stop("Need extra parameters in ", layer_name, ": ", paste(bad, collapse = ", "), call.  = FALSE)
+     if(is.null(data)){
+       NULL
      } else {
-       write_sf(data, outfile, layer_name)
+       names = names(data)
+       bad   = dm[!dm %in% names]
+       
+       if(length(bad) > 0){
+         stop("Need extra parameters in ", layer_name, ": ", paste(bad, collapse = ", "), call.  = FALSE)
+       } else {
+         write_sf(data, outfile, layer_name)
+       }
      }
+     
    }
-      
-   write_dm_model(data = network_list$flowpaths, dm = fp_dm, outfile, "flowpaths") 
-   write_dm_model(data = network_list$divides, dm = div_dm, outfile, "divides") 
-   write_dm_model(data = network_list$lookup_table, dm = lu_dm, outfile, "lookup_table")
-   write_dm_model(data = network_list$POIs, dm = poi_dm, outfile, "POIs") 
-   write_dm_model(data = network_list$network, dm = net_dm, outfile, "network")
+   
+   write_dm_model(data = network_list$flowpaths, 
+                  dm = names(hf_dm$flowlines), 
+                  outfile, 
+                  "flowpaths") 
+   write_dm_model(data = network_list$divides,   
+                  dm = names(hf_dm$divides), 
+                  outfile, 
+                  "divides") 
+   
+   write_dm_model(data = network_list$hydrolocations, 
+                  dm = names(hf_dm$hydrolocations), 
+                  outfile, 
+                  "hydrolocations") 
+   write_dm_model(data = network_list$hydrolocations_lookup, dm = names(hf_dm$hydrolocation_lookup), outfile, "hydrolocations_lookup") 
+   
+   write_dm_model(data = network_list$network, 
+                  dm = names(hf_dm$network), 
+                  outfile, "network") 
+   
+   write_dm_model(data = network_list$network_lookup, 
+                  dm = names(hf_dm$network_lookup), 
+                  outfile, "network_lookup") 
    
    if("WB" %in% names(network_list)){
-    write_dm_model(data = network_list$WB, dm = wb_dm, outfile, "WB")
+    write_dm_model(data = network_list$WB, dm = names(hf_dm$WB), outfile, "WB")
    }
    
    if("nexus" %in% names(network_list)){
+     nex_dm = c('id', 'toid', 'hl_id', 'type')
      write_dm_model(data = network_list$nexus, dm = nex_dm, outfile, "nexus")
    }
    
     
-   left_overs = names_nl[!names_nl %in% c("flowpaths", "divides", "lookup_table", "POIs", "network", "WB", "nexus")]
+   left_overs = names_nl[!names_nl %in% c(names(hf_dm), "nexus")]
    
    if(length(left_overs) > 0){
      lapply(1:length(left_overs), function(x){ write_sf(network_list[[left_overs[x]]], outfile, left_overs[x])})

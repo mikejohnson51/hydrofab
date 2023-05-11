@@ -3,15 +3,16 @@
 #' @param gpkgs a vector of file.paths to attribute
 #' @param flowpath_layer the layer name containing flowpaths
 #' @param divide_layer the layer name containing divides
-#' @return a data.frame with the file.path, file name, VPU,flowpath count, 
-#' divides count, cumulative flowpath count and cummulative divdies count
+#' @param network_layer the name of layer containing the hydrologic network
+#' @return data.frame
 #' @export
 #' @importFrom dplyr mutate
 #' @importFrom sf st_layers
 
 network_metadata = function(gpkgs,
                             flowpath_layer = "flowpaths",
-                            divide_layer   = "divides"){
+                            divide_layer   = "divides",
+                            network_layer  = "network"){
   
   meta = data.frame(path = gpkgs) %>% 
     mutate(VPU =  sub('.*_', '', gsub(".gpkg", "", basename(path)))) 
@@ -20,71 +21,71 @@ network_metadata = function(gpkgs,
     t = st_layers(meta$path[i])
     meta$flowpaths[i] =  t$features[which(t$name == flowpath_layer)]
     meta$divides[i]   =  t$features[which(t$name == divide_layer)]
+    meta$unique_features[i]   =  t$features[which(t$name == network_layer)]
   }
   
   meta$cumcount_fl  = c(0, head(cumsum(meta$flowpaths), -1))
   meta$cumcount_div = c(0, head(cumsum(meta$divides), -1))
+  meta$cumcount_unique = c(0, head(cumsum(meta$unique_features), -1))
   meta$terminals = NA
+  meta$cumcount_terminals = NA
   
   meta
   
 }
 
-#' Build a new ID lookup table
+#' Build a new ID table
 #' @param gpkgs a row of network metadata built with `network_metadata`
 #' @param flowpath_layer the layer name containing flowpaths
 #' @param divide_layer the layer name containing divides
-#' @return a data.frame with the file.path, file name, VPU,flowpath count, 
-#' divides count, cumulative flowpath count and cumulative divides count
+#' @param network_layer the name of layer containing the hydrologic network
+#' @return data.frame
 #' @export
-#' @importFrom dplyr select mutate left_join
-#' @importFrom sf read_sf st_drop_geometry
+#' @importFrom dplyr select filter mutate left_join inner_join
+#' @importFrom sf read_sf
 
-build_new_id_table = function(x, 
-                              flowpath_layer = "flowpaths",
-                              divide_layer   = "divides",
-                              lookup_table_layer = "lookup_table"){
+build_new_id_table = function(meta,
+                              index, 
+                              network_layer =  "network",
+                              term_add = 1e9,
+                              modifications = NULL){
   
-  div = read_sf(x$path, divide_layer) %>%
-    renamer()
+  network = read_sf(meta$path[index], network_layer) %>% 
+    select(id, toid, divide_id, hf_id)
   
-  fl = read_sf(x$path, flowpath_layer) %>% 
-    st_drop_geometry() %>%
-    renamer()
+  if(index == 1){
+    term_add = 0 + term_add
+  } else {
+    term_add = meta$cumcount_terminals[index] + term_add
+  }
+ 
+  unqiue_ids = sort(unique(unlist(select(network, -hf_id))))
   
-  # need to get member_comid for each flowpath out of the lookup table
-  if(!"member_comid" %in% names(fl)) {
-    lu <- read_sf(x$path, lookup_table_layer) %>% 
-      renamer() 
-    
-    names(lu) <- tolower(names(lu))
+  terminals = filter(distinct(select(network, id, toid)), toid == 0 | is.na(toid)) %>% 
+    mutate(terminal_id = term_add + 1:n()) %>% 
+    select(oldID = id, terminal_id)
+  
+  df = data.frame(oldID = unqiue_ids) %>% 
+    mutate(newID = c(1:length(unique(unqiue_ids)) + meta$cumcount_unique[index]),
+           newID = ifelse(oldID == 0, 0, newID)) %>% 
+    left_join(terminals, by = "oldID")
+  
+  if(!is.null(modifications)){
 
-    id_type <- class(lu$id)
+    lookup = network %>% 
+      select(id, hf_id) %>%
+      inner_join(modifications, by = "hf_id")
     
-    if(!"member_comid" %in% names(lu)) {
-      # not sure we need to support this, but it's a thing in some files.
-      lu$member_comid <- paste(lu$nhdplusv2_comid, lu$nhdplusv2_comid_part, sep = ".") 
-    }
-    
-    lu <- select(lu, id, member_comid)
-    
-    lu <- split(lu$member_comid, lu$id)
-    
-    lu <- data.frame(id = as(names(lu), id_type), 
-                     member_comid = I(unname(lu)))
-
-    lu <- pack_set(lu, "member_comid")
-    
-    fl <- left_join(fl, lu, by = "id")
+    df = left_join(df, lookup, by = c("oldID" = "id"))
+  
   }
   
-  fl = select(fl, oldID = id, member_comid)
+   df = distinct(df)
   
-  data.frame(oldID = sort(div$id)) %>% 
-    mutate(newID = 1:length(unique(div$id)) + x$cumcount_div,
-           newID = ifelse(oldID == 0, 0, newID),
-           VPU = x$VPU) %>% 
-    left_join(fl, by = "oldID")
+   df$terminals = nrow(terminals)
+   
+   return(df)
+
 }
 
 #' Update Network Identifiers
@@ -99,74 +100,74 @@ build_new_id_table = function(x,
 #' @export
 #' @importFrom dplyr filter bind_rows
 
-update_topo = function(x, lookup, vpu_topo = NULL){
+update_network_identifiers = function(x, lookup, term_add = 1e9, connections  = NULL){
   
   if("id" %in% names(x)){
     x$id = lookup$newID[match(x$id, lookup$oldID)]
   }
   
-  if("toid" %in% names(x)){
-    x$toid = lookup$newID[match(x$toid, lookup$oldID)]
-    x$toid[is.na(x$toid)] = 0
+  if("ds_id" %in% names(x)){
+    x$ds_id = lookup$newID[match(x$ds_id, lookup$oldID)]
   }
   
-  if((nrow(vpu_topo) != 0 | is.null(vpu_topo)) & "toid" %in% names(x)){
-
-    good = filter(x, !id %in% vpu_topo$ID)
-    fix  = filter(x,   id %in% vpu_topo$ID)
-    
-    fix$toid = vpu_topo$toID[match(fix$id, vpu_topo$ID)]
-    
-    x = bind_rows(good, fix)
-  }
-  
-  if("id" %in% names(x)){
-    x$id = as.integer(x$id)
+  if("divide_id" %in% names(x)){
+    x$divide_id = lookup$newID[match(x$divide_id, lookup$oldID)]
   }
   
   if("toid" %in% names(x)){
-    x$toid = as.integer(x$toid)
+    to   = lookup$newID[match(x$toid, lookup$oldID)]
+    term = lookup$terminal_id[match(x$id, lookup$newID)]
+    x$toid = ifelse(to != 0, to, term)
   }
   
-  x
+  if(!is.null(connections) & "toid" %in% names(x)){
+    if("id" %in% names(x)){
+    x = filter(x, id %in% connections$from) %>% 
+      select(-toid) %>% 
+      left_join(select(connections, id = from, toid = to), by = "id") %>% 
+      bind_rows(filter(x, !id %in% connections$from))
+    } else {
+      x = filter(x, divide_id %in% connections$from) %>% 
+        select(-toid) %>% 
+        left_join(select(connections, divide_id = from, toid = to), by = "divide_id") %>% 
+        bind_rows(filter(x, !divide_id %in% connections$from))
+    }
+  }
+    
+    x
 }
+
 
 #' Update Hydrofabric Identifiers
 #' For a given set of hydrofabric geopackages, update the ID and toID values to 
-#' be gloablaly unique.
+#' be globally unique.
 #' @param gpkgs a vecotor of file.paths to that define the global network
 #' @param outfiles a vector of file.paths to write to 
 #' @param flowpath_layer the layer name containing flowpaths
-#' @param mapped_POI_layer the layer name containing flowpaths
 #' @param divide_layer the layer name containing divides
-#' @param lookup_table_layer the layer name containing flowpaths
-#' @param catchment_network_layer the layer name containing flowpaths
+#' @param network_layer the name of layer containing the hydrologic network
+#' @param term_add value to be added to all terminal IDs
 #' @param overwrite overwrite existing files?
 #' @param verbose emit messages
 #' @return a data.frame
 #' @export 
-#' @importFrom dplyr filter select mutate left_join
-#' @importFrom sf read_sf write_sf
-#' @importFrom tidyr unnest
+#' @importFrom dplyr filter select mutate left_join arrange
+#' @importFrom sf read_sf write_sf st_layers
+#' @importFrom tidyr pivot_longer pivot_wider
 
 assign_global_identifiers <- function(gpkgs                     = NULL, 
                                       outfiles                  = NULL,
                                       flowpath_layer            = "flowpaths",
-                                      mapped_POI_layer          = "mapped_POIs",
                                       divide_layer              = "divides",
-                                      lookup_table_layer        = "lookup_table",
-                                      flowpath_edge_list        = "flowpath_edge_list",
+                                      network_layer             = "network",
                                       overwrite                 = FALSE,
-                                      update_terminals          = TRUE,
                                       term_add                  = 1e9,
-                                      return_lookup             = TRUE,
+                                      modifications = NULL,
                                       verbose                   = TRUE) {
 
 
-  meta = network_metadata(gpkgs, flowpath_layer, divide_layer)
+  meta = network_metadata(gpkgs, flowpath_layer, divide_layer, network_layer)
 
-  lus = list()
-  
   if(is.null(outfiles) & !overwrite){
     stop("No outfiles given and overwrite = FALSE")
   }
@@ -181,306 +182,48 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
     meta$outfiles = outfiles
   }
   
-  gs_file = 'https://code.usgs.gov/wma/nhgf/reference-hydrofabric/-/raw/04cd22f6b5f3f53d10c0b83b85a21d2387dfb6aa/workspace/cache/rpu_vpu_out.csv'
+  modifications = modifications %>% 
+    select(from, to) %>% 
+    mutate(connection = 1:n()) %>% 
+    pivot_longer(-connection, names_to = "type", values_to = 'hf_id')
   
-  vpu_topo_all = read.csv(gs_file) %>% 
-    filter(VPUID != toVPUID) %>% 
-    select(VPUID, toVPUID, COMID, toCOMID)
-  
-  for(i in 1:nrow(meta)) {
-    
-   hyaggregate_log("INFO", glue("Processing VPU-{meta$VPU[i]}..."), verbose)
-   
-   lu = build_new_id_table(x = meta[i,], flowpath_layer, divide_layer, lookup_table_layer)
-  
-   vpu_topo = filter(vpu_topo_all, VPUID == meta$VPU[i]) 
-   
-   if(nrow(vpu_topo) > 0){
-     hyaggregate_log("INFO", glue("Building Downstream VPU list for VPU-{vpu_topo$toVPUID[1]}..."), verbose)
-     
-     tryCatch({
-     ds_vpu  =  filter(meta, VPU %in% vpu_topo$toVPUID) %>% 
-       build_new_id_table(flowpath_layer, divide_layer)
-     }, error = function(e) {
-       if(!any(meta$VPU %in% vpu_topo$toVPUID)) {
-         hyaggregate_log("FATAL", glue("missing data for VPU-{vpu_topo$toVPUID[1]}"), verbose)
-       }
-       stop(e)
-     })
-     
-     vpu_topo = filter(lu, grepl(paste(vpu_topo$COMID, collapse = "|"),
-                                 lu$member_comid)) %>% 
-       mutate(member_comid = strsplit(member_comid, split = ",")) %>% 
-       unnest('member_comid') %>% 
-       mutate(member_comid = as.integer(member_comid)) %>% 
-       filter(member_comid %in% vpu_topo$COMID) %>% 
-       select(ID = newID, COMID = member_comid) %>% 
-       left_join(vpu_topo, by = "COMID")
-     
-     vpu_topo = filter(ds_vpu, grepl(paste(vpu_topo$toCOMID, collapse = "|"), 
-                                     ds_vpu$member_comid)) %>% 
-       mutate(member_comid = strsplit(member_comid, split = ",")) %>% 
-       unnest('member_comid') %>% 
-       mutate(member_comid = as.integer(member_comid)) %>% 
-       filter(member_comid %in% vpu_topo$toCOMID) %>% 
-       select(toID = newID, toCOMID = member_comid) %>% 
-       left_join(vpu_topo, by = "toCOMID")
+  ll = lapply(
+    1:nrow(meta),
+    FUN = function(l) {
+      tmp = build_new_id_table(meta, l, modifications = modifications)
+      tmp$unit = l
+      meta$terminals[l] <<- tmp$terminals[1]
+      meta$cumcount_terminals <<- c(0, head(cumsum(meta$terminals), -1))
+      return(select(tmp, -terminals))
     }
-    
-   lu$member_comid = NULL
-   
-   ## Flowpaths ##
-     if(layer_exists(meta$path[i], flowpath_layer)){
-      
-       fl = read_sf(meta$path[i], flowpath_layer) %>% 
-         renamer() %>%
-         update_topo(lu, vpu_topo)
-      
-       meta$terminals[i] = sum(fl$toid == 0 | is.na(fl$toid))
-       
-       write_sf(fl, meta$outfiles[i], flowpath_layer, overwrite = TRUE)
-      
-    } else {
-      stop(flowpath_layer, " does not exist!")
-    }
-   
-    
-    ## Divides ##
-    if(layer_exists(meta$path[i], divide_layer)){
+  ) %>%  
+    bind_rows()
 
-      dv = read_sf(meta$path[i], divide_layer) %>% 
-        renamer() %>%
-        update_topo(lu, vpu_topo)
-      
-      write_sf(dv, meta$outfiles[i], divide_layer, overwrite = TRUE)
-      
-    } else {
-      stop(divide_layer, " does not exist!")
-    }
-    
-    ### mapped_POIs ###
-    if(layer_exists(meta$path[i], mapped_POI_layer)){
-      
-      read_sf(meta$path[i], mapped_POI_layer) %>% 
-        renamer() %>%
-        update_topo(lu, vpu_topo) %>% 
-        write_sf(meta$outfiles[i], mapped_POI_layer, overwrite = TRUE)
-      
-    } else {
-      stop(mapped_POI_layer, " does not exist!")
-    }
-    
-    ### lookup_table ###
-    if(layer_exists(meta$path[i], lookup_table_layer)){
-      
-      read_sf(meta$path[i], lookup_table_layer) %>% 
-        renamer() %>% 
-        update_topo(lu, vpu_topo)  %>% 
-        rerenamer(lookup = TRUE) %>% 
-        write_sf(meta$outfiles[i], lookup_table_layer, overwrite = TRUE)
-      
 
-    } else {
-      stop(lookup_table_layer, " does not exist!")
-    }
-
-    ### catchment_network ###
-     if(layer_exists(meta$path[i], flowpath_edge_list)){
-      read_sf(meta$path[i], flowpath_edge_list) %>%
-        renamer() %>%
-        update_topo(lu, vpu_topo)  %>%
-        write_sf(meta$outfiles[i], flowpath_edge_list, overwrite = TRUE)
-      } else {
-          stop(flowpath_edge_list, " does not exist!")
-      }
-
-    hyaggregate_log("INFO", glue("Finished VPU-{meta$VPU[i]}!"), verbose)
-    lus[[i]] = lu
+  if(nrow(filter(ll, !is.na(terminal_id))) != sum(meta$terminals)){
+    hyaggregate_log("FATAL", glue("Some terminal not found."), verbose)
   }
   
-  meta$cumcount_term = c(0, head(cumsum(meta$terminals), -1))
-  
-  lookup = bind_rows(lus) %>% 
-    select(VPU, oldID, newID)
-
-  if(update_terminals){
-    meta = assign_global_terminal_identifiers(meta, 
-                                              flowpath_layer = flowpath_layer, 
-                                              divide_layer = divide_layer,
-                                              lookup_table_layer   = lookup_table_layer,
-                                              flowpath_edge_list   = flowpath_edge_list,
-                                              term_add = term_add,
-                                              verbose = verbose
-    )
+  if(nrow(filter(ll, !is.na(hf_id))) != nrow(modifications)){
+      hyaggregate_log("FATAL", glue("Some modification connections not found."), verbose)
   }
-
   
-  if(return_lookup){
-    list(meta = meta, lookup = lookup)
-  } else {
-    return(meta)
-  }
-}
-
-
-
-#' Update Hydrofabric Terminal Identifiers
-#' For a given set of hydrofabric geopackages, update terminal toID values to 
-#' be gloablaly unique.
-#' @param gpkgs a metadata data.frame resulting from `assign_global_identifiers`
-#' @param flowpath_layer the layer name containing flowpaths
-#' @param lookup_table_layer the layer name containing flowpaths
-#' @param catchment_network_layer the layer name containing flowpaths
-#' @param term_add a numeric value to add to the terminal ids to facilitate 
-#' easy discovery, and to avoid conflict with know IDs
-#' @param verbose emit messages
-#' @return data.frame
-#' @export
-#' @importFrom dplyr select mutate filter bind_rows left_join
-#' @importFrom sf read_sf write_sf st_drop_geometry
-#' @importFrom glue glue
-
-assign_global_terminal_identifiers = function(meta, 
-                                              flowpath_layer = "flowpaths",
-                                              divide_layer   = "divides",
-                                              lookup_table_layer   = "lookup_table",
-                                              flowpath_edge_list   = "flowpath_edge_list",
-                                              verbose = TRUE,
-                                              term_add = 1e9){
+  conn = filter(ll, !is.na(connection)) %>% 
+    arrange(connection) %>% 
+    select(newID, connection, type) %>% 
+    pivot_wider(id_cols = connection, names_from = type, values_from = newID) %>% 
+    select(connection, from, to)
   
   for(i in 1:nrow(meta)){
+    lyrs   =  st_layers(meta$path[i])$name
+    lookup =  filter(ll, unit == i)
     
-    hyaggregate_log("INFO", glue("Processing VPU-{meta$VPU[i]} terminals..."), verbose)
-    
-    ## Flowpaths ##
-    if(layer_exists(meta$outfiles[i], flowpath_layer)){
+    for(j in 1:length(lyrs)){
       
-       fl = read_sf(meta$outfiles[i], flowpath_layer) 
-       
-       topo = select(fl, id, toid) %>% 
-         st_drop_geometry()
-       
-       terms = filter(topo, toid == 0)
-       
-       if(nrow(terms) > 0){
-         terms = terms %>% 
-           mutate(tmp_id = 1:n()) %>% 
-           mutate(toid = tmp_id + term_add + meta$cumcount_term[i],
-                  toid = as.integer(toid),
-                  tmp_id = NULL)
-       }
-    
-       
-       topo = filter(topo, !id %in% terms$id) %>% 
-         bind_rows(terms)
-    
-      fl = mutate(fl, toid = NULL) %>% 
-         left_join(topo, by = 'id') %>% 
-         select(id, toid, everything()) 
-      
-      write_sf(fl, meta$outfiles[i], flowpath_layer, overwrite = TRUE)
-       
-     } else {
-       stop(flowpath_layer, " does not exist!")
-     }
-    
-    
-    ## Update Catchments ##
-    if(layer_exists(meta$outfiles[i], divide_layer)){
-      
-      cat = read_sf(meta$outfiles[i], divide_layer) %>% 
-        mutate(toid = NULL) %>% 
-        left_join(st_drop_geometry(select(fl, id, toid)), by = 'id') %>% 
-        select(id, toid, everything()) 
-
-      write_sf(cat, meta$outfiles[i], divide_layer, overwrite = TRUE)
-  
-    } else {
-      stop(divide_layer, " does not exist!")
-    }
-    
- 
-     ### lookup_table ###
-     if(layer_exists(meta$outfiles[i], lookup_table_layer)){
-       
-       lookup = read_sf(meta$outfiles[i], lookup_table_layer) %>% 
-         renamer() %>%
-         mutate(toid = NULL) %>% 
-         left_join(topo, by = "id") %>% 
-         rename(toid = toID)
-       
-       if("POI_ID" %in% names(lookup)) {
-         lookup <- select(lookup, NHDPlusV2_COMID, NHDPlusV2_COMID_part,
-                          reconciled_ID, aggregated_flowpath_ID = id,      
-                          toID, mainstem, POI_ID, POI_TYPE, POI_VALUE)
-       } else {
-         lookup <- select(lookup, NHDPlusV2_COMID, 
-                          reconciled_ID = id, 
-                          member_COMID = member_comid)
-       }
-       
-        write_sf(lookup, meta$outfiles[i], lookup_table_layer, overwrite = TRUE)
-        
-     } else {
-       stop(lookup_table_layer, " does not exist!")
-     }
-
-     ## catchment_network ###
-     if(layer_exists(meta$outfiles[i], flowpath_edge_list)){
-        cn = select(st_drop_geometry(fl), id, toid)
-        write_sf(cn, meta$outfiles[i], flowpath_edge_list, overwrite = TRUE)
-     } else {
-       stop(flowpath_edge_list, " does not exist!")
-     }
-
-     hyaggregate_log("INFO", glue("Finished VPU-{meta$VPU[i]}!"), verbose)
-
+     hyaggregate_log("INFO", glue("Processing Unit {i}/{nrow(meta)} -- {lyrs[j]} ({j}/{length(lyrs)})"), verbose)
+     
+     update_network_identifiers(x = read_sf(gpkgs[i], lyrs[j]), lookup, term_add = term_add, connections = conn) %>% 
+       write_sf(meta$outfiles[i], lyrs[j], overwrite = TRUE)
+    }  
   }
-  
- meta
-}
-
-#' @importFrom dplyr rename any_of
-renamer <- function(x) {
-  
-  rules <- c(id = "aggregated_ID", 
-             id = "ID", 
-             toid = "toID",
-             member_comid = "member_COMID",
-             id = "aggregated_flowpath_ID",
-             did = "aggregated_divide_ID",
-             levelpathid = "LevelPathID")
-  
-  if(sum(c("reconciled_ID", "aggregated_ID", "aggregated_flowpath_ID") %in% names(x)) < 2) {
-    rules <- c(rules, id = "reconciled_ID")
-  }
-  
-  rename(x, any_of(rules))
-}
-
-rerenamer <- function(x, agg = FALSE, lookup = FALSE) {
-  if(agg) {
-    check <- c(aggregated_ID = "id",
-               toID = "toid",
-               member_COMID = "member_comid")
-  } else if(lookup) {
-    check <- c(aggregated_flowpath_ID = "id",
-               aggregated_divide_ID = "did")
-  } else {
-    check <- c(ID = "id", 
-               toID = "toid")
-  }
-  rename(x, any_of(check))
-}
-
-# TODO: replace read_sf calls with these.
-hy_read <- function(x, layer, scheme = NULL) {
-  # if inherits, data.frame, return
-  # try to read gpkg layer
-  # rename if scheme is specified
-}
-
-hy_write <- function(x, gpkg, layer, scheme = NULL) {
-  # rename if scheme is specified
-  # write out
 }

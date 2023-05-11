@@ -23,11 +23,11 @@ add_flowpath_edge_list = function(gpkg){
 #' @export
 #' @importFrom sf read_sf st_drop_geometry
 #' @importFrom dplyr mutate_at vars mutate group_by ungroup filter distinct slice
-#' @importFrom tidyr pivot_longer
+#' @importFrom tidyr pivot_longer separate_longer_delim
 
-poi_to_outlet = function(gpkg,
-                         type = c('HUC12', 'Gages', 'TE', 'NID', 'WBIn', 'WBOut'),
-                         verbose = TRUE){
+hl_to_outlet = function(gpkg,
+                        type = c('HUC12', 'Gages', 'TE', 'NID', 'WBIn', 'WBOut'),
+                        verbose = TRUE){
   
   valid_types = c('HUC12', 'Gages', 'TE', 'NID', 'WBIn', 'WBOut', "Conf", "Term", "Elev", "Travel", "Con")
   
@@ -36,54 +36,34 @@ poi_to_outlet = function(gpkg,
     stop(bad_ids, " are not valid POI types. Only ", paste(valid_types, collapse = ", "), " are valid")
   }
   
-  if(is.null(type)){
-    type = valid_types
-  }
+  if(is.null(type)){ type = valid_types }
   
-  nexus_locations  = read_sf(gpkg, "mapped_POIs") %>%
-    st_drop_geometry() %>% 
-    select(ID, identifier, paste0("Type_", type)) %>%
+  hl  = read_sf(gpkg, "mapped_POIs") %>% 
+    mutate(hl_id = as.integer(identifier)) %>% 
+    select(ID, hl_id, paste0("Type_", type)) %>%
+    mutate_at(vars(matches("Type_")), as.character) %>% 
+    mutate(nas = rowSums(is.na(.))) %>% 
+    filter(nas != length(type))
+  
+  xx = select(hl, hl_id) %>% group_by(hl_id) %>% slice(1) %>% ungroup()
+             
+  nexus_locations = st_drop_geometry(hl) %>%
+    select(ID, hl_id, paste0("Type_", type)) %>%
     mutate_at(vars(matches("Type_")), as.character) %>%
-    mutate(poi_id = as.character(identifier),
-           identifier = NULL) %>%
-    group_by(ID, poi_id) %>%
+    group_by(ID, hl_id) %>%
     ungroup() %>%
-    pivot_longer(-c(poi_id, ID)) %>%
+    pivot_longer(-c(hl_id, ID)) %>%
     filter(!is.na(value)) %>%
-    mutate(type = gsub("Type_", "", name)) %>% 
-    select(id = ID, poi_id, type, value) %>% 
-    distinct()
+    mutate(hl_reference = gsub("Type_", "", name)) %>% 
+    select(id = ID, hl_id, hl_reference, hl_link = value) %>% 
+    distinct(hl_id, hl_reference, hl_link, .keep_all = TRUE) %>% 
+    left_join(xx, by = "hl_id", relationship = "many-to-many") %>% 
+    separate_longer_delim(hl_link,  delim = ",")
   
-  dups = which(duplicated(nexus_locations$id))
-  
-  if(length(dups) > 0){
-    
-   hyaggregate_log("WARN", glue("{length(dups)} flowpaths have multiple POI IDs. One is (randomly) being selected as flowpath outlet"))
-    
-   nexus_locations =  group_by(nexus_locations, id) %>% 
-      slice(1) %>% 
-      ungroup()
-  
-  } 
-  
-  dups2 = which(duplicated(nexus_locations$poi_id))
-  
-  if(length(dups2) > 0){
-    
-    hyaggregate_log("WARN", glue("{length(dups2)} POIs are mapped to multiple flowpaths. The most usptream will be retained"))
-    nexus_locations =  group_by(nexus_locations, poi_id) %>% 
-      slice(1) %>% 
-      ungroup()
-    
-  } 
-  
-  hyaggregate_log("INFO", glue("{length(unique(nexus_locations$poi_id))} distinct POIs found."), verbose)
+  hyaggregate_log("INFO", glue("{length(unique(nexus_locations$hl_id))} distinct POIs found."), verbose)
   
   nexus_locations
 }
-
-
-
 
 #' Add a mapped_POI layer to network_list
 #'
@@ -96,34 +76,38 @@ poi_to_outlet = function(gpkg,
 #' @importFrom tidyr pivot_longer 
 #' @importFrom nhdplusTools get_node
 
-add_mapped_pois = function(network_list, 
+add_mapped_hydrolocations = function(network_list, 
                            type = c('HUC12', 'Gages', 'TE', 'NID', 'WBIn', 'WBOut'),
                            refactored_gpkg = NULL, 
                            verbose = TRUE){
-
+  
+  hl_to_outlet(refactored_gpkg) %>% 
+    mutate(hl_id = as.integer(hl_id)) %>% 
+    left_join(select(hl, hl_id), by = "hl_id")
+              
   if(!is.null(refactored_gpkg)){
     
-      pois= read_sf(refactored_gpkg, "mapped_POIs") %>% 
-        rename(poi_id = identifier)
+      hl= read_sf(refactored_gpkg, "mapped_POIs") %>% 
+        rename(hl_id = identifier)
       
       pois = pois %>% 
-        filter(poi_id %in% as.numeric(network_list$flowpaths$poi_id)) %>% 
+        filter(hl_id %in% as.numeric(network_list$flowpaths$hl_id)) %>% 
         st_drop_geometry() %>% 
-        select(poi_id, paste0("Type_", type)) %>%
+        select(hl_id, paste0("Type_", type)) %>%
         mutate_at(vars(matches("Type_")), as.character) %>%
-        group_by(poi_id) %>%
+        group_by(hl_id) %>%
         ungroup() %>%
-        pivot_longer(-c(poi_id)) %>%
+        pivot_longer(-c(hl_id)) %>%
         filter(!is.na(value)) %>%
         mutate(type = gsub("Type_", "", name)) %>% 
-        select(poi_id, type, value) %>% 
+        select(hl_id, type, value) %>% 
         filter(type %in% !!type) %>% 
         distinct() %>% 
-        left_join(select(pois, poi_id), by = "poi_id")
+        left_join(select(hl, hl_id), by = "hl_id")
       
     }
 
-  network_list$mapped_POIs = pois
+  network_list$mapped_POIs = hl
   
   return(network_list)
   

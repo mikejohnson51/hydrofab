@@ -6,9 +6,10 @@
 \usage{
 aggregate_to_distribution(
   gpkg = NULL,
+  vpu = NULL,
   flowpath = NULL,
   divide = NULL,
-  outlets = NULL,
+  hydrolocations = NULL,
   ideal_size_sqkm = 10,
   min_length_km = 1,
   min_area_sqkm = 3,
@@ -26,9 +27,6 @@ aggregate_to_distribution(
 
 \item{divide}{If gpkg is NULL, then an sf data.frame, otherwise a the layer name. See details.}
 
-\item{outlets}{data.frame with mandatory "ID" column and optional "POI_ID" column. "ID" must be identifiers from
-flowpath and divide data.frames and POI ID must be unique.}
-
 \item{ideal_size_sqkm}{The ideal size of catchments (default = 10 sqkm)}
 
 \item{min_length_km}{The minimum allowable length of flowpath features (default = 1 km)}
@@ -42,6 +40,9 @@ flowpath and divide data.frames and POI ID must be unique.}
 \item{overwrite}{overwrite existing gf file. Default is FALSE}
 
 \item{verbose}{print status updates. Default = TRUE}
+
+\item{outlets}{data.frame with mandatory "ID" column and optional "POI_ID" column. "ID" must be identifiers from
+flowpath and divide data.frames and POI ID must be unique.}
 
 \item{nexus_locations}{a data.frame with columns specifying the ID, and the nexus type.}
 }

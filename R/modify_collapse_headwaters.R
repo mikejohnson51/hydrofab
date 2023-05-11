@@ -17,21 +17,21 @@ build_headwater_collapse = function(network_list,
   ) %>% 
     filter(hw, small) %>% 
     st_drop_geometry() %>% 
-    select(id, becomes = touches, member_comid, poi_id) %>% 
+    select(id, becomes = touches, member_comid, hl_id) %>% 
     filter(becomes != 0)
   
   df$mC1 = network_list$flowpaths$member_comid[match(df$id, network_list$flowpaths$id)]
   df$mC2 = network_list$flowpaths$member_comid[match(df$becomes, network_list$flowpaths$id)]
   
-  df$poi1 = network_list$flowpaths$poi_id[match(df$id, network_list$flowpaths$id)]
-  df$poi2 = network_list$flowpaths$poi_id[match(df$becomes, network_list$flowpaths$id)]
+  df$hl1 = network_list$flowpaths$hl_id[match(df$id, network_list$flowpaths$id)]
+  df$hl2 = network_list$flowpaths$hl_id[match(df$becomes, network_list$flowpaths$id)]
   
   suppressWarnings({
     group_by(df, becomes) %>%
       mutate(member_comid = paste0(mC2[1], "," ,paste(mC1, collapse = ",")),
-             poi_id = as.numeric(paste(unique(na.omit(c(poi1, poi2))), collapse = ","))) %>%
+             hl_id = as.numeric(paste(unique(na.omit(c(hl1, hl2))), collapse = ","))) %>%
       ungroup() %>%
-      select(-mC1, -mC2, -poi1, -poi2)
+      select(-mC1, -mC2, -hl1, -hl2)
   })
   
 }

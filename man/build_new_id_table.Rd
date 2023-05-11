@@ -2,26 +2,29 @@
 % Please edit documentation in R/merge_hydrofabrics.R
 \name{build_new_id_table}
 \alias{build_new_id_table}
-\title{Build a new ID lookup table}
+\title{Build a new ID table}
 \usage{
 build_new_id_table(
-  x,
-  flowpath_layer = "flowpaths",
-  divide_layer = "divides",
-  lookup_table_layer = "lookup_table"
+  meta,
+  index,
+  network_layer = "network",
+  network_lookup = "network_lookup",
+  term_add = 1e+09,
+  modifications = NULL
 )
 }
 \arguments{
+\item{network_layer}{the name of layer containing the hydrologic network}
+
+\item{gpkgs}{a row of network metadata built with `network_metadata`}
+
 \item{flowpath_layer}{the layer name containing flowpaths}
 
 \item{divide_layer}{the layer name containing divides}
-
-\item{gpkgs}{a row of network metadata built with `network_metadata`}
 }
 \value{
-a data.frame with the file.path, file name, VPU,flowpath count, 
-divides count, cumulative flowpath count and cumulative divides count
+data.frame
 }
 \description{
-Build a new ID lookup table
+Build a new ID table
 }
