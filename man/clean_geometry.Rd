@@ -4,7 +4,14 @@
 \alias{clean_geometry}
 \title{Clean Catchment Geometry}
 \usage{
-clean_geometry(catchments, ID = "ID", keep = 0.9, crs = 5070, sys = NULL)
+clean_geometry(
+  catchments,
+  ID = "ID",
+  keep = NULL,
+  crs = 5070,
+  grid = 9e-04,
+  sys = NULL
+)
 }
 \arguments{
 \item{catchments}{catchments geometries to fix}

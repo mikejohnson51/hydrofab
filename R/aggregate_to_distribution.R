@@ -75,7 +75,7 @@ aggregate_to_distribution = function(gpkg = NULL,
                                   flowpaths = flowpath,
                                   crs = 5070) 
   
-  network_list$catchments <- clean_geometry2(catchments = network_list$catchments, keep = NULL, ID = "ID")
+  network_list$catchments <- clean_geometry(catchments = network_list$catchments, keep = NULL, ID = "ID")
   network_list            <- prepare_network(network_list)
   network_list            <- add_network_type(network_list, verbose = FALSE)
   
