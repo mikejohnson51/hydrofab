@@ -48,6 +48,11 @@ create_style_row <- function(gpkg_path, layer_name, style_name, style_qml) {
 #' @importFrom sf st_layers st_read st_write
 #' @export
 append_style <- function(gpkg_path, layer_names) {
+    
+    qmls = gsub(".qml", "", basename(system.file("qml", paste0(layer_names, ".qml"), package = "hydrofab")))
+    
+    layer_names = layer_names[layer_names %in% qmls]
+    
     styles      <- sapply(layer_names, read_qml)
     style_names <- sapply(layer_names, paste0, "__hydrofabric_style")
     style_rows  <- do.call(rbind, mapply(
