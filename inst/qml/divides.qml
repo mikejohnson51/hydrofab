@@ -4,8 +4,7 @@
     <categories>
       <category symbol="0" value="coastal" label="coastal" render="true"/>
       <category symbol="1" value="network" label="network" render="true"/>
-      <category symbol="2" value="internal" label="" render="true"/>
-      <category symbol="3" value="" label="" render="false"/>
+      <category symbol="2" value="internal" label="internal" render="true"/>
       <category symbol="4" value="terminal" label="terminal" render="true"/>
     </categories>
     <symbols>

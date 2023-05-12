@@ -87,6 +87,8 @@ append_style <- function(gpkg_path, layer_names) {
         gpkg_path,
         layer = "layer_styles",
         append = FALSE,
-        quiet = FALSE
+        quiet = TRUE
     )
+    
+    return(gpkg_path)
 }
