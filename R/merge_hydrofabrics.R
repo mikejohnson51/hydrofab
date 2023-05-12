@@ -198,8 +198,7 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
     }
   ) %>%  
     bind_rows()
-
-
+  
   if(nrow(filter(ll, !is.na(terminal_id))) != sum(meta$terminals)){
     hyaggregate_log("FATAL", glue("Some terminal not found."), verbose)
   }
@@ -224,6 +223,7 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
      
      update_network_identifiers(x = read_sf(gpkgs[i], lyrs[j]), lookup, term_add = term_add, connections = conn) %>% 
        write_sf(meta$outfiles[i], lyrs[j], overwrite = TRUE)
+    
     }  
   }
 }

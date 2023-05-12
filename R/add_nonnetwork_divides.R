@@ -15,6 +15,7 @@
 
 
 add_nonnetwork_divides = function(gpkg = NULL,
+                                  vpu = NULL,
                                   divides = NULL,
                                   huc12 = NULL,
                                   reference_gpkg = NULL,
@@ -111,12 +112,24 @@ add_nonnetwork_divides = function(gpkg = NULL,
   
   if(nrow(divides) > 0){
     divides = divides %>% 
-        mutate(id = -1 * 1:n()) %>% 
+        mutate(divide_id = -1 * 1:n()) %>% 
         rename_geometry("geometry") %>% 
         bind_rows(rename_geometry(out_nl$catchments, "geometry"))
     
     write_sf(divides, gpkg, catchment_name, overwrite = TRUE)
+    
+    
+    net = read_sf(gpkg, 'network')
+    
+    net = st_drop_geometry(divides) %>% 
+      mutate(vpu = net$vpu[1], lengthkm = 0, tot_drainage_areasqkm = areasqkm) %>% 
+      bind_rows(net)
+    
+    write_sf(net, gpkg, "network", overwrite = TRUE)
+    
   }
+  
+  
   
   return(gpkg)
 

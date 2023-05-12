@@ -60,28 +60,29 @@ append_style <- function(gpkg_path, layer_names) {
     ))
 
     if ("layer_styles" %in% sf::st_layers(gpkg_path)$name) {
-        # read in current styles
-        old_style_rows <- sf::st_read(
-            gpkg_path,
-            layer = "layer_styles",
-            quiet = TRUE
-        )
-
-        # remove old hydrofabric styles (if they exist)
-        old_style_rows <- old_style_rows[
-            !(old_style_rows$styleName %in% style_names),
-        ]
-
-        # set our styles as default styles for new tables
-        old_style_rows[
-            old_style_rows$f_table_name %in% layer_names
-        ]$useAsDefault <- FALSE
-
-        style_rows <- rbind(style_rows, old_style_rows)
+        try(st_delete(gpkg_path, "layer_styles"), silent = TRUE)
+        # # read in current styles
+        # old_style_rows <- sf::st_read(
+        #     gpkg_path,
+        #     layer = "layer_styles",
+        #     quiet = TRUE
+        # )
+        # 
+        # # remove old hydrofabric styles (if they exist)
+        # old_style_rows <- old_style_rows[
+        #     !(old_style_rows$styleName %in% style_names),
+        # ]
+        # 
+        # # set our styles as default styles for new tables
+        # old_style_rows[
+        #     old_style_rows$f_table_name %in% layer_names
+        # ]$useAsDefault <- FALSE
+        # 
+        # style_rows <- rbind(style_rows, old_style_rows)
     }
 
     # append the new layer_styles table to the gpkg
-    sf::st_write(
+    st_write(
         style_rows,
         gpkg_path,
         layer = "layer_styles",

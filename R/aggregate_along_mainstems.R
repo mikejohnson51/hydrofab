@@ -385,7 +385,7 @@ aggregate_sets = function(network_list, index_table) {
     select(set) %>%
     union_polygons('set') %>%
     mutate(areasqkm = add_areasqkm(.)) %>% 
-    clean_geometry2(ID = "set") %>% 
+    clean_geometry(ID = "set") %>% 
     bind_rows(single_catchments) %>%
     left_join(set_topo_fin, by = "set") %>%
     select(id = set, toid = toset) 

@@ -27,7 +27,7 @@ cw = readr::read_csv('/Users/mjohnson/Downloads/CrosswalkTable_NHDplus_HU12.csv'
 
 unlink(process$outfiles)
 
-for(i in 17:nrow(process)){
+for(i in 1:nrow(process)){
   
   VPU = process$vpus[i]
   
@@ -61,6 +61,8 @@ for(i in 17:nrow(process)){
   
 }
 
+
+
 ## TASK 2: Assign Globally Unique Identifiers
 
 unlink(process$global)
@@ -73,7 +75,7 @@ modifications = read.csv(gs_file) %>%
 
 meta = assign_global_identifiers(gpkgs = process$outfiles, 
                                  outfiles = process$global,
-                                 modifications = topo_modifications)
+                                 modifications = modifications)
 
 
 for(i in 1:nrow(process)){

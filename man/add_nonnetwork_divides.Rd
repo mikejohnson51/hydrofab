@@ -9,6 +9,7 @@ area must be reintroduced from the reference dataset.}
 \usage{
 add_nonnetwork_divides(
   gpkg = NULL,
+  vpu = NULL,
   divides = NULL,
   huc12 = NULL,
   reference_gpkg = NULL,
