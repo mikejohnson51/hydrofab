@@ -3,9 +3,13 @@ build_headwater_collapse = function(network_list,
                                     min_length_km  = 1) {
   
   touch_id <-  define_touch_id(flowpaths = network_list$flowpaths) %>% 
-    #filter(type == "jun") %>% 
     filter(id != touches) %>% 
-    select(-toid)
+    group_by(id) %>% 
+    mutate(check = ifelse(toid == touches, 1, 2)) %>% 
+    slice_min(check) %>% 
+    ungroup() %>% 
+    select(-toid) 
+
   
   # bad fps are those that are both hw and too small or too large
   df = left_join(network_list$flowpaths,  touch_id, by = "id") %>% 
@@ -18,7 +22,7 @@ build_headwater_collapse = function(network_list,
     filter(hw, small) %>% 
     st_drop_geometry() %>% 
     select(id, becomes = touches, member_comid, hl_id) %>% 
-    filter(becomes != 0)
+    filter(becomes != 0) 
   
   df$mC1 = network_list$flowpaths$member_comid[match(df$id, network_list$flowpaths$id)]
   df$mC2 = network_list$flowpaths$member_comid[match(df$becomes, network_list$flowpaths$id)]

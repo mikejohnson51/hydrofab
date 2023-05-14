@@ -111,7 +111,7 @@ flowpaths_to_linestrings = function(flowpaths){
 #' the system library will be used if available.
 #' @return sf object
 #' @export
-#' @importFrom dplyr select mutate filter group_by ungroup slice_max bind_rows n right_join rename slice_min
+#' @importFrom dplyr select mutate filter group_by ungroup slice_max bind_rows n right_join rename slice_min add_count
 #' @importFrom sf st_crs st_touches st_transform st_area st_make_valid st_intersection st_collection_extract st_cast st_intersects st_length st_filter st_union st_is_empty
 #' @importFrom rmapshaper ms_explode ms_dissolve ms_simplify check_sys_mapshaper
 #' @importFrom rlang := sym
@@ -215,12 +215,12 @@ clean_geometry <- function(catchments,
       
       tj = right_join(
         small_parts,
-        select(st_drop_geometry(ints), featureid, newID),
+        select(st_drop_geometry(ints), !!ID, newID),
         by = "newID"
       ) %>%
         bind_rows(main_parts) %>%
         select(-areasqkm, -tmpID, -newID) %>%
-        group_by(featureid) %>%
+        group_by(.data[[ID]]) %>%
         mutate(n = n()) %>%
         ungroup() %>%
         rename_geometry('geometry')
@@ -228,12 +228,12 @@ clean_geometry <- function(catchments,
       in_cat <- 
         union_polygons(
           filter(tj, .data$n > 1),
-          'featureid'
+          ID
         ) %>% 
         bind_rows(
           select(
             filter(tj, .data$n == 1), 
-            'featureid')
+            !!ID)
         ) %>%
         mutate(tmpID = 1:n()) %>% 
         fast_validity_check()
@@ -254,13 +254,13 @@ clean_geometry <- function(catchments,
     return(
       mutate(in_cat, areasqkm = add_areasqkm(in_cat)) %>%
         st_transform(crs) %>%
-        select("{ID}" := ID,areasqkm)  %>%
-        left_join(st_drop_geometry(select(catchments, -areasqkm)), by = ID)
+        select("{ID}" := ID, areasqkm)  %>%
+        left_join(st_drop_geometry(select(catchments, -any_of('areasqkm'))), by = ID)
     )
     
   } else {
      return(
-       polygons
+       select(polygons, -n, -tmpID)
      )
   }
 }

@@ -38,7 +38,7 @@ aggregate_to_distribution = function(gpkg = NULL,
                                      outfile = NULL,
                                      log = TRUE,
                                      overwrite = FALSE,
-                                     cache = TRUE,
+                                     cache = FALSE,
                                      verbose = TRUE) {
   
   if (cache &  is.null(outfile)) {
@@ -141,7 +141,9 @@ aggregate_to_distribution = function(gpkg = NULL,
     verbose = verbose,
     cache_file = cache_file)
 
- tmp =  network_list$flowpaths %>% 
+
+if(!is.null(hydrolocations)){
+  tmp =  network_list$flowpaths %>% 
     st_drop_geometry() %>%
     select(id, hl_id) %>% 
     filter(!is.na(hl_id)) %>% 
@@ -150,24 +152,25 @@ aggregate_to_distribution = function(gpkg = NULL,
     left_join(select(outflows, -id), 
               by = "hl_id",
               relationship = "many-to-many") %>% 
-   st_as_sf() %>% 
-   rename_geometry("geometry")
- 
- hydrolocations_lookup =  select(st_drop_geometry(tmp), hl_id, id, hl_reference, hl_link, hl_position)
- 
- hydrolocations = distinct(select(tmp, hl_id, id,  any_of(type), hl_position))
- 
- network_list$hydrolocations = left_join(select(hydrolocations, -hl_position, -id), hydrolocations_lookup, by = "hl_id", relationship = "many-to-many") %>% 
-  separate_longer_delim(cols =c('hl_reference', 'hl_link', 'hl_position'), delim = ",") %>% 
-   mutate(hl_uri = paste0(hl_reference, "-", hl_link)) %>% 
-   st_as_sf() %>% 
-   select(hl_id, id, hl_reference, hl_link, hl_uri, hl_position)
- 
+    st_as_sf() %>% 
+    rename_geometry("geometry")
+  
+  hydrolocations_lookup =  select(st_drop_geometry(tmp), hl_id, id, hl_reference, hl_link, hl_position)
+  
+  hydrolocations = distinct(select(tmp, hl_id, id,  any_of(type), hl_position))
+  
+  network_list$hydrolocations = left_join(select(hydrolocations, -hl_position, -id), hydrolocations_lookup, by = "hl_id", relationship = "many-to-many") %>% 
+    separate_longer_delim(cols =c('hl_reference', 'hl_link', 'hl_position'), delim = ",") %>% 
+    mutate(hl_uri = paste0(hl_reference, "-", hl_link)) %>% 
+    st_as_sf() %>% 
+    select(hl_id, id, hl_reference, hl_link, hl_uri, hl_position)
+}
+  
  network_list$divides = select(network_list$catchments, id, toid, areasqkm) %>% 
    mutate(divide_id = id, has_flowline = TRUE, ds_id = NA, type = "network")
  
  network_list$flowpaths = 
-   select(network_list$flowpaths, id, toid, mainstem = levelpathid, order, member_comid, hl_id, hydroseq, lengthkm, 
+   select(network_list$flowpaths, id, toid, mainstem = levelpathid, order, member_comid, any_of('hl_id'), hydroseq, lengthkm, 
           areasqkm, tot_drainage_areasqkm = tot_drainage_area, has_divide) %>% 
    mutate(divide_id = ifelse(id %in% network_list$divides$divide_id, id, NA))
 
@@ -177,7 +180,7 @@ aggregate_to_distribution = function(gpkg = NULL,
      toid          = toid,
      member  = member_comid,
      divide_id,
-     hl_id,
+     any_of('hl_id'),
      mainstem,
      hydroseq,
      order,
@@ -189,16 +192,22 @@ aggregate_to_distribution = function(gpkg = NULL,
           member = NULL,
           hf_source = "NHDPlusV2"
    ) %>% 
+   left_join(st_drop_geometry(select(network_list$divides, divide_id, type, ds_id)), by = "divide_id")
+ 
+ 
+ if(!is.null(hydrolocations)){
+   network_list$network = network_list$network
    left_join(select(network_list$hydrolocations, hl_id, hl_uri), 
-             by = "hl_id",
-             relationship = "many-to-many") %>% 
-   select(id, toid, divide_id, mainstem, hydroseq, 
-          hf_source, hf_id, hf_id_part, 
-          hl_id, hl_uri,
-          hf_id, hf_source,
-          lengthkm, areasqkm, tot_drainage_areasqkm
-          ) %>% 
-  left_join(st_drop_geometry(select(network_list$divides, divide_id, type, ds_id)), by = "divide_id")
+               by = "hl_id",
+               relationship = "many-to-many") %>% 
+     select(id, toid, divide_id, mainstem, hydroseq, 
+            hf_source, hf_id, hf_id_part, 
+            hl_id, hl_uri,
+            hf_id, hf_source,
+            lengthkm, areasqkm, tot_drainage_areasqkm
+            ) 
+ }
+ 
  
   if(!is.null(vpu)){ 
     network_list$network$vpu = vpu 
@@ -218,7 +227,7 @@ aggregate_to_distribution = function(gpkg = NULL,
     return(outfile)
     
   } else {
-    tmp
+    network_list
   }
   
 }

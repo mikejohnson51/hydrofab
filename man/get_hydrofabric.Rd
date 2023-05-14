@@ -4,7 +4,13 @@
 \alias{get_hydrofabric}
 \title{Download Reference Fabric Data by VPU ID}
 \usage{
-get_hydrofabric(VPU = "01", type = "refactor", dir = NULL, overwrite = FALSE)
+get_hydrofabric(
+  VPU = "01",
+  type = "refactor",
+  dir = NULL,
+  progress = TRUE,
+  overwrite = FALSE
+)
 }
 \arguments{
 \item{VPU}{a VPU ID}

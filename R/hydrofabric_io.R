@@ -155,6 +155,7 @@ read_hydrofabric = function(gpkg = NULL,
 get_hydrofabric = function(VPU = "01",
                            type = "refactor",
                            dir  = NULL,
+                           progress = TRUE,
                            overwrite = FALSE) {
   if (is.null(dir)) {
     stop("`dir` cannot be NULL", call. = FALSE)
@@ -170,14 +171,34 @@ get_hydrofabric = function(VPU = "01",
     return(outfile)
   } else {
     
-    url = paste0("https://www.sciencebase.gov/catalog/item/", sb_id(type), '?format=json')
+    s3_id = function(type){
+      if(type == "reference"){
+        '01_reference/reference_'
+      } else if(type == "refactor"){
+        '02_refactored/refactor_'
+      } else if(type == "nextgen") {
+        'pre-release/nextgen_'
+      }
+    }
     
-    xx = fromJSON(url, simplifyDataFrame = TRUE)
+    url = glue('https://nextgen-hydrofabric.s3.amazonaws.com/{s3_id(type)}{VPU}.gpkg')
     
-    find = slice_max(filter(xx$files, grepl(VPU, xx$files$name)), dateUploaded)
-    
-    httr::GET(find$url, httr::write_disk(outfile, overwrite = TRUE), httr::progress())
-    
+ #    url = paste0("https://www.sciencebase.gov/catalog/item/", sb_id(type), "?format=json")
+ #    
+ #    sbtools::item_list_files(sb_id(type))
+ #    
+ #    sbtools::authenticate_sb("jjohnson@lynker.com", "Bedford-109034")
+ #    
+ # xx = fromJSON(url, simplifyDataFrame = TRUE)
+ #    find = slice_max(filter(xx$files, grepl(VPU, xx$files$name)), 
+ #                     dateUploaded)
+ # 
+    if(progress){
+      httr::GET(url, httr::write_disk(outfile, overwrite = TRUE), httr::progress())
+    } else {
+      httr::GET(url, httr::write_disk(outfile, overwrite = TRUE))
+    }
+ #   
     return(outfile)
   }
   

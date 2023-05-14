@@ -14,9 +14,10 @@ refactor(
   collapse_flines_meters = 1000,
   collapse_flines_main_meters = 1000,
   cores = 1,
-  facfdr = NULL,
+  fac = NULL,
+  fdr = NULL,
   purge_non_dendritic = TRUE,
-  keep = 0.9,
+  keep = NULL,
   outfile = NULL
 )
 }
@@ -39,7 +40,9 @@ refactor(
 
 \item{cores}{integer number of cores to use for parallel execution}
 
-\item{facfdr}{path to directory with flow direction and flow accumulation `SpatRast`. If NULL (default) then catchments are NOT reconciled.}
+\item{fac}{path to flow accumulation grid. If NULL (default) then catchments are NOT reconciled.}
+
+\item{fdr}{path to flow direction grid. If NULL (default) then catchments are NOT reconciled.}
 
 \item{keep}{proportion of points to retain in geometry simplification (0-1; default 0.05). See ms_simplify. If NULL, then no simplification will be executed.}
 

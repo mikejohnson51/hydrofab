@@ -93,6 +93,9 @@ make_hf_gpkg_from_uniform_aggregate = function(gpkg){
 #' @return file.path
 #' @export
 
+
+gpkg = '/Volumes/Transcend/ngen/CONUS-hydrofabric/01_reference/reference_01.gpkg'
+
 make_hf_gpkg_from_reference = function(gpkg){
   
   if (is.null(gpkg)) {

@@ -15,7 +15,12 @@ dir.create(glue("{base}/refactored"))
 dir.create(glue("{base}/reference"))
 
 for(i in 1:length(vpus)){
-  get_hydrofabric(VPU = vpus[i], type = "reference", dir =  glue("{base}/reference"), overwrite = TRUE)
-  get_hydrofabric(VPU = vpus[i], type = "refactor", dir =  glue("{base}/refactored"), overwrite = TRUE)
+  get_hydrofabric(VPU = "01", type = "reference", dir =  '/Volumes/Transcend/ngen/CONUS-hydrofabric/01_usgs_ref', overwrite = TRUE)
+  #get_hydrofabric(VPU = vpus[i], type = "refactor", dir =  glue("{base}/refactored"), overwrite = TRUE)
   message(vpus[i])
 }
+
+
+
+
+get_refer

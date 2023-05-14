@@ -14,7 +14,8 @@ omit.na = function(x){ x[!is.na(x)] }
 #' @param collapse_flines_main_meters numeric the minimum length of between-confluence flowpaths.
 #' @param cores   integer number of cores to use for parallel execution
 #' @param keep    Defines the proportion of points to retain in geometry simplification (0-1; default .9). See ms_simplify.
-#' @param facfdr  path to directory with flow direction and flow accumulation `SpatRast`. If NULL (default) then catchments are NOT reconciled.
+#' @param fac  path to flow accumulation grid. If NULL (default) then catchments are NOT reconciled.
+#' @param fdr  path to flow direction grid. If NULL (default) then catchments are NOT reconciled.
 #' @param keep proportion of points to retain in geometry simplification (0-1; default 0.05). See ms_simplify. If NULL, then no simplification will be executed.
 #' @param outfile path to geopackage to write refactored_flowlines, and if facfdr != NULL, refactored catchments.
 #' @return data to the specified gpkg
@@ -26,14 +27,16 @@ omit.na = function(x){ x[!is.na(x)] }
 refactor  = function (gpkg = NULL,
                       flowpaths = NULL, 
                       catchments = NULL,
-                      events = NULL, avoid = NULL,
+                      events = NULL, 
+                      avoid = NULL,
                       split_flines_meters = 10000,
                       collapse_flines_meters = 1000,
                       collapse_flines_main_meters = 1000,
                       cores = 1,
-                      facfdr = NULL,
+                      fac = NULL,
+                      fdr = NULL,
                       purge_non_dendritic = TRUE,
-                      keep = 0.9, 
+                      keep = NULL, 
                       outfile = NULL) {
   
   
@@ -71,24 +74,26 @@ refactor  = function (gpkg = NULL,
     rec = select(rec, -"ID.1")
   }
   
-  if (!is.null(facfdr) & !is.null(network_list$catchments)) {
+  if (!is.null(fac) & !is.null(fdr) & !is.null(network_list$catchments)) {
     
     rpus         = omit.na(unique(network_list$flowpaths$RPUID))
-    fdrfac_files = list.files(facfdr, pattern = rpus, full.names = TRUE)
-    
+
     if ("featureid" %in% names(network_list$catchments)) {
       network_list$catchments = dplyr::rename( network_list$catchments, FEATUREID = .data$featureid)
     }
     
+    fac = dap(URL = fac, AOI = network_list$catchments)
+    fdr = dap(URL = fdr, AOI = network_list$catchments)
+    
     divides <- reconcile_catchment_divides(catchment = network_list$catchments,
-                                                       fline_ref = sf::read_sf(tf),
-                                                       fline_rec = rec,
-                                                       fdr = terra::rast(grep("_fdr.tif$", fdrfac_files, value = TRUE)),
-                                                       fac = terra::rast(grep("_fac.tif$", fdrfac_files, value = TRUE)),
-                                                       para = cores,
-                                                       cache = NULL,
-                                                       keep = keep,
-                                                       fix_catchments = TRUE) %>%
+                                           fline_ref = sf::read_sf(tf),
+                                           fline_rec = rec,
+                                           fdr = fdr,
+                                           fac = fac,
+                                           para = cores,
+                                           cache = NULL,
+                                           keep = keep,
+                                           fix_catchments = FALSE) %>%
       rename_geometry("geometry")
   } else {
     divides = NULL

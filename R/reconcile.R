@@ -187,6 +187,7 @@ reconcile_catchment_divides <- function(catchment,
   if(!is.null(fdr) & !is.null(fac)){
     
     fdr_temp <- fdr
+    
     if(!inherits(fdr_temp, "SpatRaster")){
       fdr_temp <- terra::rast(fdr_temp)
     }
@@ -198,7 +199,7 @@ reconcile_catchment_divides <- function(catchment,
   }
   
   reconciled <- st_drop_geometry(fline_rec) %>%
-    dplyr::select(.data$ID, .data$member_COMID)
+    select(ID, member_COMID)
   
   rm(fline_rec)
   
@@ -296,9 +297,11 @@ reconcile_catchment_divides <- function(catchment,
     )))
   }
   
-  out <- st_sf(right_join(dplyr::select(split_cats, member_COMID = .data$FEATUREID), 
+  out <- st_sf(right_join(dplyr::select(split_cats, member_COMID = FEATUREID), 
                           reconciled,
-                          by = "member_COMID"))
+                          by = "member_COMID")) 
+  
+  out = left_join(union_polygons(out, "ID"), distinct(st_drop_geometry(out)))
   
   missing <- is.na(st_dimension(out$geom))
   
@@ -315,11 +318,13 @@ reconcile_catchment_divides <- function(catchment,
       select(.data$ID, .data$member_COMID) %>% 
       rename_geometry(attr(out_mp, "sf_column")) %>% 
       bind_rows(out_mp)
+    
+    
   } 
   
   if(fix_catchments){
     # cat("Fixing Catchment Geometries...\n")
-    clean_geometry(catchments = out, "ID", keep) %>% 
+    clean_geometry(catchments = out, ID = "ID", keep = keep) %>% 
       sf::st_transform(in_crs)
   } else {
     sf::st_transform(out, in_crs)
