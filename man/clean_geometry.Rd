@@ -6,6 +6,8 @@
 \usage{
 clean_geometry(
   catchments,
+  flowlines = NULL,
+  fl_ID = NULL,
   ID = "ID",
   keep = NULL,
   crs = 5070,
@@ -15,6 +17,10 @@ clean_geometry(
 }
 \arguments{
 \item{catchments}{catchments geometries to fix}
+
+\item{flowlines}{flowlines geometries to filter largest unit (optional)}
+
+\item{fl_ID}{flowlines unique identifier}
 
 \item{ID}{name of uniquely identifying column}
 

@@ -9,8 +9,7 @@ append_style(gpkg_path, layer_names)
 \arguments{
 \item{gpkg_path}{Path to GeoPackage}
 
-\item{layer_names}{character vector of names to append styles for.
-These names must be in the package QML directory.}
+\item{layer_names}{character vector of names to append styles for. These names must be in the package QML directory.}
 }
 \description{
 Append a hydrofabric style to a hydrofabric GeoPackage

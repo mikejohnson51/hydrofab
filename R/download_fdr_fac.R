@@ -11,8 +11,6 @@ check7z = function (){
 #' @param product character DEM, hydroDEM, or FDRFAC.  
 #' @param out_dir path to directory to store output.
 #' @param regions character vector of two digit hydrologic 
-#' @importFrom rvest read_html html_nodes html_attr
-#' @importFrom httr RETRY write_disk progress
 #' @export
 download_elev <- function(product, out_dir, regions = NULL) {
   

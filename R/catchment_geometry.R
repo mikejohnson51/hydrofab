@@ -101,7 +101,9 @@ flowpaths_to_linestrings = function(flowpaths){
 #' Generally a "keep" parameter of .9 seems appropriate for the resolution of
 #' the data but can be modified in function
 #' @param catchments catchments geometries to fix
+#' @param flowlines flowlines geometries to filter largest unit (optional)
 #' @param ID name of uniquely identifying column
+#' @param fl_ID flowlines unique identifier
 #' @param keep proportion of points to retain in geometry simplification
 #' (0-1; default 0.05). See \code{\link[rmapshaper]{ms_simplify}}.
 #' If NULL, then no simplification will be executed.
@@ -111,19 +113,15 @@ flowpaths_to_linestrings = function(flowpaths){
 #' the system library will be used if available.
 #' @return sf object
 #' @export
-#' @importFrom dplyr select mutate filter group_by ungroup slice_max bind_rows n right_join rename slice_min add_count
-#' @importFrom sf st_crs st_touches st_transform st_area st_make_valid st_intersection st_collection_extract st_cast st_intersects st_length st_filter st_union st_is_empty
-#' @importFrom rmapshaper ms_explode ms_dissolve ms_simplify check_sys_mapshaper
-#' @importFrom rlang := sym
-#' @importFrom nhdplusTools rename_geometry
-
 
 clean_geometry <- function(catchments,
-                            ID = "ID",
-                            keep = NULL,
-                            crs = 5070,
-                            grid = .0009,
-                            sys = NULL) {
+                           flowlines = NULL,
+                           fl_ID = NULL,
+                           ID = "ID",
+                           keep = NULL,
+                           crs = 5070,
+                           grid = .0009,
+                           sys = NULL) {
   
   # keep an original count of # rows in catchments
   MASTER_COUNT = nrow(catchments)
@@ -163,19 +161,46 @@ clean_geometry <- function(catchments,
       silent = TRUE
     )
     
+    extra_parts$tmpID = 1:nrow(extra_parts)
+    
+    if(!is.null(flowlines)){
+      
+      imap = st_intersects(extra_parts, st_transform(st_zm(flowlines), st_crs(extra_parts)))
+      
+      l = lengths(imap)
+      
+      df = data.frame(
+        tmpID = rep(extra_parts[['tmpID']], times = l),
+        uid = rep(extra_parts[[ID]], times = l),
+        touch_id = flowlines[[fl_ID]][unlist(imap)]
+      ) %>% 
+        group_by(tmpID) %>% 
+        summarize(prime = any(uid == touch_id))
+      
+      extra_parts = left_join(extra_parts, df, by = 'tmpID') %>% 
+        mutate(prime = ifelse(is.na(prime), FALSE, prime))
+      
+    } else {
+      extra_parts$prime = FALSE
+    }
+    
+    
     # recalculate area
-    extra_parts <- mutate(extra_parts, areasqkm = add_areasqkm(extra_parts), newID = row_number(desc(areasqkm))) 
+    extra_parts <- mutate(extra_parts, 
+                          areasqkm = add_areasqkm(extra_parts)) %>% 
+      arrange(desc(prime), desc(areasqkm)) %>% 
+      mutate(newID = row_number())
 
     # get the biggest parts by area in each catchment and bind with rest of good_to_go catchments
     main_parts <- 
       extra_parts %>% 
       group_by(.data[[ID]]) %>% 
-      slice_max(areasqkm, with_ties = FALSE) %>% 
+      slice(1) %>% 
       ungroup() 
     
     small_parts <- 
       extra_parts %>% 
-      filter(newID != main_parts$newID)
+      filter(!newID %in% main_parts$newID)
     
     if(!sum(nrow(main_parts)) + nrow(filter(polygons, n == 1)) == MASTER_COUNT){ stop() }
     
@@ -280,7 +305,10 @@ fast_validity_check <- function(x){
 simplify_process = function(catchments, keep, sys){
   
   # simplify catchments
-  catchments =  ms_simplify(catchments, keep = keep, keep_shapes = TRUE, sys = sys)
+  catchments =  ms_simplify(catchments, 
+                            keep = keep,
+                            keep_shapes = TRUE, 
+                            sys = sys)
   
   # mark valid/invalid geoms
   bool = st_is_valid(catchments)
@@ -324,10 +352,8 @@ simplify_process = function(catchments, keep, sys){
     
     # combine corrected invalids with valids and recalc area
     return(
-      mutate(
-        bind_rows(invalids, filter(catchments, bool)), 
-        areasqkm = add_areasqkm(.)
-      ) 
+      bind_rows(invalids, filter(catchments, bool)) %>% 
+        mutate( areasqkm = add_areasqkm(.)) 
     )
   }
 }

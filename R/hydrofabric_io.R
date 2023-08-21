@@ -149,13 +149,12 @@ read_hydrofabric = function(gpkg = NULL,
 #' @export
 #' @importFrom nhdplusTools get_boundaries
 #' @importFrom dplyr filter slice_min
-#' @importFrom jsonlite fromJSON
+#' @importFrom sbtools item_list_files item_file_download authenticate_sb
 #' @importFrom httr GET write_disk progress
 
 get_hydrofabric = function(VPU = "01",
                            type = "refactor",
                            dir  = NULL,
-                           progress = TRUE,
                            overwrite = FALSE) {
   if (is.null(dir)) {
     stop("`dir` cannot be NULL", call. = FALSE)
@@ -170,38 +169,23 @@ get_hydrofabric = function(VPU = "01",
   if (file.exists(outfile) & !overwrite) {
     return(outfile)
   } else {
+
+    xx = jsonlite::fromJSON(paste0("https://www.sciencebase.gov/catalog/item/",
+                                   sb_id(type), 
+                                   "?format=json"),
+                  simplifyDataFrame = TRUE)
     
-    s3_id = function(type){
-      if(type == "reference"){
-        '01_reference/reference_'
-      } else if(type == "refactor"){
-        '02_refactored/refactor_'
-      } else if(type == "nextgen") {
-        'pre-release/nextgen_'
-      }
-    }
+    url = filter(xx$files, grepl(VPU, xx$files$name))
     
-    url = glue('https://nextgen-hydrofabric.s3.amazonaws.com/{s3_id(type)}{VPU}.gpkg')
+    unlink(outfile)
     
- #    url = paste0("https://www.sciencebase.gov/catalog/item/", sb_id(type), "?format=json")
- #    
- #    sbtools::item_list_files(sb_id(type))
- #    
- #    sbtools::authenticate_sb("jjohnson@lynker.com", "Bedford-109034")
- #    
- # xx = fromJSON(url, simplifyDataFrame = TRUE)
- #    find = slice_max(filter(xx$files, grepl(VPU, xx$files$name)), 
- #                     dateUploaded)
- # 
-    if(progress){
-      httr::GET(url, httr::write_disk(outfile, overwrite = TRUE), httr::progress())
-    } else {
-      httr::GET(url, httr::write_disk(outfile, overwrite = TRUE))
-    }
- #   
+    sbtools::item_file_download(sb_id(type), 
+                                names = url$name,  
+                                destinations = outfile, 
+                                overwrite_file = overwrite)
+
     return(outfile)
   }
-  
 }
 
 #' Write a hydrofabric gpkg

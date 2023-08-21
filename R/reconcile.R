@@ -17,13 +17,13 @@
 reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 
   check_names(flines, "reconcile_collapsed_flowlines")
-
+  
   new_flines <-
     mutate(flines,
            becomes =
              ifelse((is.na(.data$joined_fromCOMID) | .data$joined_fromCOMID == -9999),
-                     ifelse((is.na(.data$joined_toCOMID) | .data$joined_toCOMID == -9999),
-                            .data$COMID, .data$joined_toCOMID),
+                    ifelse((is.na(.data$joined_toCOMID) | .data$joined_toCOMID == -9999),
+                           .data$COMID, .data$joined_toCOMID),
                     .data$joined_fromCOMID))
   
   # In the case that something is first joined to then the thing it joins with joins from
@@ -58,7 +58,7 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
            part = ifelse(is.na(.data$part), "0", part)) %>%
     ungroup() %>%
     select(-.data$joined_fromCOMID, -.data$joined_toCOMID)
-
+  
   new_flines <-
     left_join(new_flines,
               data.frame(becomes = unique(new_flines$becomes),
@@ -68,20 +68,20 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
   
   tocomid_updater <- filter(select(new_flines, .data$becomes, .data$toCOMID),
                             !is.na(.data$toCOMID))
-
+  
   new_flines <- distinct(left_join(select(new_flines, -.data$toCOMID),
                                    tocomid_updater, by = "becomes"))
-
+  
   new_flines <- left_join(new_flines,
                           select(new_flines, .data$becomes, toID = .data$ID),
                           by = c("toCOMID" = "becomes")) %>%
     arrange(.data$Hydroseq, desc(.data$part))
-
+  
   new_flines <- left_join(new_flines,
                           data.frame(ID = unique(new_flines$ID),
                                      ID_Hydroseq = seq_len(length(unique(new_flines$ID)))),
                           by = "ID")
-
+  
   new_lp <- group_by(new_flines, .data$LevelPathI) %>%
     filter(Hydroseq == min(.data$Hydroseq)) %>% # Get the outlet by hydrosequence.
     ungroup() %>%
@@ -93,17 +93,17 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
   
   if(!"event_identifier" %in% names(new_flines)) 
     new_flines$event_identifier <- rep(NA, nrow(new_flines))
-
+  
   new_flines <- left_join(distinct(new_flines), distinct(new_lp), by = "LevelPathI") %>%
     select(.data$ID, .data$toID, .data$LENGTHKM, .data$TotDASqKM, member_COMID = .data$COMID,
            LevelPathID = .data$ID_LevelPathID, Hydroseq = .data$ID_Hydroseq, 
            .data$event_identifier, orig_levelpathID = .data$LevelPathI)
-
+  
   if (!is.null(geom)) {
     geom_column <- attr(geom, "sf_column")
-
+    
     if (is.null(geom_column)) stop("geom must contain an sf geometry column")
-
+    
     new_flines <- right_join(select(geom, member_COMID = id, geom_column), 
                              new_flines,
                              by = "member_COMID")
@@ -127,6 +127,7 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
   }
   
   return(new_flines)
+  
 }
 
 #' @title Reconcile Catchment Divides

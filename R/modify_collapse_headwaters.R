@@ -10,19 +10,25 @@ build_headwater_collapse = function(network_list,
     ungroup() %>% 
     select(-toid) 
 
+  divide_touch_id = st_intersects(network_list$catchments)
+
+  divide_touches = data.frame(
+    id            = rep(  network_list$catchments$id, times = lengths(divide_touch_id)),
+    becomes       =   network_list$catchments$id[unlist(divide_touch_id)]
+  ) 
   
   # bad fps are those that are both hw and too small or too large
-  df = left_join(network_list$flowpaths,  touch_id, by = "id") %>% 
-  mutate(
-    inflow = ifelse(id %in% touch_id$touches, TRUE, FALSE),
-    hw = ifelse(!id %in% toid, TRUE, FALSE),
-    hw = ifelse(hw & !inflow,  TRUE, FALSE),
-    small = areasqkm < min_area_sqkm | lengthkm < min_length_km
-  ) %>% 
-    filter(hw, small) %>% 
-    st_drop_geometry() %>% 
-    select(id, becomes = touches, member_comid, hl_id) %>% 
-    filter(becomes != 0) 
+  df = left_join(network_list$flowpaths,  select(touch_id, -hl_id), by = "id") %>% 
+    mutate(
+      inflow = ifelse(id %in% touch_id$touches, TRUE, FALSE),
+      hw = ifelse(!id %in% toid, TRUE, FALSE),
+      hw = ifelse(hw & !inflow,  TRUE, FALSE),
+      small = areasqkm < min_area_sqkm | lengthkm < min_length_km
+    ) %>% 
+      filter(hw, small) %>% 
+      st_drop_geometry() %>% 
+      select(id, becomes = touches, member_comid, hl_id) %>% 
+      filter(becomes != 0) 
   
   df$mC1 = network_list$flowpaths$member_comid[match(df$id, network_list$flowpaths$id)]
   df$mC2 = network_list$flowpaths$member_comid[match(df$becomes, network_list$flowpaths$id)]
@@ -30,13 +36,16 @@ build_headwater_collapse = function(network_list,
   df$hl1 = network_list$flowpaths$hl_id[match(df$id, network_list$flowpaths$id)]
   df$hl2 = network_list$flowpaths$hl_id[match(df$becomes, network_list$flowpaths$id)]
   
-  suppressWarnings({
+  tmp = suppressWarnings({
     group_by(df, becomes) %>%
       mutate(member_comid = paste0(mC2[1], "," ,paste(mC1, collapse = ",")),
              hl_id = as.numeric(paste(unique(na.omit(c(hl1, hl2))), collapse = ","))) %>%
       ungroup() %>%
       select(-mC1, -mC2, -hl1, -hl2)
   })
+  
+  
+  semi_join(tmp, divide_touches, by = c("id", "becomes"))
   
 }
 
@@ -85,7 +94,7 @@ collapse_headwaters2 = function(network_list,
     mapping_table = build_headwater_collapse(network_list, min_area_sqkm, min_length_km)
   }
   
-  network_list = add_network_type(network_list, verbose )
+  network_list = add_network_type(network_list, verbose)
   
   hyaggregate_log("SUCCESS", glue("Collapsed {start - nrow(network_list$flowpaths)} features."), verbose)
   

@@ -20,7 +20,7 @@ define_touch_id = function(flowpaths, term_cut = 1e9){
   tmp$type = ifelse(tmp$toid > term_cut, "term", tmp$type)
 
   ends2 = left_join(st_drop_geometry(select(ends, id)), 
-                    st_drop_geometry(select(tmp, id, toid, type, hydroseq)), 
+                    st_drop_geometry(select(tmp, id, toid, type, hydroseq, hl_id)), 
                     by = "id")
   
   tmap = st_intersects(ends, tmp)
@@ -30,10 +30,12 @@ define_touch_id = function(flowpaths, term_cut = 1e9){
     toid          = rep(ends2$toid, times = lengths(tmap)),
     type          = rep(ends2$type, times = lengths(tmap)),
     hs            = rep(ends2$hydroseq, times = lengths(tmap)),
+    hl_id         = rep(ends2$hl_id, times = lengths(tmap)),
     touches       = tmp$id[unlist(tmap)],
     touches_toID  = tmp$toid[unlist(tmap)],
     touches_hs  = tmp$hydroseq[unlist(tmap)]
-  ) 
+  ) %>% 
+    filter(is.na(hl_id))
 }
 
 

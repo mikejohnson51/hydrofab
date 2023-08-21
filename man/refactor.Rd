@@ -10,6 +10,7 @@ refactor(
   catchments = NULL,
   events = NULL,
   avoid = NULL,
+  outlets = NULL,
   split_flines_meters = 10000,
   collapse_flines_meters = 1000,
   collapse_flines_main_meters = 1000,

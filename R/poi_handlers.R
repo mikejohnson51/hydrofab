@@ -25,6 +25,7 @@ add_flowpath_edge_list = function(gpkg){
 #' @importFrom dplyr mutate_at vars mutate group_by ungroup filter distinct slice
 #' @importFrom tidyr pivot_longer separate_longer_delim
 
+
 hl_to_outlet = function(gpkg,
                         type = c('HUC12', 'Gages', 'TE', 'NID', 'WBIn', 'WBOut'),
                         verbose = TRUE){
@@ -38,24 +39,30 @@ hl_to_outlet = function(gpkg,
   
   if(is.null(type)){ type = valid_types }
   
-  hl  = read_sf(gpkg, "mapped_POIs") %>% 
-    mutate(hl_id = as.integer(identifier)) %>% 
-    select(ID, hl_id, paste0("Type_", type)) %>%
+  poi_layer = grep("POIs_*", st_layers(gpkg)$name, value = TRUE)
+  
+  
+  hl  = read_sf(gpkg, poi_layer) %>% 
+    mutate(hl_id = as.integer(id)) %>% 
+    select(COMID, hl_id, paste0("Type_", type)) %>%
     mutate_at(vars(matches("Type_")), as.character) %>% 
     mutate(nas = rowSums(is.na(.))) %>% 
     filter(nas != length(type))
   
-  xx = select(hl, hl_id) %>% group_by(hl_id) %>% slice(1) %>% ungroup()
+  xx = select(hl, hl_id) %>% 
+    group_by(hl_id) %>% 
+    slice(1) %>% 
+    ungroup()
              
   nexus_locations = st_drop_geometry(hl) %>%
-    select(ID, hl_id, paste0("Type_", type)) %>%
+    select(COMID, hl_id, paste0("Type_", type)) %>%
     mutate_at(vars(matches("Type_")), as.character) %>%
-    group_by(ID, hl_id) %>%
+    group_by(COMID, hl_id) %>%
     ungroup() %>%
-    pivot_longer(-c(hl_id, ID)) %>%
+    pivot_longer(-c(hl_id, COMID)) %>%
     filter(!is.na(value)) %>%
     mutate(hl_reference = gsub("Type_", "", name)) %>% 
-    select(id = ID, hl_id, hl_reference, hl_link = value) %>% 
+    select(id = COMID, hl_id, hl_reference, hl_link = value) %>% 
     distinct(hl_id, hl_reference, hl_link, .keep_all = TRUE) %>% 
     left_join(xx, by = "hl_id", relationship = "many-to-many") %>% 
     separate_longer_delim(hl_link,  delim = ",")

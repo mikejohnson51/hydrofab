@@ -9,10 +9,6 @@
 #' @param verbose Should messages be emitted?
 #' @return gpkg path
 #' @export
-#' @importFrom sf st_layers st_transform st_crs write_sf
-#' @importFrom dplyr filter select rename mutate bind_rows
-#' @importFrom nhdplusTools rename_geometry
-
 
 add_nonnetwork_divides = function(gpkg = NULL,
                                   vpu = NULL,
