@@ -1,3 +1,5 @@
+st_erase = function(x, y) st_difference(x, st_union(st_combine(y)))
+
 add_network_type = function(network_list, verbose = TRUE){
   
   network_list$flowpaths = network_list$flowpaths %>% 
@@ -57,6 +59,7 @@ aggregate_along_mainstems = function(network_list,
     ungroup()
   
   fline = network_list$flowpaths %>% 
+    #filter(levelpathid == 2109833) %>% 
     st_drop_geometry() %>% 
     mutate(hl_dn = hl_id) %>% 
     left_join(tmp, by = "id") %>% 
@@ -355,7 +358,7 @@ aggregate_sets = function(network_list, index_table) {
   ####
   
   single_flowpaths = filter(index_table, n == 1) %>%
-    #chagned to inner_join from left_join!
+    #changed to inner_join from left_join!
     inner_join(network_list$flowpaths, by = "id") %>%
     st_as_sf() %>%
     select(set) %>%
@@ -385,13 +388,75 @@ aggregate_sets = function(network_list, index_table) {
     select(set) %>%
     union_polygons('set') %>%
     mutate(areasqkm = add_areasqkm(.)) %>% 
-    clean_geometry(ID = "set") %>% 
     bind_rows(single_catchments) %>%
     left_join(set_topo_fin, by = "set") %>%
     select(id = set, toid = toset) 
   
-  catchments_out$toid = ifelse(is.na(catchments_out$toid), 0, catchments_out$toid)
+  mps = suppressWarnings({
+    catchments_out %>% 
+      st_cast("MULTIPOLYGON") %>% 
+      st_cast("POLYGON") %>% 
+      add_count(id) 
+  })  
   
-  prepare_network(list(flowpaths = flowpaths_out, catchments = catchments_out))
+  fixers = filter(mps, n > 1)
+  
+  good_to_go = filter(mps, n == 1)
+  
+  ll = list()
+  u = unique(fixers$id)
+  
+  for(i in 1:length(u)){
+    
+   tmp = filter(fixers, id == u[i])
+   fp = filter(flowpaths_out, id == tmp$id[1]) %>% 
+     st_buffer(60)
+  
+   q = suppressWarnings({
+     st_erase(fp, tmp) %>% 
+       st_cast("POLYGON") %>% mutate(id = 1:n())
+   })
+   
+   
+   filler = q[lengths(st_intersects(q, st_cast(tmp, "POLYGON"))) == 2, ]
+    
+   cc = bind_rows(st_cast(tmp, "POLYGON"), filler)
+    
+   g = union_polygons(cc, ID = "toid") %>% 
+     st_buffer(.00001)
+  
+   replace = filter(catchments_out, id == tmp$id[1])
+   
+   st_geometry(replace) = st_geometry(g)
+  
+   ll[[i]] = replace
+   
+  }
+  
+  new = bind_rows(ll)
+  
+  mapview(new)
+  
+  old = filter(catchments_out, !id %in% new$id)
+  
+  catchments_out2 = suppressWarnings({
+    st_erase(old, new) %>% 
+    st_collection_extract("POLYGON") %>% 
+    st_cast("POLYGON")
+  })
+  
+  catchments_out2$id %>% table() %>% sort(decreasing = T)
+  check = filter(catchments_out2, st_geometry_type(catchments_out2) != "POLYGON")
+  
+  if(nrow(check) != 0){
+    stop("Errors Found.")
+  }
+  
+
+  catchments_out3 = bind_rows(catchments_out2, new)
+
+  catchments_out3$toid = ifelse(is.na(catchments_out$toid), 0, catchments_out$toid)
+  
+  prepare_network(list(flowpaths = flowpaths_out, catchments = catchments_out3))
 }
 

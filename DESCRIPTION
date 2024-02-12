@@ -2,14 +2,20 @@ Package: hydrofab
 Type: Package
 Title: Hydrologic Network Refactoring and Aggregation Tools
 Version: 0.5.0
-Authors@R: c(person("David", "Blodgett", role = c("aut"), email = "dblodgett@usgs.gov"),
-           person(given = "Mike", family = "Johnson", role = c("aut", "cre"), comment = c(ORCID = "0000-0002-5288-8350"), email = "mike.johnson@noaa.gov"))
+Authors@R: c(person(given = "Mike", family = "Johnson", 
+                    role = c("aut", "cre"), 
+                    comment = c(ORCID = "0000-0002-5288-8350"), 
+                                email = "mike.johnson@noaa.gov"),
+            person("David", "Blodgett", 
+                    role = c("ctb"), 
+                    email = "dblodgett@usgs.gov"))
 Description: A collection of tools for maniputatling hydrologic and hydraulic networks 
 URL: https://github.com/mikejohnson51/hydrofab
 BugReports: https://github.com/mikejohnson51/hydrofab/issues
 Depends: 
     R (>= 3.5.0)
 Imports: 
+    climateR,
     data.table,
     dplyr,
     glue,
@@ -19,6 +25,7 @@ Imports:
     logger,
     lwgeom,
     methods,
+    hyRefactor,
     nhdplusTools,
     parallel,
     pbapply,
@@ -31,7 +38,6 @@ Imports:
     units,
     utils
 Suggests: 
-    hyRefactor,
     knitr,
     magrittr,
     mapview,
@@ -39,7 +45,10 @@ Suggests:
     testthat,
     tibble,
     RSQLite
-Remotes: dblodgett-usgs/nhdplusTools
+Remotes: 
+    mikejohnson51/climateR
+    DOI-USGS/nhdplusTools,
+    DOI-USGS/hyRefactor
 License: CC0
 Encoding: UTF-8
 LazyData: true

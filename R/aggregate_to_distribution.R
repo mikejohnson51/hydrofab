@@ -75,24 +75,26 @@ aggregate_to_distribution = function(gpkg = NULL,
                                   flowpaths = flowpath,
                                   crs = 5070) 
   
-  network_list$catchments <- clean_geometry(catchments = network_list$catchments, keep = NULL, ID = "ID")
+
+  #network_list$catchments <- clean_geometry(catchments = network_list$catchments, keep = NULL, ID = "ID")
   network_list            <- prepare_network(network_list)
   network_list            <- add_network_type(network_list, verbose = FALSE)
   
   # Add outlets
   if (!is.null(hydrolocations)) {
     
+    names(hydrolocations) = tolower(names(hydrolocations))
+    
     outflows = hydrolocations %>% 
-      select(hy_id, starts_with("hl")) %>% 
-      group_by(hy_id) %>% 
+      select(hf_id, id, vpuid,  starts_with("hl")) %>% 
+      group_by(id) %>% 
       mutate(hl_reference = paste(hl_reference, collapse = ","),
              hl_id = paste(hl_id, collapse = ","),
              hl_link = paste(hl_link, collapse = ","),
-             hl_position = paste(hl_position, collapse = ","),
-             id = hy_id) %>% 
+             hl_position = paste(hl_position, collapse = ",")) %>% 
       slice(1) %>% 
       ungroup() %>% 
-      mutate(hy_id = NULL)
+      mutate(hl_id = paste0(vpuid, 1:n()))
 
     network_list$flowpaths  = left_join(mutate(network_list$flowpaths, hl_id = NULL), 
                                         st_drop_geometry(outflows), 
@@ -102,8 +104,6 @@ aggregate_to_distribution = function(gpkg = NULL,
     network_list$flowpaths$hl_uri   = NA
     outflows = NULL
   }
-  
-
   
   if (cache) {
     tmp = list()
@@ -130,15 +130,17 @@ aggregate_to_distribution = function(gpkg = NULL,
     verbose = verbose,
     cache_file = cache_file
   )
-  
+
   network_list3  = collapse_headwaters2(
     network_list2,
     min_area_sqkm,
     min_length_km,
     verbose = verbose,
     cache_file = cache_file)
+
+  network_list3$catchments = clean_geometry(network_list3$catchments, ID = "id")
   
-  network_list3$catchments = clean_geometry(network_list3$catchments, "id")
+  #write_sf(network_list3$catchments, cache_file, "cleaned_step")
 
 if(!is.null(hydrolocations)){
   
@@ -212,8 +214,29 @@ if(!is.null(hydrolocations)){
 
  
  if(!all(st_geometry_type(network_list3$divides) == "POLYGON")){
-   stop("MULTIPOLYGONS FOUND VPU: ", VPU)
+   stop("MULTIPOLYGONS FOUND VPU: ", vpu)
  }
+  
+  if(!all(st_geometry_type(network_list3$flowpaths) == "LINESTRING")){
+    
+    # line_merge = function(x){
+    #   
+    #   ls = x[st_geometry_type(x) == "LINESTRING", ]
+    #   ms = x[!st_geometry_type(x) == "LINESTRING", ]
+    #   
+    #   d = filter(network_list3$divides, id %in% ms$id)
+    #   mapview::mapview(ms) + d
+    #   
+    # }
+    # 
+    # tmp2 = st_line_merge(network_list3$flowpaths)
+    # 
+    # if(nrow(tmp2) == nrow(network_list3$flowpaths)){
+    #   network_list3$flowpaths = tmp2
+    # } else {
+      warning("MULTILINESTRINGS FOUND VPU: ", vpu)
+    #}
+  }
  
   if (!is.null(outfile)) {
   

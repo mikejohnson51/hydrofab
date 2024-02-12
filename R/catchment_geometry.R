@@ -137,11 +137,13 @@ clean_geometry <- function(catchments,
   # set crs variable to crs of catchments
   if(!is.null(crs)){  crs = st_crs(catchments)  }
   
-  catchments = lwgeom::st_snap_to_grid(st_transform(catchments, 5070), size = grid)
+  catchments = lwgeom::st_snap_to_grid(st_transform(catchments, 5070),
+                                       size = grid)
   
   # cast MPs to POLYGONS and add featureid count column
   polygons = suppressWarnings({
     catchments %>% 
+      st_cast("MULTIPOLYGON") %>% 
       st_cast("POLYGON") %>% 
       fast_validity_check() %>% 
       add_count(!!sym(ID)) %>% 
@@ -149,8 +151,8 @@ clean_geometry <- function(catchments,
       rename_geometry("geometry") 
   })
   
-  
-  if(any(st_geometry_type(polygons) != "POLYGON") | nrow(polygons) != MASTER_COUNT){
+  if(any(st_geometry_type(polygons) != "POLYGON") | 
+     nrow(polygons) != MASTER_COUNT){
     # separate polygons with more than 1 feature counts
     extra_parts = filter(polygons, n != 1) 
     
@@ -165,14 +167,16 @@ clean_geometry <- function(catchments,
     
     if(!is.null(flowlines)){
       
-      imap = st_intersects(extra_parts, st_transform(st_zm(flowlines), st_crs(extra_parts)))
+      fl = filter(flowlines, .data[[fl_ID]] %in% extra_parts[[ID]])
       
+      imap = st_intersects(extra_parts, st_transform(st_zm(fl), st_crs(extra_parts)))
+  
       l = lengths(imap)
-      
+    
       df = data.frame(
         tmpID = rep(extra_parts[['tmpID']], times = l),
         uid = rep(extra_parts[[ID]], times = l),
-        touch_id = flowlines[[fl_ID]][unlist(imap)]
+        touch_id = fl[[fl_ID]][unlist(imap)]
       ) %>% 
         group_by(tmpID) %>% 
         summarize(prime = any(uid == touch_id))
@@ -183,7 +187,6 @@ clean_geometry <- function(catchments,
     } else {
       extra_parts$prime = FALSE
     }
-    
     
     # recalculate area
     extra_parts <- mutate(extra_parts, 
@@ -229,8 +232,10 @@ clean_geometry <- function(catchments,
             st_collection_extract("LINESTRING")
         })
       }, error = function(e) {
-        NULL
+        st_intersection(small_parts, st_make_valid(main_parts)) %>%
+          st_collection_extract("POINT")
       })
+  
       
       ints =  out %>%
         mutate(l = st_length(.)) %>%
@@ -266,24 +271,26 @@ clean_geometry <- function(catchments,
     } else {
       in_cat = fast_validity_check(main_parts)
     }
-   
+
+    if(!is.null(keep)){ 
+      in_cat = simplify_process(in_cat, keep, sys)
+    } 
   
-    if(all(st_is_valid(in_cat)) & all(st_geometry_type(in_cat) == "POLYGON")){
-      
-      if(!is.null(keep)){ in_cat = simplify_process(in_cat, keep, sys) } 
-      
-    } else {
-      warning ("Invalid geometries found.", call. = FALSE)
-    }
     
     return(
-      mutate(in_cat, areasqkm = add_areasqkm(in_cat)) %>%
+     mutate(in_cat, areasqkm = add_areasqkm(in_cat)) %>%
         st_transform(crs) %>%
         select("{ID}" := ID, areasqkm)  %>%
         left_join(st_drop_geometry(select(catchments, -any_of('areasqkm'))), by = ID)
     )
     
   } else {
+    
+    if(!is.null(keep)){ 
+      polygons = simplify_process(polygons, keep, sys) %>% 
+            fast_validity_check()
+    } 
+    
      return(
        select(polygons, -n, -tmpID)
      )
@@ -310,52 +317,59 @@ simplify_process = function(catchments, keep, sys){
                             keep_shapes = TRUE, 
                             sys = sys)
   
-  # mark valid/invalid geoms
-  bool = st_is_valid(catchments)
+  tt = fast_validity_check(catchments)
   
-  # make invalid geoms valid
-  invalids = st_make_valid(filter(catchments, !bool))
-  
-  # if not all polygons get returned, try different simplification keep value
-  if(nrow(filter(invalids, st_geometry_type(invalids) != "POLYGON")) > 0){
-    
-    warning("Invalid geometries found. Trying new keep of:",  keep + ((1-keep) / 2) , call. = FALSE)
-    
-    # try simplification again
-    catchments = ms_simplify(catchments, keep =  keep + ((1-keep) / 2), keep_shapes = TRUE, sys = sys)
-    
-    # mark valid/invalid geoms
-    bool = st_is_valid(catchments)
-    
-    # make invalid geoms valid
-    invalids = st_make_valid(filter(catchments, !bool))
-    
-    # if catchments still containing non POLYGON geometries, return original data
-    if(nrow(filter(invalids, st_geometry_type(invalids) != "POLYGON")) > 0){ 
-      
-      warning("Invalid geometries found. Original catchments returned." , call. = FALSE) 
-      
-      return(catchments)
-      
-    } else {
-      
-      # combine corrected invalids with valids and recalc area
-      return(
-        mutate(
-          bind_rows(invalids, filter(catchments, bool)), 
-          areasqkm = add_areasqkm(.)
-        ) 
-      )
-    }
-    
+  if(nrow(tt) != sum(st_is_valid(tt))){
+    stop("Invalid simplication")
   } else {
-    
-    # combine corrected invalids with valids and recalc area
-    return(
-      bind_rows(invalids, filter(catchments, bool)) %>% 
-        mutate( areasqkm = add_areasqkm(.)) 
-    )
+    tt
   }
+  # # mark valid/invalid geoms
+  # bool = st_is_valid(catchments)
+  # 
+  # # make invalid geoms valid
+  # invalids = st_make_valid(filter(catchments, !bool))
+  # 
+  # # if not all polygons get returned, try different simplification keep value
+  # if(nrow(filter(invalids, st_geometry_type(invalids) != "POLYGON")) > 0){
+  #   
+  #   warning("Invalid geometries found. Trying new keep of:",  keep + ((1-keep) / 2) , call. = FALSE)
+  #   
+  #   # try simplification again
+  #   catchments = ms_simplify(catchments, keep =  keep + ((1-keep) / 2), keep_shapes = TRUE, sys = sys)
+  #   
+  #   # mark valid/invalid geoms
+  #   bool = st_is_valid(catchments)
+  #   
+  #   # make invalid geoms valid
+  #   invalids = st_make_valid(filter(catchments, !bool))
+  #   
+  #   # if catchments still containing non POLYGON geometries, return original data
+  #   if(nrow(filter(invalids, st_geometry_type(invalids) != "POLYGON")) > 0){ 
+  #     
+  #     warning("Invalid geometries found. Original catchments returned." , call. = FALSE) 
+  #     
+  #     return(catchments)
+  #     
+  #   } else {
+  #     
+  #     # combine corrected invalids with valids and recalc area
+  #     return(
+  #       mutate(
+  #         bind_rows(invalids, filter(catchments, bool)), 
+  #         areasqkm = add_areasqkm(.)
+  #       ) 
+  #     )
+  #   }
+  #   
+  # } else {
+  #   
+  #   # combine corrected invalids with valids and recalc area
+  #   return(
+  #     bind_rows(invalids, filter(catchments, bool)) %>% 
+  #       mutate( areasqkm = add_areasqkm(.)) 
+  #   )
+  # }
 }
 
 
