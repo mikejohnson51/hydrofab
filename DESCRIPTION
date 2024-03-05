@@ -46,7 +46,7 @@ Suggests:
     tibble,
     RSQLite
 Remotes: 
-    mikejohnson51/climateR
+    mikejohnson51/climateR,
     DOI-USGS/nhdplusTools,
     DOI-USGS/hyRefactor
 License: CC0
