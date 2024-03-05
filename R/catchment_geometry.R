@@ -137,8 +137,7 @@ clean_geometry <- function(catchments,
   # set crs variable to crs of catchments
   if(!is.null(crs)){  crs = st_crs(catchments)  }
   
-  catchments = lwgeom::st_snap_to_grid(st_transform(catchments, 5070),
-                                       size = grid)
+  catchments = lwgeom::st_snap_to_grid(st_transform(catchments, 5070), size = grid)
   
   # cast MPs to POLYGONS and add featureid count column
   polygons = suppressWarnings({
@@ -158,8 +157,7 @@ clean_geometry <- function(catchments,
     
     # dissolve, and explode if necessary
     try(
-      extra_parts <- ms_explode(ms_dissolve(extra_parts, ID, copy_fields = names(extra_parts))
-      ), 
+      extra_parts <- ms_explode(ms_dissolve(extra_parts, ID, copy_fields = names(extra_parts), sys = sys), sys = sys), 
       silent = TRUE
     )
     
@@ -212,9 +210,9 @@ clean_geometry <- function(catchments,
     if(nrow(small_parts) > 0){
       # dissolve, and explode if necessary
       small_parts <- tryCatch(
-        ms_explode(
-          ms_dissolve(small_parts, ID, copy_fields = names(small_parts))
-        ), error = function(e){ NULL}, warning = function(w){ NULL }
+        ms_explode(ms_dissolve(small_parts, ID, copy_fields = names(small_parts), sys = sys), sys = sys), 
+        error = function(e){ NULL}, 
+        warning = function(w){ NULL }
       )
       
       # add area
