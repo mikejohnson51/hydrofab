@@ -1,4 +1,4 @@
-pacman::p_load(hydrofabric, arrow)
+pacman::p_load(hydrofabric)
 devtools::load_all()
 
 vpus = vpu_boundaries$VPUID[1:21]
@@ -21,8 +21,6 @@ cw = read.csv(glue('{base}/CrosswalkTable_NHDplus_HU12.csv')) %>%
 for (i in 1:nrow(process)) {
   
   VPU = process$vpus[i]
-  
- 
   
   refactored_gpkg = get_hydrofabric(VPU = VPU,
                                     type = "refactor",
@@ -50,22 +48,4 @@ for (i in 1:nrow(process)) {
 }
 
 
-## TASK 2: Assign Globally Unique Identifiers ----
 
-unlink(process$global)
-
-gs_file = 'https://code.usgs.gov/wma/nhgf/reference-hydrofabric/-/raw/04cd22f6b5f3f53d10c0b83b85a21d2387dfb6aa/workspace/cache/rpu_vpu_out.csv'
-
-modifications = read.csv(gs_file) %>% 
-  filter(VPUID != toVPUID) %>% 
-  rename(from = COMID, to = toCOMID)
-
-meta = assign_global_identifiers(gpkgs = process$outfiles, 
-                                 outfiles = process$global,
-                                 modifications = modifications)
-
-## TASK 3: Assign Globally Unique Identifiers
-## 
-for(i in 1:nrow(process)){
-  try(append_style(process$global[i], layer_names = c("flowpaths", "divides", "hydrolocations")), silent = TRUE)
-}
