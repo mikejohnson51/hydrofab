@@ -5,7 +5,9 @@
 
 <!-- badges: start -->
 
-[![Dependencies](https://img.shields.io/badge/dependencies-19/80-red?style=flat)](#)
+[![R CMD
+Check](https://github.com/mikejohnson51/hydrofab/actions/workflows/R-CMD-check.yml/badge.svg)](https://github.com/mikejohnson51/hydrofab/actions/workflows/R-CMD-check.yml)
+[![Dependencies](https://img.shields.io/badge/dependencies-21/80-red?style=flat)](#)
 <!-- badges: end -->
 
 The goal of `hydrofab` is to provide consistent hydrologic and hydraulic
@@ -23,17 +25,10 @@ install.packages("remotes")
 remotes::install_github("mikejohnson51/hydrofab")
 ```
 
-Soon to be …
-
-``` r
-remotes::install_github("NOAA-OWP/hydrofab")
-```
-
 ## Introduction
 
 This package is based around the same concepts as
-[nhdplusTools](https://usgs-r.github.io/nhdplusTools/) and merges the
-previous `hyRefactor` and `hyAggregate` packages in an attempt to
+[nhdplusTools](https://usgs-r.github.io/nhdplusTools/) in an attempt to
 provide a common software stack for fabricating hydrofabrics.
 
 ### Refactoring and Aggregating
@@ -62,9 +57,7 @@ other applications
 ## Questions:
 
 <a href = "mailto:mike.johnson@noaa.gov?subject=Nexgen Hydrofabric Questions">
-Mike Johnson</a> (NOAA Hydrofabric Lead),
-<a href = "mailto:dblodgett@usgs.gov?subject=Nexgen Hydrofabric Questions">
-David L. Blodgett </a> (Hydroinformatics Lead, USGS WMA)
+Mike Johnson</a> (NOAA Hydrofabric Lead)
 
 ## Disclaimer
 

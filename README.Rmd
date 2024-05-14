@@ -17,7 +17,8 @@ knitr::opts_chunk$set(
 # hydrofab: Fabricating Hydrofabrics <img src='man/figures/imgfile.png' align="right" height="139" />
 
 <!-- badges: start -->
-[![Dependencies](https://img.shields.io/badge/dependencies-19/80-red?style=flat)](#)
+[![R CMD Check](https://github.com/mikejohnson51/hydrofab/actions/workflows/R-CMD-check.yml/badge.svg)](https://github.com/mikejohnson51/hydrofab/actions/workflows/R-CMD-check.yml)
+[![Dependencies](https://img.shields.io/badge/dependencies-21/80-red?style=flat)](#)
 <!-- badges: end -->
 
 The goal of `hydrofab` is to provide consistent hydrologic and hydraulic network manipulation tool chains to achieve model application ready datasets from a consistent reference fabric. Some of these are being built at [ngen.hydrofab](https://github.com/mikejohnson51/ngen.hydrofab) and [gfv2.0](https://code.usgs.gov/wma/nhgf/gfv2.0)
@@ -32,16 +33,10 @@ install.packages("remotes")
 remotes::install_github("mikejohnson51/hydrofab")
 ```
 
-Soon to be ...
-
-```{r eval = FALSE}
-remotes::install_github("NOAA-OWP/hydrofab")
-```
 
 ## Introduction 
 
-This package is based around the same concepts as [nhdplusTools](https://usgs-r.github.io/nhdplusTools/) and merges the 
-previous `hyRefactor` and `hyAggregate` packages in an attempt to provide a common software stack for fabricating hydrofabrics.
+This package is based around the same concepts as [nhdplusTools](https://usgs-r.github.io/nhdplusTools/) in an attempt to provide a common software stack for fabricating hydrofabrics.
 
 ### Refactoring and Aggregating
 
@@ -80,7 +75,7 @@ knitr::include_graphics("man/figures/logos.png")
 ## Questions:
 
 <a href = "mailto:mike.johnson@noaa.gov?subject=Nexgen Hydrofabric Questions">
-Mike Johnson</a> (NOAA Hydrofabric Lead), <a href = "mailto:dblodgett@usgs.gov?subject=Nexgen Hydrofabric Questions"> David L. Blodgett </a> (Hydroinformatics Lead, USGS WMA)
+Mike Johnson</a> (NOAA Hydrofabric Lead)
  
 
 ## Disclaimer

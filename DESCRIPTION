@@ -1,7 +1,7 @@
 Package: hydrofab
 Type: Package
 Title: Hydrologic Network Refactoring and Aggregation Tools
-Version: 0.5.1
+Version: 0.5.2
 Authors@R: c(person(given = "Mike", family = "Johnson", 
                     role = c("aut", "cre"), 
                     comment = c(ORCID = "0000-0002-5288-8350"), 
@@ -15,13 +15,14 @@ BugReports: https://github.com/mikejohnson51/hydrofab/issues
 Depends: 
     R (>= 3.5.0)
 Imports: 
+    climateR,
     data.table,
     DBI,
     dplyr,
     glue,
     httr,
+    hydroloom,
     igraph,
-    jsonlite,
     logger,
     lwgeom,
     methods,
@@ -29,19 +30,19 @@ Imports:
     parallel,
     pbapply,
     rlang,
-    RSQLite,
     rmapshaper,
+    RSQLite,
     rvest,
     sf,
     terra,
+    tibble,
     tidyr,
     units,
     utils
 Suggests: 
-    knitr,
-    rmarkdown,
-    testthat,
-    tibble
+    testthat
+Remotes: 
+    mikejohnson51/climateR
 License: CC0
 Encoding: UTF-8
 LazyData: true
