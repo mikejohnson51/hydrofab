@@ -207,6 +207,10 @@ clean_geometry <- function(catchments,
     
     main_parts =  bind_rows(main_parts, filter(polygons, n == 1))
     
+    if(is.null(small_parts)){
+      small_parts = data.frame()
+    }
+    
     if(nrow(small_parts) > 0){
       # dissolve, and explode if necessary
       small_parts <- tryCatch(

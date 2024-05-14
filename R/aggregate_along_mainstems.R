@@ -11,10 +11,10 @@ add_network_type = function(network_list, verbose = TRUE){
     filter(!duplicated(.))
   
   if(verbose){
-    message("Has Divide")
-    print(table(network_list$flowpaths$has_divide))
-    message("\nHas Flowpath")
-    print(table(network_list$catchments$has_flowpath))
+    # message("Has Divide")
+    # print(table(network_list$flowpaths$has_divide))
+    # message("\nHas Flowpath")
+    # print(table(network_list$catchments$has_flowpath))
   }
   
   network_list
@@ -43,14 +43,14 @@ aggregate_along_mainstems = function(network_list,
                                      verbose = TRUE,
                                      cache_file = NULL) {
   
-  hyaggregate_log("INFO", "\n---  Aggregate Along Mainstem ---\n", verbose)
+  hyaggregate_log("INFO", "\n---  Aggregate Along Mainstem ---", verbose)
   hyaggregate_log("INFO", glue("ideal_size_sqkm --> {ideal_size_sqkm}"), verbose)
   hyaggregate_log("INFO", glue("min_length_km --> {min_length_km}"),     verbose)
   hyaggregate_log("INFO", glue("min_area_sqkm --> {min_area_sqkm}"),     verbose)
   
   tmp = network_list$flowpaths %>% 
     st_drop_geometry() %>% 
-    select(id = toid, hl_un = hl_id) %>% 
+    select(id = toid, hl_un = poi_id) %>% 
     st_drop_geometry() %>% 
     distinct() %>% 
     filter(!is.na(hl_un)) %>% 
@@ -59,15 +59,14 @@ aggregate_along_mainstems = function(network_list,
     ungroup()
   
   fline = network_list$flowpaths %>% 
-    #filter(levelpathid == 2109833) %>% 
     st_drop_geometry() %>% 
-    mutate(hl_dn = hl_id) %>% 
+    mutate(hl_dn = poi_id) %>% 
     left_join(tmp, by = "id") %>% 
     distinct() 
   
   index_table = fline %>%
-    group_by(.data$levelpathid) %>%
-    arrange(.data$hydroseq) %>%
+    group_by(levelpathid) %>%
+    arrange(hydroseq) %>%
     mutate(hl_un = ifelse(hl_un %in% hl_dn, NA, hl_un)) %>% 
     mutate(
       ind = cs_group(
@@ -81,12 +80,12 @@ aggregate_along_mainstems = function(network_list,
       )
     ) %>%
     ungroup()   %>%
-    group_by(.data$levelpathid, .data$ind) %>%
+    group_by(levelpathid, ind) %>%
     mutate(set = cur_group_id(), n = n()) %>%
     ungroup() %>%
     select(set, id, toid, levelpathid,
            hydroseq, member_comid,
-           hl_id, n)
+           poi_id, n)
   
   v = aggregate_sets(network_list, index_table)
   
@@ -175,6 +174,7 @@ cs_group <- function(areas, lengths, exclude_dn, exclude_un, ideal_size_sqkm, am
 #' @param ind current index values
 #' @param thres threshold to evaluate x
 #' @return a vector of length(x) containing grouping indexes
+#' @importFrom sf st_set_geometry st_geometry
 #' @export
 
 pinch_sides = function(x, ind, thres){
@@ -337,15 +337,15 @@ aggregate_sets = function(network_list, index_table) {
   set_topo = index_table %>%
     group_by(set) %>%
     mutate(member_comid  = paste(member_comid, collapse = ","),
-           hl_id  = paste(hl_id[!is.na(hl_id)], collapse = ","),
-           hl_id  = ifelse(hl_id == "", NA, hl_id)) %>%
+           poi_id  = paste(poi_id[!is.na(poi_id)], collapse = ","),
+           poi_id  = ifelse(poi_id == "", NA, poi_id)) %>%
     arrange(hydroseq) %>%
-    select(set, id, toid, levelpathid, hl_id,
+    select(set, id, toid, levelpathid, poi_id,
            hydroseq, member_comid) %>%
     ungroup()
   
   set_topo_fin = left_join(select(set_topo, set, id = toid, hydroseq,
-                                  levelpathid, hl_id, member_comid),
+                                  levelpathid, poi_id, member_comid),
                            select(set_topo, toset = set, id),
                            by = "id") %>%
     group_by(set) %>%
@@ -353,12 +353,11 @@ aggregate_sets = function(network_list, index_table) {
     filter(set != toset) %>%
     slice_min(hydroseq) %>%
     ungroup() %>%
-    select(set, toset, levelpathid, hl_id, member_comid)
+    select(set, toset, levelpathid, poi_id, member_comid)
   
   ####
   
   single_flowpaths = filter(index_table, n == 1) %>%
-    #changed to inner_join from left_join!
     inner_join(network_list$flowpaths, by = "id") %>%
     st_as_sf() %>%
     select(set) %>%
@@ -396,67 +395,33 @@ aggregate_sets = function(network_list, index_table) {
     catchments_out %>% 
       st_cast("MULTIPOLYGON") %>% 
       st_cast("POLYGON") %>% 
+      fast_validity_check() %>% 
       add_count(id) 
-  })  
-  
-  fixers = filter(mps, n > 1)
-  
-  good_to_go = filter(mps, n == 1)
-  
-  ll = list()
-  u = unique(fixers$id)
-  
-  for(i in 1:length(u)){
-    
-   tmp = filter(fixers, id == u[i])
-   fp = filter(flowpaths_out, id == tmp$id[1]) %>% 
-     st_buffer(60)
-  
-   q = suppressWarnings({
-     st_erase(fp, tmp) %>% 
-       st_cast("POLYGON") %>% mutate(id = 1:n())
-   })
-   
-   
-   filler = q[lengths(st_intersects(q, st_cast(tmp, "POLYGON"))) == 2, ]
-    
-   cc = bind_rows(st_cast(tmp, "POLYGON"), filler)
-    
-   g = union_polygons(cc, ID = "toid") %>% 
-     st_buffer(.00001)
-  
-   replace = filter(catchments_out, id == tmp$id[1])
-   
-   st_geometry(replace) = st_geometry(g)
-  
-   ll[[i]] = replace
-   
-  }
-  
-  new = bind_rows(ll)
-  
-  mapview(new)
-  
-  old = filter(catchments_out, !id %in% new$id)
-  
-  catchments_out2 = suppressWarnings({
-    st_erase(old, new) %>% 
-    st_collection_extract("POLYGON") %>% 
-    st_cast("POLYGON")
   })
   
-  catchments_out2$id %>% table() %>% sort(decreasing = T)
-  check = filter(catchments_out2, st_geometry_type(catchments_out2) != "POLYGON")
-  
-  if(nrow(check) != 0){
-    stop("Errors Found.")
-  }
-  
-
-  catchments_out3 = bind_rows(catchments_out2, new)
-
-  catchments_out3$toid = ifelse(is.na(catchments_out$toid), 0, catchments_out$toid)
-  
-  prepare_network(list(flowpaths = flowpaths_out, catchments = catchments_out3))
+  if(nrow(mps) > nrow(catchments_out)){
+    fixers = filter(mps, n > 1) %>% 
+      mutate(areasqkm = add_areasqkm(.),
+             tmpID = 1:n()) %>% 
+      group_by(id) 
+    
+    keep = slice_max(fixers, areasqkm) %>% 
+      ungroup() 
+    
+    to_merge = filter(fixers, !tmpID %in% keep$tmpID) %>% 
+      ungroup()
+    
+    good_to_go = filter(mps, n == 1) %>% 
+      bind_rows(select(keep, id, toid)) %>% 
+      fast_validity_check()
+    
+    catchments_out = suppressWarnings({
+      terra::combineGeoms(vect(good_to_go), vect(to_merge)) %>% 
+      st_as_sf() %>% 
+      st_cast("POLYGON")
+    })
+  } 
+ 
+  prepare_network(network_list = list(flowpaths = flowpaths_out, catchments = catchments_out))
 }
 

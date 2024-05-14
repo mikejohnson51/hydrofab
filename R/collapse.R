@@ -187,10 +187,11 @@ collapse_flowlines <- function(flines, thresh, add_category = FALSE,
 
   if(nrow(removed_confluence) > 0) {
     removed_confluence <-
-      select(ungroup(filter(removed_confluence,
-                            # Deduplicate by largest trib path
-                            usLevelPathI == min(usLevelPathI))),
-             -usLevelPathI) # clean
+      filter(removed_confluence,
+             # Deduplicate by largest trib path
+             usLevelPathI == min(usLevelPathI)) %>% 
+      ungroup() %>% 
+      select(-usLevelPathI) # clean
     
     flines <- reconcile_removed_flowlines(flines,
                                           reroute_confluence_set,

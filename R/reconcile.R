@@ -87,7 +87,7 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
     ungroup() %>%
     group_by(.data$Hydroseq) %>%
     # Get the outlet if the original was split.
-    filter(as.integer(.data$part) == max(as.integer(.data$part))) %>%
+    filter(as.numeric(.data$part) == max(as.numeric(.data$part))) %>%
     ungroup() %>%
     select(ID_LevelPathID = .data$ID_Hydroseq, .data$LevelPathI)
   
@@ -169,16 +169,16 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 
 
 reconcile_catchment_divides <- function(catchment, 
-                                              fline_ref, 
-                                              fline_rec, 
-                                              fdr = NULL, fac = NULL,
-                                              para = 2, cache = NULL, 
-                                              min_area_m = 800, 
-                                              snap_distance_m = 100,
-                                              simplify_tolerance_m = 40, 
-                                              vector_crs = 5070,
-                                              fix_catchments = TRUE,
-                                              keep = .9) {
+                                        fline_ref, 
+                                        fline_rec, 
+                                        fdr = NULL, fac = NULL,
+                                        para = 2, cache = NULL, 
+                                        min_area_m = 800, 
+                                        snap_distance_m = 100,
+                                        simplify_tolerance_m = 40, 
+                                        vector_crs = 5070,
+                                        fix_catchments = TRUE,
+                                        keep = .9) {
   
   in_crs    <- st_crs(catchment)
   catchment <- rename_geometry(catchment, "geom")
@@ -206,26 +206,26 @@ reconcile_catchment_divides <- function(catchment,
   
   # Not all catchments have flowlines. Remove the flowlines without.  
   comid <- fline_ref$COMID # Just being explicit here.
-  featureid <- catchment$FEATUREID # type conversion below is annoying.
-  # as.integer removes the .1, .2, semantic part but the response retains 
+  featureid <- catchment$featureid # type conversion below is annoying.
+  # as.numeric removes the .1, .2, semantic part but the response retains 
   # the semantic component. If you don't know what this means, stop hacking.
-  comid_with_catchment <- comid[as.integer(comid) %in% featureid]
+  comid_with_catchment <- comid[as.numeric(comid) %in% featureid]
   
   reconciled <- distinct(reconciled) %>% # had dups from prior steps.
     tidyr::separate_rows(.data$member_COMID, sep = ",") %>% # Make long form
     dplyr::filter(.data$member_COMID %in% comid_with_catchment) %>% # 
     dplyr::group_by(.data$ID) %>%
-    dplyr::summarise(member_COMID = paste(.data$member_COMID, collapse = ",")) %>%
+    dplyr::summarise(member_COMID = paste(member_COMID, collapse = ",")) %>%
     dplyr::ungroup()
 
-  fline_ref <- fline_ref[as.integer(fline_ref$COMID) %in% catchment$FEATUREID, ]
+  fline_ref <- fline_ref[as.numeric(fline_ref$COMID) %in% catchment$featureid, ]
   
   to_split_bool <- as.numeric(fline_ref$COMID) !=
-    as.integer(fline_ref$COMID)
+    as.numeric(fline_ref$COMID)
   
   to_split_ids <- fline_ref$COMID[which(to_split_bool)]
   
-  to_split_featureids <- unique(as.integer(to_split_ids))
+  to_split_featureids <- unique(as.numeric(to_split_ids))
   
   cl <- NULL
   
@@ -252,6 +252,7 @@ reconcile_catchment_divides <- function(catchment,
                                     simplify_tolerance_m = simplify_tolerance_m, 
                                     vector_crs = vector_crs,
                                     cl = cl)
+    
     if(!is.null(cache)) save(split_cats, file = cache)
   }
   
@@ -269,7 +270,7 @@ reconcile_catchment_divides <- function(catchment,
     dplyr::filter(dplyr::row_number() == 1) %>%
     dplyr::ungroup()
   
-  unsplit <- get_cat_unsplit(catchment, fline_ref, to_split_featureids)
+  unsplit <- get_cat_unsplit(rename(catchment, FEATUREID = featureid), fline_ref, to_split_featureids)
   
   if(nrow(unsplit) > 0) {
     split_cats <- sf::st_as_sf(data.table::rbindlist(list(
@@ -302,7 +303,7 @@ reconcile_catchment_divides <- function(catchment,
                           reconciled,
                           by = "member_COMID")) 
   
-  out = left_join(union_polygons(out, "ID"), distinct(st_drop_geometry(out)))
+  out = left_join(union_polygons(out, "ID"), distinct(st_drop_geometry(out)), by = "ID")
   
   missing <- is.na(st_dimension(out$geom))
   
@@ -313,7 +314,7 @@ reconcile_catchment_divides <- function(catchment,
     
 
     out <- select(catchment, member_COMID = .data$FEATUREID) %>%
-      filter(.data$member_COMID %in% unique(as.integer(out$member_COMID[missing]))) %>%
+      filter(.data$member_COMID %in% unique(as.numeric(out$member_COMID[missing]))) %>%
       mutate(member_COMID = paste0(.data$member_COMID, ".1")) %>%
       mutate(ID = out$ID[match(.data$member_COMID, out$member_COMID)]) %>%
       select(.data$ID, .data$member_COMID) %>% 

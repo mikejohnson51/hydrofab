@@ -23,7 +23,7 @@ refactor(
 )
 }
 \arguments{
-\item{gpkg}{}
+\item{gpkg}{a starting GPKG}
 
 \item{flowpaths}{Reference flowline features}
 
@@ -32,6 +32,8 @@ refactor(
 \item{events}{data.frame containing events}
 
 \item{avoid}{integer vector of COMIDs to be excluded from collapse modifications.}
+
+\item{outlets}{DO I NEED THIS?}
 
 \item{split_flines_meters}{numeric the maximum length flowpath desired in the output.}
 
@@ -53,7 +55,5 @@ refactor(
 data to the specified gpkg
 }
 \description{
-A wrapper around refactor_nhdplus and
-reconcile_catchment_divides that optionally adds routing parameters to the
-flowpath objects.
+A wrapper around refactor_nhdplus and reconcile_catchment_divides
 }

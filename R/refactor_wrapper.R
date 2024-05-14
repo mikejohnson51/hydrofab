@@ -58,7 +58,7 @@ build_events = function(ref_gpkg = NULL,
 #' @param flowpaths Reference flowline features
 #' @param catchments Reference catchment features
 #' @param events 	data.frame containing events
-#' @param outlests DO I NEED THIS?
+#' @param outlets DO I NEED THIS?
 #' @param avoid integer vector of COMIDs to be excluded from collapse modifications.
 #' @param split_flines_meters numeric the maximum length flowpath desired in the output.
 #' @param collapse_flines_meters      numeric the minimum length of inter-confluence flowpath desired in the output.
@@ -75,6 +75,7 @@ build_events = function(ref_gpkg = NULL,
 #' @importFrom sf read_sf st_transform st_drop_geometry write_sf st_crs st_precision
 #' @importFrom nhdplusTools get_streamorder get_vaa
 
+
 refactor  = function (gpkg = NULL,
                       flowpaths = NULL,
                       catchments = NULL,
@@ -90,6 +91,7 @@ refactor  = function (gpkg = NULL,
                       purge_non_dendritic = TRUE,
                       keep = NULL,
                       outfile = NULL) {
+  
   network_list = read_hydrofabric(gpkg, catchments, flowpaths)
   
   tf <- tempfile(pattern = "refactored", fileext = ".gpkg")
@@ -102,22 +104,42 @@ refactor  = function (gpkg = NULL,
   if (!is.null(avoid))  {
     avoid   = avoid[avoid %in% network_list$flowpaths$COMID]
   }
+  
   if (!is.null(outlets)) {
     outlets = filter(outlets, COMID %in% network_list$flowpaths$COMID)
   }
   
   # derive list of unique terminal paths
-  TerminalPaths <- unique(network_list$flowpaths$TerminalPa)
+  TerminalPaths <- unique(network_list$flowpaths$terminalpa)
   
   network_list$flowpaths <-
     mutate(network_list$flowpaths,
-           refactor = ifelse(TerminalPa %in% TerminalPaths, 1, 0))
+           refactor = ifelse(terminalpa %in% TerminalPaths, 1, 0)) %>% 
+    rename(COMID = comid,
+           toCOMID = tocomid,
+           LENGTHKM = lengthkm, 
+           Hydroseq = hydroseq,
+           LevelPathI = levelpathi,
+           TotDASqKM = totdasqkm)
   
   network_list$flowpaths <-
-    st_as_sf(st_zm(filter(network_list$flowpaths, refactor == 1)))
+    st_as_sf(sf::st_zm(filter(network_list$flowpaths, refactor == 1)))
   
-  hyRefactor::refactor_nhdplus(
-    nhdplus_flines  = select(network_list$flowpaths, -FTYPE),
+  # nhdplus_flines  = select(network_list$flowpaths, -ftype)
+  # split_flines_meters         = split_flines_meters
+  # split_flines_cores          = cores
+  # collapse_flines_meters      = collapse_flines_meters
+  # collapse_flines_main_meters = collapse_flines_main_meters
+  # out_refactored              = tf
+  # out_reconciled              = tr
+  # three_pass                  = TRUE
+  # purge_non_dendritic         = purge_non_dendritic
+  # events                      = events
+  # exclude_cats                = avoid
+  # warn                        = FALSE
+  
+  refactor_nhdplus(
+    nhdplus_flines  = select(network_list$flowpaths, -ftype),
     split_flines_meters         = split_flines_meters,
     split_flines_cores          = cores,
     collapse_flines_meters      = collapse_flines_meters,
@@ -142,16 +164,16 @@ refactor  = function (gpkg = NULL,
     select(ID, member_COMID) %>%
     mutate(member_COMID = strsplit(member_COMID, ",")) %>%
     unnest(cols = member_COMID) %>%
-    mutate(NHDPlusV2_COMID = as.integer(member_COMID)) %>%
+    mutate(NHDPlusV2_COMID = as.numeric(member_COMID)) %>%
     rename(reconciled_ID = ID)
   
   if (is.character(refactor_lookup$reconciled_ID)) {
     refactor_lookup$reconciled_ID <-
-      as.integer(refactor_lookup$reconciled_ID)
+      as.numeric(refactor_lookup$reconciled_ID)
   }
   
   lookup_table <-
-    data.frame(NHDPlusV2_COMID = unique(as.integer(refactor_lookup$member_COMID))) %>%
+    data.frame(NHDPlusV2_COMID = unique(as.numeric(refactor_lookup$member_COMID))) %>%
     left_join(refactor_lookup, by = "NHDPlusV2_COMID")
   
   # Join refactored to original NHD
@@ -231,18 +253,18 @@ refactor  = function (gpkg = NULL,
   
   
   if (!is.null(fac) &
-      !is.null(fdr) & !is.null(network_list$catchments)) {
-    rpus         = omit.na(unique(network_list$flowpaths$RPUID))
-    
+      !is.null(fdr) & 
+      !is.null(network_list$catchments)) {
+
     if ("featureid" %in% names(network_list$catchments)) {
-      network_list$catchments = dplyr::rename(network_list$catchments, FEATUREID = .data$featureid)
+      network_list$catchments = dplyr::rename(network_list$catchments, FEATUREID = FEATUREID)
     }
     
     fac_open = climateR::dap(URL = fac, AOI = network_list$catchments)
     fdr_open = climateR::dap(URL = fdr, AOI = network_list$catchments)
     
     divides <-
-      hyRefactor::reconcile_catchment_divides(
+      reconcile_catchment_divides(
         catchment = network_list$catchments,
         fline_ref = read_sf(tf),
         fline_rec = rec,

@@ -18,7 +18,7 @@ build_headwater_collapse = function(network_list,
   ) 
   
   # bad fps are those that are both hw and too small or too large
-  df = left_join(network_list$flowpaths,  select(touch_id, -hl_id), by = "id") %>% 
+  df = left_join(network_list$flowpaths,  select(touch_id, -poi_id), by = "id") %>% 
     mutate(
       inflow = ifelse(id %in% touch_id$touches, TRUE, FALSE),
       hw = ifelse(!id %in% toid, TRUE, FALSE),
@@ -27,19 +27,19 @@ build_headwater_collapse = function(network_list,
     ) %>% 
       filter(hw, small) %>% 
       st_drop_geometry() %>% 
-      select(id, becomes = touches, member_comid, hl_id) %>% 
+      select(id, becomes = touches, member_comid, poi_id) %>% 
       filter(becomes != 0) 
   
   df$mC1 = network_list$flowpaths$member_comid[match(df$id, network_list$flowpaths$id)]
   df$mC2 = network_list$flowpaths$member_comid[match(df$becomes, network_list$flowpaths$id)]
   
-  df$hl1 = network_list$flowpaths$hl_id[match(df$id, network_list$flowpaths$id)]
-  df$hl2 = network_list$flowpaths$hl_id[match(df$becomes, network_list$flowpaths$id)]
+  df$hl1 = network_list$flowpaths$poi_id[match(df$id, network_list$flowpaths$id)]
+  df$hl2 = network_list$flowpaths$poi_id[match(df$becomes, network_list$flowpaths$id)]
   
   tmp = suppressWarnings({
     group_by(df, becomes) %>%
       mutate(member_comid = paste0(mC2[1], "," ,paste(mC1, collapse = ",")),
-             hl_id = as.numeric(paste(unique(na.omit(c(hl1, hl2))), collapse = ","))) %>%
+             poi_id = as.numeric(paste(unique(na.omit(c(hl1, hl2))), collapse = ","))) %>%
       ungroup() %>%
       select(-mC1, -mC2, -hl1, -hl2)
   })

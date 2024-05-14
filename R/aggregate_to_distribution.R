@@ -70,37 +70,33 @@ aggregate_to_distribution = function(gpkg = NULL,
     }
   }
   
-  network_list = read_hydrofabric(gpkg,
+  network_list <- read_hydrofabric(gpkg,
                                   catchments = divide,
                                   flowpaths = flowpath,
                                   crs = 5070) 
   
-
-  #network_list$catchments <- clean_geometry(catchments = network_list$catchments, keep = NULL, ID = "ID")
-  network_list            <- prepare_network(network_list)
-  network_list            <- add_network_type(network_list, verbose = FALSE)
+  network_list            <- add_network_type(prepare_network(network_list), verbose = FALSE)
   
   # Add outlets
   if (!is.null(hydrolocations)) {
     
     names(hydrolocations) = tolower(names(hydrolocations))
     
-    outflows = hydrolocations %>% 
-      select(hf_id, id, vpuid,  starts_with("hl")) %>% 
+    outflows = hydrolocations %>%
+      st_drop_geometry() %>% 
+      select(poi_id, id) %>% 
       group_by(id) %>% 
-      mutate(hl_reference = paste(hl_reference, collapse = ","),
-             hl_id = paste(hl_id, collapse = ","),
-             hl_link = paste(hl_link, collapse = ","),
-             hl_position = paste(hl_position, collapse = ",")) %>% 
+      mutate(poi_id = paste(poi_id, collapse = ",")) %>% 
       slice(1) %>% 
-      ungroup() %>% 
-      mutate(hl_id = paste0(vpuid, 1:n()))
+      ungroup()
+    
+    length(unique(outflows$id))
 
-    network_list$flowpaths  = left_join(mutate(network_list$flowpaths, hl_id = NULL), 
+    network_list$flowpaths  = left_join(mutate(network_list$flowpaths, poi_id = NULL), 
                                         st_drop_geometry(outflows), 
                                         by = 'id')
   } else {
-    network_list$flowpaths$hl_id   = NA
+    network_list$flowpaths$poi_id    = NA
     network_list$flowpaths$hl_uri   = NA
     outflows = NULL
   }
@@ -139,36 +135,23 @@ aggregate_to_distribution = function(gpkg = NULL,
     cache_file = cache_file)
 
   network_list3$catchments = clean_geometry(network_list3$catchments, ID = "id")
-  
-  #write_sf(network_list3$catchments, cache_file, "cleaned_step")
 
 if(!is.null(hydrolocations)){
   
-  hydrolocations =  network_list3$flowpaths %>% 
+  network_list3$hydrolocations =  network_list3$flowpaths %>% 
     st_drop_geometry() %>%
-    select(id, hl_id) %>% 
-    filter(!is.na(hl_id)) %>% 
-    distinct() %>% 
-    left_join(select(outflows, -id), 
-              by = "hl_id",
-              relationship = "many-to-many") %>% 
-    st_as_sf() %>% 
-    rename_geometry("geometry") %>% 
+    select(id, poi_id) %>% 
+    filter(!is.na(poi_id)) %>% 
+    tidyr::separate_longer_delim(poi_id, delim = ",") %>% 
+    left_join(mutate(select(hydrolocations, -id), poi_id = as.character(poi_id)), by = "poi_id",relationship = "many-to-many") %>% 
     distinct()
-  
-  hydrolocations_lookup =  select(st_drop_geometry(hydrolocations), 
-                                  starts_with("hl_"),
-                                  id)
 
-  network_list3$hydrolocations = hydrolocations %>% 
-    separate_longer_delim(cols =c('hl_reference', 'hl_link', 'hl_position'), delim = ",") %>% 
-    mutate(hl_uri = paste0(hl_reference, "-", hl_link)) %>% 
-    st_as_sf() %>% 
-    select(hl_id, id, hl_reference, hl_link, hl_uri, hl_position)
 } 
   
+  network_list3$flowpaths = hydroloom::add_streamorder(network_list3$flowpaths) 
+  
   network_list3$flowpaths = 
-    select(network_list3$flowpaths, id, toid, mainstem = levelpathid, order, member_comid, any_of('hl_id'), hydroseq, lengthkm, 
+    select(network_list3$flowpaths, id, toid, mainstem = levelpathid, order = stream_order, member_comid, any_of('poi_id'), hydroseq, lengthkm, 
            areasqkm, tot_drainage_areasqkm = tot_drainage_area, has_divide) %>% 
     mutate(divide_id = ifelse(id %in% network_list3$catchments$id, id, NA))
   
@@ -181,70 +164,51 @@ if(!is.null(hydrolocations)){
   
   network_list3$catchments = NULL
 
-  network_list3$network  = st_drop_geometry(network_list3$flowpaths) %>% 
+  network_list3$network  = st_drop_geometry(network_list3$flowpaths) %>%
    select(
      id,
      toid          = toid,
      member  = member_comid,
      divide_id,
-     any_of('hl_id'),
+     any_of('poi_id'),
      mainstem,
      hydroseq,
      order,
-     lengthkm, areasqkm, tot_drainage_areasqkm) %>%
+     lengthkm, areasqkm,
+     tot_drainage_areasqkm) %>%
    separate_longer_delim(col = 'member', delim = ",") %>%
    mutate(hf_id_part = sapply( strsplit(member, "[.]"), FUN = function(x){ x[2] }),
           hf_id_part = ifelse(is.na(hf_id_part), 1L, as.integer(hf_id_part)),
           hf_id = sapply( strsplit(member, "[.]"), FUN = function(x){ as.numeric(x[1]) }),
           member = NULL,
           hf_source = "NHDPlusV2"
-   ) %>% 
+   ) %>%
    left_join(st_drop_geometry(select(network_list3$divides, divide_id, type, ds_id)), by = "divide_id")
- 
- 
- if(is.null(network_list3$network$hl_uri)){
-   network_list3$network$hl_uri = NA
- }
- 
-  if(!is.null(vpu)){ 
-    network_list3$network$vpu = vpu 
+
+
+ # if(is.null(network_list3$network$hl_uri)){
+ #   network_list3$network$hl_uri = NA
+ # }
+
+  if(!is.null(vpu)){
+    network_list3$network$vpu = vpu
   } else {
     network_list3$network$vpu = NA
   }
 
  
  if(!all(st_geometry_type(network_list3$divides) == "POLYGON")){
-   stop("MULTIPOLYGONS FOUND VPU: ", vpu)
+   warning("MULTIPOLYGONS FOUND VPU: ", vpu)
  }
   
-  if(!all(st_geometry_type(network_list3$flowpaths) == "LINESTRING")){
-    
-    # line_merge = function(x){
-    #   
-    #   ls = x[st_geometry_type(x) == "LINESTRING", ]
-    #   ms = x[!st_geometry_type(x) == "LINESTRING", ]
-    #   
-    #   d = filter(network_list3$divides, id %in% ms$id)
-    #   mapview::mapview(ms) + d
-    #   
-    # }
-    # 
-    # tmp2 = st_line_merge(network_list3$flowpaths)
-    # 
-    # if(nrow(tmp2) == nrow(network_list3$flowpaths)){
-    #   network_list3$flowpaths = tmp2
-    # } else {
-      warning("MULTILINESTRINGS FOUND VPU: ", vpu)
-    #}
-  }
- 
+
   if (!is.null(outfile)) {
   
     outfile = write_hydrofabric(
       network_list3,
       outfile,
       verbose = verbose, 
-      enforce_dm = TRUE)
+      enforce_dm = FALSE)
     
     return(outfile)
     
