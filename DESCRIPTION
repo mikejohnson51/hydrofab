@@ -29,6 +29,7 @@ Imports:
     parallel,
     pbapply,
     rlang,
+    RSQLite,
     rmapshaper,
     rvest,
     sf,

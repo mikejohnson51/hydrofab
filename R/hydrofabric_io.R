@@ -140,53 +140,6 @@ read_hydrofabric = function(gpkg = NULL,
   
 }
 
-#' Download Reference Fabric Data by VPU ID
-#' @param VPU a VPU ID
-#' @param type either 'refactor' (default) or 'reference'
-#' @param dir directory path to save data to
-#' @param overwrite should existing files be overwritten? (default = FALSE)
-#' @return file path
-#' @export
-#' @importFrom nhdplusTools get_boundaries
-#' @importFrom dplyr filter slice_min
-#' @importFrom sbtools item_list_files item_file_download authenticate_sb
-#' @importFrom httr GET write_disk progress
-
-get_hydrofabric = function(VPU = "01",
-                           type = "refactor",
-                           dir  = NULL,
-                           overwrite = FALSE) {
-  if (is.null(dir)) {
-    stop("`dir` cannot be NULL", call. = FALSE)
-  }
-  
-  if(!VPU %in% get_boundaries()$VPUID){
-    stop(VPU, " is not a valid VPU ID", call. = FALSE)
-  }
-  
-  outfile = file.path(dir, paste0(type, "_", VPU, ".gpkg"))
-  
-  if (file.exists(outfile) & !overwrite) {
-    return(outfile)
-  } else {
-
-    xx = jsonlite::fromJSON(paste0("https://www.sciencebase.gov/catalog/item/",
-                                   sb_id(type), 
-                                   "?format=json"),
-                  simplifyDataFrame = TRUE)
-    
-    url = filter(xx$files, grepl(VPU, xx$files$name))
-    
-    unlink(outfile)
-    
-    sbtools::item_file_download(sb_id(type), 
-                                names = url$name,  
-                                destinations = outfile, 
-                                overwrite_file = overwrite)
-
-    return(outfile)
-  }
-}
 
 #' Write a hydrofabric gpkg
 #' A hydrofabric consists of a flowpath, catchment,
