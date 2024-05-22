@@ -105,7 +105,7 @@ aggregate_to_outlets <- function(gpkg = NULL,
     clean_geometry(ID = "ID", 
                    crs = in_crs, 
                    keep = keep) %>% 
-    select(.data$ID) %>% 
+    select(ID) %>% 
     left_join(agg_network$cat_sets, by = "ID")
   
   return(c(agg_network, list(coastal_sets = coastal)))

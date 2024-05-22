@@ -10,12 +10,6 @@ add_network_type = function(network_list, verbose = TRUE){
     mutate(has_flowpath = id %in% network_list$flowpaths$id) %>% 
     filter(!duplicated(.))
   
-  if(verbose){
-    # message("Has Divide")
-    # print(table(network_list$flowpaths$has_divide))
-    # message("\nHas Flowpath")
-    # print(table(network_list$catchments$has_flowpath))
-  }
   
   network_list
 }  
@@ -70,10 +64,10 @@ aggregate_along_mainstems = function(network_list,
     mutate(hl_un = ifelse(hl_un %in% hl_dn, NA, hl_un)) %>% 
     mutate(
       ind = cs_group(
-        .data$areasqkm,
-        .data$lengthkm,
-        .data$hl_dn,
-        .data$hl_un,
+        areasqkm,
+        lengthkm,
+        hl_dn,
+        hl_un,
         ideal_size_sqkm,
         min_area_sqkm,
         min_length_km

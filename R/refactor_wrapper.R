@@ -1,64 +1,9 @@
-omit.na = function(x) {
-  x[!is.na(x)]
-}
-
-build_events = function(ref_gpkg = NULL,
-                        area_length_ratio = 3,
-                        area_threshold = 1,
-                        flowline = "reference_flowline",
-                        poi_data = 'poi_data',
-                        poi_geometry_table = 'poi_geometry_table',
-                        event_geometry_table = 'event_geometry_table') {
-  
-  fl        <- read_sf(ref_gpkg, flowline)
-  POIs_data <- read_sf(ref_gpkg, poi_data)
-  POIs      <- read_sf(ref_gpkg, poi_geometry_table)
-  events    <- read_sf(ref_gpkg, event_geometry_table) %>%
-    mutate(event_identifier = as.character(row_number()))
-  
-  POIs_ref <- inner_join(
-    POIs,
-    select(st_drop_geometry(fl), TotDASqKM, COMID, DnHydroseq),
-    by = c("hy_id" = "COMID")
-  )
-  
-  avoid <-
-    filter(fl,
-           (sqrt(AreaSqKM) / LENGTHKM) > area_length_ratio &
-             AreaSqKM > area_threshold)
-  
-  # Also need to avoid modification to flowlines immediately downstream of POIs
-  #      This can cause some hydrologically-incorrect catchment aggregation
-  POI_downstream <-
-    filter(fl, Hydroseq %in% POIs_ref$DnHydroseq, AreaSqKM > 0)
-  
-  # build final outlets set
-  term_poi <- filter(POIs_data, hl_reference == "Type_Term")
-  
-  outlets <- POIs_ref %>%
-    mutate(type = ifelse(poi_id %in% term_poi$poi_id, "terminal", "outlet")) %>%
-    filter(!poi_id %in% events$poi_id) %>%
-    rename(COMID = hy_id)
-  
-  events_ref <- filter(events, hy_id %in% fl$COMID) %>%
-    rename(COMID = hy_id) %>%
-    distinct(COMID, REACHCODE, REACH_meas, event_identifier, poi_id)
-  
-  list(
-    events = events_ref,
-    avoid =  c(outlets$COMID, avoid$COMID, POI_downstream$COMID),
-    outlets = outlets
-  )
-  
-}
-
 #' Refactoring Wrapper
 #' @description A wrapper around refactor_nhdplus and reconcile_catchment_divides
 #' @param gpkg a starting GPKG
 #' @param flowpaths Reference flowline features
 #' @param catchments Reference catchment features
 #' @param events 	data.frame containing events
-#' @param outlets DO I NEED THIS?
 #' @param avoid integer vector of COMIDs to be excluded from collapse modifications.
 #' @param split_flines_meters numeric the maximum length flowpath desired in the output.
 #' @param collapse_flines_meters      numeric the minimum length of inter-confluence flowpath desired in the output.
@@ -79,9 +24,8 @@ build_events = function(ref_gpkg = NULL,
 refactor  = function (gpkg = NULL,
                       flowpaths = NULL,
                       catchments = NULL,
-                      events = NULL,
+                      pois = NULL,
                       avoid = NULL,
-                      outlets = NULL,
                       split_flines_meters = 10000,
                       collapse_flines_meters = 1000,
                       collapse_flines_main_meters = 1000,
@@ -94,30 +38,41 @@ refactor  = function (gpkg = NULL,
   
   network_list = read_hydrofabric(gpkg, catchments, flowpaths)
   
+  fl_lookup  <- c(id = "comid", toid = "tocomid", levelpathi = "mainstemlp")
+  div_lookup <- c(featureid = "divide_id", toid = "tocomid", levelpathi = "mainstemlp")
+  
+  network_list$flowpaths = rename(network_list$flowpaths, any_of(fl_lookup))
+  
   tf <- tempfile(pattern = "refactored", fileext = ".gpkg")
   tr <- tempfile(pattern = "reconciled", fileext = ".gpkg")
   
-  if (!is.null(events)) {
-    events  = filter(events, COMID %in% network_list$flowpaths$COMID)
-  }
+  events = prep_split_events(pois, network_list$flowpaths, network_list$catchments, 25) %>%
+    mutate(event_identifier = as.character(row_number()))
   
-  if (!is.null(avoid))  {
-    avoid   = avoid[avoid %in% network_list$flowpaths$COMID]
-  }
+  avoid_int <- filter(network_list$flowpaths, (sqrt(areasqkm) / lengthkm) > 3 & areasqkm > 1) 
+  avoid  = c(avoid_int$id, avoid)
+  avoid   = avoid[avoid %in% network_list$flowpaths$id]
   
-  if (!is.null(outlets)) {
-    outlets = filter(outlets, COMID %in% network_list$flowpaths$COMID)
-  }
+  outlets <- pois %>%
+    inner_join(select(st_drop_geometry(network_list$flowpaths), totdasqkm, id, dnhydroseq), 
+               by = c("hf_id" = "id"))
+
+  # Need to avoid modification to flowlines immediately downstream of POIs
+  #      This can cause some hydrologically-incorrect catchment aggregation
+  POI_downstream <- filter(network_list$flowpaths, hydroseq %in% outlets$dnhydroseq, areasqkm > 0)
   
   # derive list of unique terminal paths
   TerminalPaths <- unique(network_list$flowpaths$terminalpa)
-  
+
   network_list$flowpaths <-
     mutate(network_list$flowpaths,
            refactor = ifelse(terminalpa %in% TerminalPaths, 1, 0)) %>% 
-    rename(COMID = comid,
-           toCOMID = tocomid,
+    rename(COMID = id,
+           toCOMID = toid,
            LENGTHKM = lengthkm, 
+           REACHCODE = reachcode,  
+           FromMeas = frommeas,
+           ToMeas   = tomeas,
            Hydroseq = hydroseq,
            LevelPathI = levelpathi,
            TotDASqKM = totdasqkm)
@@ -125,21 +80,8 @@ refactor  = function (gpkg = NULL,
   network_list$flowpaths <-
     st_as_sf(sf::st_zm(filter(network_list$flowpaths, refactor == 1)))
   
-  # nhdplus_flines  = select(network_list$flowpaths, -ftype)
-  # split_flines_meters         = split_flines_meters
-  # split_flines_cores          = cores
-  # collapse_flines_meters      = collapse_flines_meters
-  # collapse_flines_main_meters = collapse_flines_main_meters
-  # out_refactored              = tf
-  # out_reconciled              = tr
-  # three_pass                  = TRUE
-  # purge_non_dendritic         = purge_non_dendritic
-  # events                      = events
-  # exclude_cats                = avoid
-  # warn                        = FALSE
-  
   refactor_nhdplus(
-    nhdplus_flines  = select(network_list$flowpaths, -ftype),
+    nhdplus_flines  = network_list$flowpaths,
     split_flines_meters         = split_flines_meters,
     split_flines_cores          = cores,
     collapse_flines_meters      = collapse_flines_meters,
@@ -149,7 +91,7 @@ refactor  = function (gpkg = NULL,
     three_pass                  = TRUE,
     purge_non_dendritic         = purge_non_dendritic,
     events                      = events,
-    exclude_cats                = avoid,
+    exclude_cats                = unique(c(outlets$hf_id, avoid, POI_downstream$id)),
     warn                        = FALSE
   )
   
@@ -175,7 +117,7 @@ refactor  = function (gpkg = NULL,
   lookup_table <-
     data.frame(NHDPlusV2_COMID = unique(as.numeric(refactor_lookup$member_COMID))) %>%
     left_join(refactor_lookup, by = "NHDPlusV2_COMID")
-  
+
   # Join refactored to original NHD
   refactored <- read_sf(tf) %>%
     select(member_COMID = COMID, Hydroseq, event_identifier, event_REACHCODE) %>%
@@ -189,29 +131,31 @@ refactor  = function (gpkg = NULL,
     # Subset for events
     refactored_events <- refactored %>%
       filter(!is.na(event_REACHCODE), !is.na(event_identifier))
-    
+
     event_outlets <- events %>%
+      mutate(event_identifier = as.character(1:nrow(events))) %>%
       inner_join(st_drop_geometry(refactored_events), by = "event_identifier") %>%
       select(COMID, event_identifier, poi_id, member_COMID)
-    
+
     # subset for refactored outlets (non-events)
     refactored_outlets <-
       filter(refactored, !member_COMID %in% event_outlets$member_COMID)
-    
-    # get ref_COMId for other outlets
-    outlets_ref <- outlets %>%
+
+    # get ref_COMID for other outlets
+    outlets_ref <-
       left_join(
+        outlets,
         select(
           st_drop_geometry(refactored_outlets),
           member_COMID,
           orig_COMID
         ),
-        by = c("COMID" = "orig_COMID")
+        by = c("hf_id" = "orig_COMID")
       ) %>%
-      group_by(COMID) %>%
+      group_by(hf_id) %>%
       filter(member_COMID == max(member_COMID)) %>%
-      select(hy_id = COMID, poi_id, member_COMID, type)
-    
+      select(hf_id, poi_id, member_COMID)
+
     outlets_ref_COMID <-
       data.table::rbindlist(list(outlets_ref, event_outlets), fill = TRUE) %>%
       st_as_sf()
@@ -229,36 +173,36 @@ refactor  = function (gpkg = NULL,
       outlets_ref_COMID = NULL
     }
   }
-  
+
   if (!is.null(outlets_ref_COMID)) {
     final_outlets <-  outlets_ref_COMID %>%
       st_as_sf() %>%
       inner_join(select(lookup_table, member_COMID, reconciled_ID),
-                 by = "member_COMID")
-    
+                 by = "member_COMID") %>% 
+      distinct()
+
     check_dups_poi <- final_outlets %>%
       group_by(reconciled_ID) %>%
       filter(n() > 1) %>%
       ungroup()
-    
+
     if (nrow(check_dups_poi) > 1) {
       hydrofab::hyaggregate_log("WARN", "Double-check for double POIs")
     } else {
       hydrofab::hyaggregate_log("SUCCESS", "No double POIs detected")
     }
-    
+
     hydrofab::hyaggregate_log("SUCCESS", "Flowlines successfully refactored.")
-    
+
   }
-  
   
   if (!is.null(fac) &
       !is.null(fdr) & 
       !is.null(network_list$catchments)) {
-
-    if ("featureid" %in% names(network_list$catchments)) {
-      network_list$catchments = dplyr::rename(network_list$catchments, FEATUREID = FEATUREID)
-    }
+    
+    div_lookup <- c(FEATUREID = "divide_id", FEATUREID = "featureid")
+    
+    network_list$catchments = rename(network_list$catchments, any_of(div_lookup))
     
     fac_open = climateR::dap(URL = fac, AOI = network_list$catchments)
     fdr_open = climateR::dap(URL = fdr, AOI = network_list$catchments)
@@ -301,9 +245,31 @@ refactor  = function (gpkg = NULL,
                overwrite = TRUE)
     }
     
+    if (!is.null(lookup_table)) {
+      write_sf(lookup_table,
+               outfile,
+               "lookup_table",
+               overwrite = TRUE)
+    }
+    
+    if (!is.null(final_outlets)) {
+      write_sf(final_outlets,
+               outfile,
+               
+               "outlets",
+               overwrite = TRUE)
+    }
+    
+    if (!is.null(outlets)) {
+      write_sf(outlets,
+               outfile,
+               "pois",
+               overwrite = TRUE)
+    }
+    
     return(outfile)
     
   } else {
-    list(flowpaths  = rec, catchments = divides)
+    list(flowpaths  = rec, catchments = divides) 
   }
 }

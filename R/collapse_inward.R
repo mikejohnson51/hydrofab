@@ -87,7 +87,7 @@ build_collapse_table = function(network_list,
     touches  = network_list$flowpaths$id[unlist(emap)]
   ) %>%
     # we dont care if it touches itself
-    filter(!.data$id == .data$touches) %>%
+    filter(!id == touches) %>%
     # group_by ID
     group_by(id) %>% 
     # If the bad fp touches is topo toid, the bad id will become the min (most downstream) toid or the id it touches (most downstream)

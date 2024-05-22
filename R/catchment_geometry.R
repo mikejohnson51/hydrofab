@@ -259,12 +259,12 @@ clean_geometry <- function(catchments,
       
       in_cat <- 
         union_polygons(
-          filter(tj, .data$n > 1),
+          filter(tj, n > 1),
           ID
         ) %>% 
         bind_rows(
           select(
-            filter(tj, .data$n == 1), 
+            filter(tj, n == 1), 
             !!ID)
         ) %>%
         mutate(tmpID = 1:n()) %>% 
@@ -400,9 +400,9 @@ simplify_process = function(catchments, keep, sys){
 add_lengthmap = function(flowpaths, length_table){
 
   tmp = dplyr::select(st_drop_geometry(flowpaths),
-                           .data$ID,
-                           COMID = .data$member_COMID) %>%
-    mutate(COMID = strsplit(.data$COMID, ","))
+                           ID,
+                           COMID = member_COMID) %>%
+    mutate(COMID = strsplit(COMID, ","))
 
   unnested = data.frame(ID =  rep(tmp$ID,  times = lengths(tmp$COMID)),
                     COMID = as.character(unlist(tmp$COMID)))
@@ -411,25 +411,25 @@ add_lengthmap = function(flowpaths, length_table){
     mutate(baseCOMID = floor(as.numeric(COMID)))
 
   lengthm_fp = length_table %>%
-    select(baseCOMID = .data$comid, .data$lengthkm) %>%
-    mutate(lengthm_fp = .data$lengthkm * 1000, lengthkm = NULL)
+    select(baseCOMID = comid, lengthkm) %>%
+    mutate(lengthm_fp = lengthkm * 1000, lengthkm = NULL)
   
   lengthm_id = flowpaths %>%
     mutate(lengthm_id = as.numeric(st_length(.))) %>%
-    select(.data$ID, .data$lengthm_id) %>%
+    select(ID, lengthm_id) %>%
     st_drop_geometry()
 
   map = left_join(left_join(unnested2, lengthm_fp, "baseCOMID"), lengthm_id, by = "ID") %>%
-    mutate(perLength = round(.data$lengthm_id/.data$lengthm_fp, 3)/10) %>%
-    select(.data$ID, .data$COMID, .data$perLength) %>%
+    mutate(perLength = round(lengthm_id/lengthm_fp, 3)/10) %>%
+    select(ID, COMID, perLength) %>%
     right_join(unnested, by = c("ID", "COMID")) %>%
-    mutate(perLength = ifelse(is.na(.data$perLength), 1,
-                              as.character(.data$perLength))) %>%
-    arrange(.data$ID) %>%
-    mutate(new = paste0(floor(as.numeric(.data$COMID)), ".",
-                        gsub("0\\.", "", .data$perLength))) %>%
-    group_by(.data$ID) %>%
-    summarize(lengthMap = paste(.data$new, collapse = ",")) %>%
+    mutate(perLength = ifelse(is.na(perLength), 1,
+                              as.character(perLength))) %>%
+    arrange(ID) %>%
+    mutate(new = paste0(floor(as.numeric(COMID)), ".",
+                        gsub("0\\.", "", perLength))) %>%
+    group_by(ID) %>%
+    summarize(lengthMap = paste(new, collapse = ",")) %>%
     right_join(flowpaths) %>%
     st_as_sf()
 

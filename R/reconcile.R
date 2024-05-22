@@ -21,10 +21,10 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
   new_flines <-
     mutate(flines,
            becomes =
-             ifelse((is.na(.data$joined_fromCOMID) | .data$joined_fromCOMID == -9999),
-                    ifelse((is.na(.data$joined_toCOMID) | .data$joined_toCOMID == -9999),
-                           .data$COMID, .data$joined_toCOMID),
-                    .data$joined_fromCOMID))
+             ifelse((is.na(joined_fromCOMID) | joined_fromCOMID == -9999),
+                    ifelse((is.na(joined_toCOMID) | joined_toCOMID == -9999),
+                           COMID, joined_toCOMID),
+                    joined_fromCOMID))
   
   # In the case that something is first joined to then the thing it joins with joins from
   # we have to do a little reassignment.
@@ -33,31 +33,31 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
   
   joined_tofrom <- joined_to[joined_to$becomes %in% joined_from$COMID, ]
   
-  update_tofrom <- left_join(select(joined_tofrom, .data$COMID, .data$becomes), 
-                             select(joined_from, .data$COMID, new_becomes = .data$becomes), 
+  update_tofrom <- left_join(select(joined_tofrom, COMID, becomes), 
+                             select(joined_from, COMID, new_becomes = becomes), 
                              by = c("becomes" = "COMID"))
   
   if(nrow(update_tofrom) > 0) {
-    new_flines <- left_join(new_flines, select(update_tofrom, .data$COMID, .data$new_becomes), by = "COMID") %>%
-      mutate(becomes = ifelse(!is.na(.data$new_becomes), .data$new_becomes, .data$becomes)) %>%
-      select(-.data$new_becomes)
+    new_flines <- left_join(new_flines, select(update_tofrom, COMID, new_becomes), by = "COMID") %>%
+      mutate(becomes = ifelse(!is.na(new_becomes), new_becomes, becomes)) %>%
+      select(-new_becomes)
   }
   
   new_flines <- new_flines %>%
-    group_by(.data$becomes) %>%
-    mutate(LENGTHKM = max(.data$LENGTHKM),
-           Hydroseq = min(.data$Hydroseq),
-           LevelPathI = min(.data$LevelPathI)) %>%
+    group_by(becomes) %>%
+    mutate(LENGTHKM = max(LENGTHKM),
+           Hydroseq = min(Hydroseq),
+           LevelPathI = min(LevelPathI)) %>%
     ungroup() %>%
-    tidyr::separate(.data$COMID, c("orig_COMID", "part"),
+    tidyr::separate(COMID, c("orig_COMID", "part"),
                     sep = "\\.", remove = FALSE, fill = "right") %>%
-    mutate(new_Hydroseq = ifelse(is.na(.data$part),
-                                 as.character(.data$Hydroseq),
-                                 paste(as.character(.data$Hydroseq),
+    mutate(new_Hydroseq = ifelse(is.na(part),
+                                 as.character(Hydroseq),
+                                 paste(as.character(Hydroseq),
                                        part, sep = ".")),
-           part = ifelse(is.na(.data$part), "0", part)) %>%
+           part = ifelse(is.na(part), "0", part)) %>%
     ungroup() %>%
-    select(-.data$joined_fromCOMID, -.data$joined_toCOMID)
+    select(-joined_fromCOMID, -joined_toCOMID)
   
   new_flines <-
     left_join(new_flines,
@@ -66,38 +66,38 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
                          stringsAsFactors = FALSE),
               by = "becomes")
   
-  tocomid_updater <- filter(select(new_flines, .data$becomes, .data$toCOMID),
-                            !is.na(.data$toCOMID))
+  tocomid_updater <- filter(select(new_flines, becomes, toCOMID),
+                            !is.na(toCOMID))
   
-  new_flines <- distinct(left_join(select(new_flines, -.data$toCOMID),
+  new_flines <- distinct(left_join(select(new_flines, -toCOMID),
                                    tocomid_updater, by = "becomes"))
   
   new_flines <- left_join(new_flines,
-                          select(new_flines, .data$becomes, toID = .data$ID),
+                          select(new_flines, becomes, toID = ID),
                           by = c("toCOMID" = "becomes")) %>%
-    arrange(.data$Hydroseq, desc(.data$part))
+    arrange(Hydroseq, desc(part))
   
   new_flines <- left_join(new_flines,
                           data.frame(ID = unique(new_flines$ID),
                                      ID_Hydroseq = seq_len(length(unique(new_flines$ID)))),
                           by = "ID")
   
-  new_lp <- group_by(new_flines, .data$LevelPathI) %>%
-    filter(Hydroseq == min(.data$Hydroseq)) %>% # Get the outlet by hydrosequence.
+  new_lp <- group_by(new_flines, LevelPathI) %>%
+    filter(Hydroseq == min(Hydroseq)) %>% # Get the outlet by hydrosequence.
     ungroup() %>%
-    group_by(.data$Hydroseq) %>%
+    group_by(Hydroseq) %>%
     # Get the outlet if the original was split.
-    filter(as.numeric(.data$part) == max(as.numeric(.data$part))) %>%
+    filter(as.numeric(part) == max(as.numeric(part))) %>%
     ungroup() %>%
-    select(ID_LevelPathID = .data$ID_Hydroseq, .data$LevelPathI)
+    select(ID_LevelPathID = ID_Hydroseq, LevelPathI)
   
   if(!"event_identifier" %in% names(new_flines)) 
     new_flines$event_identifier <- rep(NA, nrow(new_flines))
   
   new_flines <- left_join(distinct(new_flines), distinct(new_lp), by = "LevelPathI") %>%
-    select(.data$ID, .data$toID, .data$LENGTHKM, .data$TotDASqKM, member_COMID = .data$COMID,
-           LevelPathID = .data$ID_LevelPathID, Hydroseq = .data$ID_Hydroseq, 
-           .data$event_identifier, orig_levelpathID = .data$LevelPathI)
+    select(ID, toID, LENGTHKM, TotDASqKM, member_COMID = COMID,
+           LevelPathID = ID_LevelPathID, Hydroseq = ID_Hydroseq, 
+           event_identifier, orig_levelpathID = LevelPathI)
   
   if (!is.null(geom)) {
     geom_column <- attr(geom, "sf_column")
@@ -110,18 +110,18 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
     
     new_flines <- new_flines %>%
       drop_geometry() %>%
-      group_by(.data$ID) %>%
-      summarise(toID = .data$toID[1],
-                LENGTHKM = .data$LENGTHKM[1],
-                TotDASqKM = max(.data$TotDASqKM),
-                LevelPathID = .data$LevelPathID[1],
-                Hydroseq = .data$Hydroseq[1],
-                event_identifier = .data$event_identifier[1],
-                orig_levelpathID = .data$orig_levelpathID[1],
-                member_COMID = list(unique(.data$member_COMID))) %>%
+      group_by(ID) %>%
+      summarise(toID = toID[1],
+                LENGTHKM = LENGTHKM[1],
+                TotDASqKM = max(TotDASqKM),
+                LevelPathID = LevelPathID[1],
+                Hydroseq = Hydroseq[1],
+                event_identifier = event_identifier[1],
+                orig_levelpathID = orig_levelpathID[1],
+                member_COMID = list(unique(member_COMID))) %>%
       ungroup() %>%
       left_join(union_linestrings(
-        select(new_flines[!sf::st_is_empty(new_flines), ], .data$ID), "ID"),
+        select(new_flines[!sf::st_is_empty(new_flines), ], ID), "ID"),
         by = "ID") %>%
       sf::st_as_sf()
   }
@@ -167,7 +167,6 @@ reconcile_collapsed_flowlines <- function(flines, geom = NULL, id = "COMID") {
 #' @importFrom data.table rbindlist
 #' @importFrom nhdplusTools rename_geometry
 
-
 reconcile_catchment_divides <- function(catchment, 
                                         fline_ref, 
                                         fline_rec, 
@@ -188,11 +187,10 @@ reconcile_catchment_divides <- function(catchment,
   if(!is.null(fdr) & !is.null(fac)){
     
     fdr_temp <- fdr
-    
     if(!inherits(fdr_temp, "SpatRaster")){
       fdr_temp <- terra::rast(fdr_temp)
     }
-
+    
     catchment <-  st_transform(catchment, terra::crs(fdr_temp)) 
     #st_precision(catchment) <- terra::res(fdr_temp)[1]
     fline_ref <-  st_transform(fline_ref,  terra::crs(fdr_temp))
@@ -200,32 +198,32 @@ reconcile_catchment_divides <- function(catchment,
   }
   
   reconciled <- st_drop_geometry(fline_rec) %>%
-    select(ID, member_COMID)
+    dplyr::select(ID, member_COMID)
   
   rm(fline_rec)
   
   # Not all catchments have flowlines. Remove the flowlines without.  
   comid <- fline_ref$COMID # Just being explicit here.
-  featureid <- catchment$featureid # type conversion below is annoying.
-  # as.numeric removes the .1, .2, semantic part but the response retains 
+  featureid <- catchment$FEATUREID # type conversion below is annoying.
+  # as.integer removes the .1, .2, semantic part but the response retains 
   # the semantic component. If you don't know what this means, stop hacking.
-  comid_with_catchment <- comid[as.numeric(comid) %in% featureid]
+  comid_with_catchment <- comid[as.integer(comid) %in% featureid]
   
   reconciled <- distinct(reconciled) %>% # had dups from prior steps.
-    tidyr::separate_rows(.data$member_COMID, sep = ",") %>% # Make long form
-    dplyr::filter(.data$member_COMID %in% comid_with_catchment) %>% # 
-    dplyr::group_by(.data$ID) %>%
+    tidyr::separate_rows(member_COMID, sep = ",") %>% # Make long form
+    dplyr::filter(member_COMID %in% comid_with_catchment) %>% # 
+    dplyr::group_by(ID) %>%
     dplyr::summarise(member_COMID = paste(member_COMID, collapse = ",")) %>%
     dplyr::ungroup()
-
-  fline_ref <- fline_ref[as.numeric(fline_ref$COMID) %in% catchment$featureid, ]
+  
+  fline_ref <- fline_ref[as.integer(fline_ref$COMID) %in% catchment$FEATUREID, ]
   
   to_split_bool <- as.numeric(fline_ref$COMID) !=
-    as.numeric(fline_ref$COMID)
+    as.integer(fline_ref$COMID)
   
   to_split_ids <- fline_ref$COMID[which(to_split_bool)]
   
-  to_split_featureids <- unique(as.numeric(to_split_ids))
+  to_split_featureids <- unique(as.integer(to_split_ids))
   
   cl <- NULL
   
@@ -252,7 +250,6 @@ reconcile_catchment_divides <- function(catchment,
                                     simplify_tolerance_m = simplify_tolerance_m, 
                                     vector_crs = vector_crs,
                                     cl = cl)
-    
     if(!is.null(cache)) save(split_cats, file = cache)
   }
   
@@ -270,7 +267,7 @@ reconcile_catchment_divides <- function(catchment,
     dplyr::filter(dplyr::row_number() == 1) %>%
     dplyr::ungroup()
   
-  unsplit <- get_cat_unsplit(rename(catchment, FEATUREID = featureid), fline_ref, to_split_featureids)
+  unsplit <- get_cat_unsplit(catchment, fline_ref, to_split_featureids)
   
   if(nrow(unsplit) > 0) {
     split_cats <- sf::st_as_sf(data.table::rbindlist(list(
@@ -285,8 +282,8 @@ reconcile_catchment_divides <- function(catchment,
                                     split_cats = split_cats,
                                     cache = cache,
                                     cl = cl)
-
-
+  
+  
   if(!is.null(cl)) {
     parallel::stopCluster(cl)
   }
@@ -301,9 +298,7 @@ reconcile_catchment_divides <- function(catchment,
   
   out <- st_sf(right_join(dplyr::select(split_cats, member_COMID = FEATUREID), 
                           reconciled,
-                          by = "member_COMID")) 
-  
-  out = left_join(union_polygons(out, "ID"), distinct(st_drop_geometry(out)), by = "ID")
+                          by = "member_COMID"))
   
   missing <- is.na(st_dimension(out$geom))
   
@@ -312,25 +307,66 @@ reconcile_catchment_divides <- function(catchment,
     out_mp <- filter(out, !missing) %>%
       st_cast("MULTIPOLYGON")
     
-
-    out <- select(catchment, member_COMID = .data$FEATUREID) %>%
-      filter(.data$member_COMID %in% unique(as.numeric(out$member_COMID[missing]))) %>%
-      mutate(member_COMID = paste0(.data$member_COMID, ".1")) %>%
-      mutate(ID = out$ID[match(.data$member_COMID, out$member_COMID)]) %>%
-      select(.data$ID, .data$member_COMID) %>% 
-      rename_geometry(attr(out_mp, "sf_column")) %>% 
+    out <- select(catchment, member_COMID = FEATUREID) %>%
+      filter(member_COMID %in% unique(as.integer(out$member_COMID[missing]))) %>%
+      mutate(member_COMID = paste0(member_COMID, ".1")) %>%
+      mutate(ID = out$ID[match(member_COMID, out$member_COMID)]) %>%
+      select(ID, member_COMID) %>% 
+      nhdplusTools::rename_geometry(attr(out_mp, "sf_column")) %>% 
       bind_rows(out_mp)
-    
-    
   } 
   
   if(fix_catchments){
     # cat("Fixing Catchment Geometries...\n")
-    clean_geometry(catchments = out, ID = "ID", keep = keep) %>% 
+    clean_geometry(catchments = out, "ID", keep) %>% 
       sf::st_transform(in_crs)
   } else {
     sf::st_transform(out, in_crs)
   }
+}
+
+par_split_cat <- function(fid, to_split_ids, fline_ref, catchment, fdr, fac,
+                          min_area_m, snap_distance_m,
+                          simplify_tolerance_m, vector_crs) {
+  out <- NULL
+  try({
+    
+    message(paste0(Sys.time(), " par_split_cat() on pid: ", 
+                   Sys.getpid(), " catchment: ", fid))
+    
+    # nolint start
+    requireNamespace("hyRefactor", quietly = TRUE)
+    requireNamespace("terra", quietly = TRUE)
+    # nolint end
+    
+    if(!inherits(fdr, "SpatRaster")){
+      fdr = terra::rast(fdr)
+    }
+    
+    if(!inherits(fac, "SpatRaster")){
+      fac = terra::rast(fac)
+    }
+    
+    split_set <- to_split_ids[which(grepl(paste0("^", as.character(fid)), to_split_ids))]
+    to_split_flines <- dplyr::filter(fline_ref, COMID %in% split_set)
+    to_split_cat    <- dplyr::filter(catchment, FEATUREID == fid)
+    
+    split_cats <- split_catchment_divide(catchment = to_split_cat,
+                                         fline = to_split_flines,
+                                         fdr = fdr,
+                                         fac = fac, 
+                                         lr = FALSE,
+                                         min_area_m = min_area_m, 
+                                         snap_distance_m = snap_distance_m,
+                                         simplify_tolerance_m = simplify_tolerance_m, 
+                                         vector_crs = vector_crs)
+    
+    out <- sf::st_sf(FEATUREID = to_split_flines$COMID,
+                     geom = sf::st_cast(split_cats, "MULTIPOLYGON"), 
+                     stringsAsFactors = FALSE)
+  }, silent = FALSE)
+  
+  return(out)
 }
 
 par_split_cat <- function(fid, to_split_ids, fline_ref, catchment, fdr, fac,
@@ -356,8 +392,8 @@ par_split_cat <- function(fid, to_split_ids, fline_ref, catchment, fdr, fac,
     }
     
     split_set <- to_split_ids[which(grepl(paste0("^", as.character(fid)), to_split_ids))]
-    to_split_flines <- dplyr::filter(fline_ref, .data$COMID %in% split_set)
-    to_split_cat    <- dplyr::filter(catchment, .data$FEATUREID == fid)
+    to_split_flines <- dplyr::filter(fline_ref, COMID %in% split_set)
+    to_split_cat    <- dplyr::filter(catchment, FEATUREID == fid)
     
     split_cats <- split_catchment_divide(catchment = to_split_cat,
                                          fline = to_split_flines,
@@ -383,34 +419,34 @@ get_split_cats <- function(cats, split_cats, cache = NULL) {
   error_file <- paste0(gsub(".rda", "", cache), "error.rda")
   
   tryCatch({
-  cats_vec <- unlist(strsplit(cats, ","))
-  
-  union_cats <- dplyr::filter(split_cats, .data$FEATUREID %in% cats_vec)
-
-  if (length(unique(union_cats$FEATUREID)) != length(cats_vec)) {
-    if(!is.null(cache)) {
-      
-      save(list = ls(), file = error_file)
+    cats_vec <- unlist(strsplit(cats, ","))
+    
+    union_cats <- dplyr::filter(split_cats, FEATUREID %in% cats_vec)
+    
+    if (length(unique(union_cats$FEATUREID)) != length(cats_vec)) {
+      if(!is.null(cache)) {
+        
+        save(list = ls(), file = error_file)
+        stop(paste("missing a split catchment for an expected flowline.", 
+                   cats_vec, "environment saved to:", cache))
+      } 
       stop(paste("missing a split catchment for an expected flowline.", 
-                 cats_vec, "environment saved to:", cache))
-    } 
-    stop(paste("missing a split catchment for an expected flowline.", 
-                paste(cats_vec, collapse = "\n")))
-
-  }
-  
-  geom <- sf::st_cast(sf::st_union(sf::st_make_valid(union_cats)), 
-                      "MULTIPOLYGON")
-  
-  unioned <- sf::st_sf(FEATUREID = cats, 
-                       geom = geom,
-                       stringsAsFactors = FALSE)
-  
-  if (!any(grepl("MULTIPOLYGON", class(sf::st_geometry(unioned))))) {
-    warning("Somthing is wrong with the union of catchments.")
-  }
-  
-  return(unioned)
+                 paste(cats_vec, collapse = "\n")))
+      
+    }
+    
+    geom <- sf::st_cast(sf::st_union(sf::st_make_valid(union_cats)), 
+                        "MULTIPOLYGON")
+    
+    unioned <- sf::st_sf(FEATUREID = cats, 
+                         geom = geom,
+                         stringsAsFactors = FALSE)
+    
+    if (!any(grepl("MULTIPOLYGON", class(sf::st_geometry(unioned))))) {
+      warning("Somthing is wrong with the union of catchments.")
+    }
+    
+    return(unioned)
   }, error = function(e) {
     warning(paste0("error in get_split_cats", e))
   })
@@ -421,13 +457,14 @@ get_split_cats <- function(cats, split_cats, cache = NULL) {
 }
 
 
+
 get_cat_unsplit <- function(catchment, fline_ref, to_split_featureids) {
   cat <- select(catchment, FEATUREID)
   cat <- cat[!cat$FEATUREID %in% to_split_featureids, ]
   cat$FEATUREID <- as.character(cat$FEATUREID)
   cat <- left_join(cat,
-                        select(st_drop_geometry(fline_ref), 
-                               FEATUREID = .data$COMID),
-                        by = "FEATUREID")
-  st_cast(select(cat, .data$FEATUREID), "MULTIPOLYGON")
+                   select(st_drop_geometry(fline_ref), 
+                          FEATUREID = COMID),
+                   by = "FEATUREID")
+  st_cast(select(cat, FEATUREID), "MULTIPOLYGON")
 }

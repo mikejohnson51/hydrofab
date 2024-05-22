@@ -71,9 +71,9 @@ split_flowlines <- function(flines, max_length = NULL,
     
     remove_comid <- unique(as.integer(split[["COMID"]]))
     
-    not_split <- dplyr::filter(select(flines, .data$COMID, .data$toCOMID, 
-                                      .data$LENGTHKM, .data$LevelPathI, 
-                                      .data$Hydroseq, .data$TotDASqKM), !(.data$COMID %in% remove_comid))
+    not_split <- dplyr::filter(select(flines, COMID, toCOMID, 
+                                      LENGTHKM, LevelPathI, 
+                                      Hydroseq, TotDASqKM), !(COMID %in% remove_comid))
     
     not_split <- dplyr::mutate(not_split, event_REACHCODE = "", event_REACH_meas = NA, event_identifier = NA)
     
@@ -136,21 +136,21 @@ split_lines <- function(input_lines,
   
   if(nrow(event_split_points) > 0) {
     split_points <- too_long_split_points %>%
-      dplyr::left_join(select(event_split_points, e_start = .data$start, 
-                              e_end = .data$end, .data$event_split_fID), 
+      dplyr::left_join(select(event_split_points, e_start = start, 
+                              e_end = end, event_split_fID), 
                        by = "event_split_fID")  %>%
-      dplyr::mutate(start = ifelse(!is.na(.data$e_start), 
-                                   .data$start * (.data$e_end - .data$e_start) + .data$e_start, 
-                                   .data$start),
-                    end = ifelse(!is.na(.data$e_start), 
-                                 .data$end * (.data$e_end - .data$e_start) + .data$e_start, 
-                                 .data$end)) %>%
-      dplyr::mutate(event_REACHCODE = ifelse((!.data$event_REACHCODE == "" & !is.na(.data$event_REACHCODE)) & 
-                                               round(.data$end, digits = 5) == round(.data$e_end, digits = 5), 
-                                             .data$event_REACHCODE, 
+      dplyr::mutate(start = ifelse(!is.na(e_start), 
+                                   start * (e_end - e_start) + e_start, 
+                                   start),
+                    end = ifelse(!is.na(e_start), 
+                                 end * (e_end - e_start) + e_start, 
+                                 end)) %>%
+      dplyr::mutate(event_REACHCODE = ifelse((!event_REACHCODE == "" & !is.na(event_REACHCODE)) & 
+                                               round(end, digits = 5) == round(e_end, digits = 5), 
+                                             event_REACHCODE, 
                                              NA)) %>%
-      dplyr::mutate(event_REACH_meas = ifelse(is.na(.data$event_REACHCODE), NA, .data$event_REACH_meas)) %>%
-      dplyr::mutate(event_identifier = ifelse(is.na(.data$event_identifier), NA, .data$event_identifier))
+      dplyr::mutate(event_REACH_meas = ifelse(is.na(event_REACHCODE), NA, event_REACH_meas)) %>%
+      dplyr::mutate(event_identifier = ifelse(is.na(event_identifier), NA, event_identifier))
   } else {
     split_points <- too_long_split_points
     
@@ -161,15 +161,15 @@ split_lines <- function(input_lines,
   }
   
   input_lines <- split_points %>%  
-    dplyr::group_by(.data$COMID) %>%
-    dplyr::arrange(.data$end) %>%
+    dplyr::group_by(COMID) %>%
+    dplyr::arrange(end) %>%
     dplyr::mutate(split_fID = ifelse(dplyr::row_number() == 1,
-                            as.character(.data$COMID),
-                            paste0(.data$COMID, ".", dplyr::row_number() - 1))) %>%
+                            as.character(COMID),
+                            paste0(COMID, ".", dplyr::row_number() - 1))) %>%
     dplyr::ungroup() %>%
-    dplyr::arrange(.data$fID, .data$end) %>%
-    select(.data$COMID, .data$split_fID, .data$start, .data$end, 
-           .data$event_REACHCODE, .data$event_REACH_meas, .data$event_identifier) %>%
+    dplyr::arrange(fID, end) %>%
+    select(COMID, split_fID, start, end, 
+           event_REACHCODE, event_REACH_meas, event_identifier) %>%
     split_lines_fun(input_lines, para)
   
   if(is.logical(input_lines$split_fID)) input_lines$split_fID <- as.character(input_lines$split_fID)
@@ -223,7 +223,7 @@ split_lines_fun <- function(split_points, lines, para) {
     parallel::stopCluster(cl)
   }
   
-  split_points <- dplyr::select(split_points, -.data$start, -.data$end)
+  split_points <- dplyr::select(split_points, -start, -end)
   
   sf::st_sf(split_points, geom = sf::st_sfc(lines, crs = crs))
 }
@@ -241,9 +241,9 @@ split_by_event <- function(input_lines, events) {
                            
                            # from is downstream -- 0 is the outlet
                            # to is upstream -- 100 is the inlet
-                           dplyr::filter(input_lines, .data$REACHCODE == e$REACHCODE &
-                                           .data$ToMeas > e$REACH_meas & 
-                                           .data$FromMeas < e$REACH_meas)$COMID
+                           dplyr::filter(input_lines, REACHCODE == e$REACHCODE &
+                                           ToMeas > e$REACH_meas & 
+                                           FromMeas < e$REACH_meas)$COMID
                          }, events = events, input_lines = input_lines)
   
   # filter down so we could parallelize this without blowing out memory.
@@ -265,9 +265,9 @@ split_by_event <- function(input_lines, events) {
                       
                       # only work on events in the interval of the current flowline
                       e <- dplyr::filter(events, 
-                                         .data$REACHCODE %in% l$REACHCODE &
-                                         .data$REACH_meas < l$ToMeas &
-                                           .data$REACH_meas > l$FromMeas)
+                                         REACHCODE %in% l$REACHCODE &
+                                         REACH_meas < l$ToMeas &
+                                           REACH_meas > l$FromMeas)
                       
                       # arrange in upstream downstream order (greater measures are upstream)
                       # from is downstream -- 0 is the outlet
@@ -300,9 +300,9 @@ split_by_length <- function(lines, max_length, event_split_points, avoid) {
   
   if(nrow(event_split_points) > 0) {
     event_split_points <- dplyr::left_join(event_split_points, 
-                                           dplyr::select(lines, .data$COMID, .data$geom_len), 
+                                           dplyr::select(lines, COMID, geom_len), 
                                            by = "COMID") %>%
-      mutate(geom_len = .data$geom_len * (.data$end - .data$start))
+      mutate(geom_len = geom_len * (end - start))
     
     lines <-  lines %>%
       dplyr::filter(!COMID %in% event_split_points$COMID) %>%
@@ -318,28 +318,28 @@ split_by_length <- function(lines, max_length, event_split_points, avoid) {
   # pieces is the number of pieces we need to break each too long feature into.
   # fID is an identifier for a given geometry which may have already been split!
   lines <- lines %>%
-    filter((.data$geom_len >= max_length & !.data$COMID %in% avoid) | !is.na(.data$event_split_fID)) %>%
-    mutate(pieces = ceiling(.data$geom_len / max_length), 
+    filter((geom_len >= max_length & !COMID %in% avoid) | !is.na(event_split_fID)) %>%
+    mutate(pieces = ceiling(geom_len / max_length), 
            fID = seq_len(nrow(.))) %>%
-    select(-.data$geom_len)
+    select(-geom_len)
   
   if(nrow(lines) == 0) {
-    return(dplyr::select(event_split_points, .data$COMID, .data$start, .data$end, 
-                         .data$event_REACHCODE, .data$event_REACH_meas, .data$event_split_fID) %>%
-             dplyr::mutate(fID = .data$event_split_fID))
+    return(dplyr::select(event_split_points, COMID, start, end, 
+                         event_REACHCODE, event_REACH_meas, event_split_fID) %>%
+             dplyr::mutate(fID = event_split_fID))
   } 
   
   # rep here is done by row of lines so we get a row with the correct fID 
   # for each part we expect in the output.
   
   lines[rep(seq_len(nrow(lines)),lines$pieces), ] %>%
-    dplyr::select(-.data$pieces) %>%
+    dplyr::select(-pieces) %>%
     # Assign featureIDs to the output. start and end are decimal % along catchment
-    dplyr::group_by(.data$fID) %>%
+    dplyr::group_by(fID) %>%
     dplyr::mutate(piece = 1:n()) %>%
-    dplyr::mutate(start = (.data$piece - 1) / dplyr::n(),
-                  end = .data$piece / dplyr::n()) %>%
+    dplyr::mutate(start = (piece - 1) / dplyr::n(),
+                  end = piece / dplyr::n()) %>%
     dplyr::ungroup() %>%
-    dplyr::select(-.data$piece)
+    dplyr::select(-piece)
   
 }

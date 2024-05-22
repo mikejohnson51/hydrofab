@@ -8,9 +8,8 @@ refactor(
   gpkg = NULL,
   flowpaths = NULL,
   catchments = NULL,
-  events = NULL,
+  pois = NULL,
   avoid = NULL,
-  outlets = NULL,
   split_flines_meters = 10000,
   collapse_flines_meters = 1000,
   collapse_flines_main_meters = 1000,
@@ -29,11 +28,7 @@ refactor(
 
 \item{catchments}{Reference catchment features}
 
-\item{events}{data.frame containing events}
-
 \item{avoid}{integer vector of COMIDs to be excluded from collapse modifications.}
-
-\item{outlets}{DO I NEED THIS?}
 
 \item{split_flines_meters}{numeric the maximum length flowpath desired in the output.}
 
@@ -50,6 +45,8 @@ refactor(
 \item{keep}{proportion of points to retain in geometry simplification (0-1; default 0.05). See ms_simplify. If NULL, then no simplification will be executed.}
 
 \item{outfile}{path to geopackage to write refactored_flowlines, and if facfdr != NULL, refactored catchments.}
+
+\item{events}{data.frame containing events}
 }
 \value{
 data to the specified gpkg

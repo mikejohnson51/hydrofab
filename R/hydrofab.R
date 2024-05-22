@@ -1,13 +1,13 @@
-#' @importFrom dplyr right_join filter select rename mutate bind_rows group_by ungroup slice_max bind_rows n right_join rename slice_min add_count tbl collect
-#' @importFrom nhdplusTools get_vaa rename_geometry
+#' @importFrom dplyr right_join filter select rename mutate bind_rows group_by ungroup slice_max bind_rows n left_join rename slice_min add_count tbl collect everything distinct contains slice_max case_when bind_cols
+#' @importFrom nhdplusTools get_vaa rename_geometry get_node get_flowline_index
 #' @importFrom rvest read_html html_nodes html_attr
 #' @importFrom httr RETRY write_disk progress
-#' @importFrom sf st_layers st_transform st_crs write_sf st_read st_write st_crs st_touches st_transform st_area st_make_valid st_intersection st_collection_extract st_cast st_intersects st_length st_filter st_union st_is_empty
+#' @importFrom sf write_sf read_sf st_read st_write st_as_sf
+#' @importFrom sf st_layers st_crs st_touches st_transform st_area st_make_valid st_intersection st_collection_extract st_cast st_intersects st_length st_filter st_union st_is_empty st_drop_geometry
 #' @importFrom rmapshaper ms_explode ms_dissolve ms_simplify check_sys_mapshaper
 #' @importFrom rlang := sym
 #' @importFrom RSQLite SQLite
 #' @importFrom DBI dbListTables dbDisconnect dbConnect
-
 
 #nolint start
 # NHDPlus Attributes

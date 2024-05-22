@@ -249,7 +249,7 @@ split_catchment_divide <- function(catchment, fline, fdr, fac, lr = FALSE,
       raster_function <- function(x) x == 1
 
       out = st_as_sf(terra::as.polygons(out)) |> 
-        filter(.data$cats == 1)
+        filter(cats == 1)
 
       smaller_than_one_pixel <- units::set_units(min_area_m, "m^2")
       snap_distance          <- units::set_units(snap_distance_m, "m")

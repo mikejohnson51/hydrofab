@@ -15,12 +15,18 @@ add_nonnetwork_divides = function(gpkg = NULL,
                                   divides = NULL,
                                   huc12 = NULL,
                                   reference_gpkg = NULL,
+                                  reference_divides = NULL,
                                   verbose = TRUE){
   
-  if(is.null(reference_gpkg)){ stop('reference_gpkg cannot be NULL')}
+  if(is.null(reference_gpkg) & is.null(reference_divides)){ stop('reference_gpkg and reference_divides cannot be NULL')}
+  if(!is.null(reference_gpkg) & !is.null(reference_divides)){ stop('Either reference_gpkg or reference_divides must be NULL')}
   
-  ref_nl = read_hydrofabric(reference_gpkg, verbose = verbose, realization = "catchments")
-  names(ref_nl$catchments) = tolower(names(ref_nl$catchments))
+  if(!is.null(reference_gpkg)){
+    reference_divides = read_hydrofabric(reference_gpkg, verbose = verbose, realization = "catchments")[[1]]
+    names(reference_divides) = tolower(names(reference_divides))
+  } else {
+    names(reference_divides) = tolower(names(reference_divides))
+  }
   
   catchment_name = grep("divide|catchment", st_layers(gpkg)$name, value = TRUE)
   catchment_name = catchment_name[!grepl("network", catchment_name)]
@@ -37,7 +43,7 @@ add_nonnetwork_divides = function(gpkg = NULL,
   u_fl = unique(net$hf_id)
   
   # Reference ND catchments
-  non_network_divides = filter(ref_nl$catchments, !featureid %in% u_fl) %>%
+  non_network_divides = filter(reference_divides, !featureid %in% u_fl) %>%
     select(id = featureid) %>%
     st_transform(st_crs(out_nl$catchments)) %>%
     mutate(areasqkm = add_areasqkm(.),

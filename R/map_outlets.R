@@ -24,7 +24,7 @@ map_outlet_ids <- function(source_outlets, reconciled) {
   reconciled$integer_COMID <- strsplit(reconciled$member_COMID, ",")
   reconciled$integer_COMID <- lapply(reconciled$integer_COMID, as.integer)
   
-  rec <- unnest_flines(select(reconciled, .data$ID, .data$integer_COMID), 
+  rec <- unnest_flines(select(reconciled, ID, integer_COMID), 
                        col = "integer_COMID")
   
   # finds IDs from reconciled that represent the passed-in COMID

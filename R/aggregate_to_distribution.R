@@ -71,12 +71,13 @@ aggregate_to_distribution = function(gpkg = NULL,
   }
   
   network_list <- read_hydrofabric(gpkg,
-                                  catchments = divide,
-                                  flowpaths = flowpath,
-                                  crs = 5070) 
-  
+                                   catchments = divide,
+                                   flowpaths = flowpath,
+                                   crs = 5070) 
+
   network_list            <- add_network_type(prepare_network(network_list), verbose = FALSE)
   
+
   # Add outlets
   if (!is.null(hydrolocations)) {
     
@@ -89,8 +90,6 @@ aggregate_to_distribution = function(gpkg = NULL,
       mutate(poi_id = paste(poi_id, collapse = ",")) %>% 
       slice(1) %>% 
       ungroup()
-    
-    length(unique(outflows$id))
 
     network_list$flowpaths  = left_join(mutate(network_list$flowpaths, poi_id = NULL), 
                                         st_drop_geometry(outflows), 
@@ -184,11 +183,6 @@ if(!is.null(hydrolocations)){
           hf_source = "NHDPlusV2"
    ) %>%
    left_join(st_drop_geometry(select(network_list3$divides, divide_id, type, ds_id)), by = "divide_id")
-
-
- # if(is.null(network_list3$network$hl_uri)){
- #   network_list3$network$hl_uri = NA
- # }
 
   if(!is.null(vpu)){
     network_list3$network$vpu = vpu

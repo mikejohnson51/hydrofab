@@ -13,6 +13,7 @@ add_nonnetwork_divides(
   divides = NULL,
   huc12 = NULL,
   reference_gpkg = NULL,
+  reference_divides = NULL,
   verbose = TRUE
 )
 }
