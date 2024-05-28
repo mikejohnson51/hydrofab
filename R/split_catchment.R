@@ -226,6 +226,7 @@ split_catchment_divide <- function(catchment, fline, fdr, fac, lr = FALSE,
                                        crs = st_crs(fline)),
                             catchment, prepared = FALSE)[[1]]
     
+    
     if (length(in_out) > 0 && in_out == 1) {
       suppressWarnings(row_col <- get_row_col(fdr, start = cbind(outlets$X[cat], outlets$Y[cat]), fac_matrix))
       

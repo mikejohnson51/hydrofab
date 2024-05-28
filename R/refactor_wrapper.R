@@ -46,20 +46,28 @@ refactor  = function (gpkg = NULL,
   tf <- tempfile(pattern = "refactored", fileext = ".gpkg")
   tr <- tempfile(pattern = "reconciled", fileext = ".gpkg")
   
-  events = prep_split_events(pois, network_list$flowpaths, network_list$catchments, 25) %>%
-    mutate(event_identifier = as.character(row_number()))
-  
   avoid_int <- filter(network_list$flowpaths, (sqrt(areasqkm) / lengthkm) > 3 & areasqkm > 1) 
   avoid  = c(avoid_int$id, avoid)
   avoid   = avoid[avoid %in% network_list$flowpaths$id]
   
-  outlets <- pois %>%
-    inner_join(select(st_drop_geometry(network_list$flowpaths), totdasqkm, id, dnhydroseq), 
-               by = c("hf_id" = "id"))
-
-  # Need to avoid modification to flowlines immediately downstream of POIs
-  #      This can cause some hydrologically-incorrect catchment aggregation
-  POI_downstream <- filter(network_list$flowpaths, hydroseq %in% outlets$dnhydroseq, areasqkm > 0)
+  if(!is.null(pois)){
+    events = prep_split_events(pois, network_list$flowpaths, network_list$catchments, 25) %>%
+      mutate(event_identifier = as.character(row_number()))
+    
+    outlets <- pois %>%
+      inner_join(select(st_drop_geometry(network_list$flowpaths), totdasqkm, id, dnhydroseq), 
+                 by = c("hf_id" = "id"))
+    
+    # Need to avoid modification to flowlines immediately downstream of POIs
+    #      This can cause some hydrologically-incorrect catchment aggregation
+    POI_downstream <- filter(network_list$flowpaths, hydroseq %in% outlets$dnhydroseq, areasqkm > 0)
+    
+    ex <- unique(c(outlets$hf_id, avoid, POI_downstream$id))
+  } else { 
+    events = NULL
+    outlets = NULL
+    ex <- unique(avoid)
+  }
   
   # derive list of unique terminal paths
   TerminalPaths <- unique(network_list$flowpaths$terminalpa)
@@ -80,7 +88,7 @@ refactor  = function (gpkg = NULL,
   network_list$flowpaths <-
     st_as_sf(sf::st_zm(filter(network_list$flowpaths, refactor == 1)))
   
-  refactor_nhdplus(
+  hyRefactor::refactor_nhdplus(
     nhdplus_flines  = network_list$flowpaths,
     split_flines_meters         = split_flines_meters,
     split_flines_cores          = cores,
@@ -91,7 +99,7 @@ refactor  = function (gpkg = NULL,
     three_pass                  = TRUE,
     purge_non_dendritic         = purge_non_dendritic,
     events                      = events,
-    exclude_cats                = unique(c(outlets$hf_id, avoid, POI_downstream$id)),
+    exclude_cats                = ex,
     warn                        = FALSE
   )
   
@@ -194,6 +202,8 @@ refactor  = function (gpkg = NULL,
 
     hydrofab::hyaggregate_log("SUCCESS", "Flowlines successfully refactored.")
 
+  } else {
+    final_outlets = NULL
   }
   
   if (!is.null(fac) &
