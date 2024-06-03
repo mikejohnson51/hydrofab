@@ -88,7 +88,7 @@ refactor  = function (gpkg = NULL,
   network_list$flowpaths <-
     st_as_sf(sf::st_zm(filter(network_list$flowpaths, refactor == 1)))
   
-  hyRefactor::refactor_nhdplus(
+  refactor_nhdplus(
     nhdplus_flines  = network_list$flowpaths,
     split_flines_meters         = split_flines_meters,
     split_flines_cores          = cores,

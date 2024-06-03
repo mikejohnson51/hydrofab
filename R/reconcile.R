@@ -335,8 +335,8 @@ par_split_cat <- function(fid, to_split_ids, fline_ref, catchment, fdr, fac,
                    Sys.getpid(), " catchment: ", fid))
     
     # nolint start
-    requireNamespace("hyRefactor", quietly = TRUE)
-    requireNamespace("terra", quietly = TRUE)
+    #requireNamespace("hyRefactor", quietly = TRUE)
+    #requireNamespace("terra", quietly = TRUE)
     # nolint end
     
     if(!inherits(fdr, "SpatRaster")){
