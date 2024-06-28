@@ -44,13 +44,13 @@ aggregate_along_mainstems = function(network_list,
   
   tmp = network_list$flowpaths %>% 
     st_drop_geometry() %>% 
+    as.data.frame() |> 
     select(id = toid, hl_un = poi_id) %>% 
-    st_drop_geometry() %>% 
-    distinct() %>% 
+    distinct() |> 
     filter(!is.na(hl_un)) %>% 
     group_by(id) %>% 
     slice(1) %>% 
-    ungroup()
+    ungroup() 
   
   fline = network_list$flowpaths %>% 
     st_drop_geometry() %>% 
@@ -59,9 +59,7 @@ aggregate_along_mainstems = function(network_list,
     distinct() 
   
   index_table = fline %>%
-    group_by(levelpathid) %>%
-    arrange(hydroseq) %>%
-    mutate(hl_un = ifelse(hl_un %in% hl_dn, NA, hl_un)) %>% 
+    group_by(levelpathid) |> 
     mutate(
       ind = cs_group(
         areasqkm,

@@ -105,9 +105,7 @@ refactor  = function (gpkg = NULL,
   
   rec =  rename_geometry(st_transform(read_sf(tr), 5070), "geometry")
   
-  if ("ID.1" %in% names(rec)) {
-    rec = select(rec, -"ID.1")
-  }
+  if ("ID.1" %in% names(rec)) { rec = select(rec, -"ID.1") }
   
   ##### LOOKUP #####
   refactor_lookup <- st_drop_geometry(rec) %>%

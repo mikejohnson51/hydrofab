@@ -4,7 +4,7 @@
 \alias{add_measures}
 \title{Add/sync/update length and area measures}
 \usage{
-add_measures(flowpaths, cat)
+add_measures(flowpaths, divides)
 }
 \arguments{
 \item{cat}{sf object (POLYGON)}

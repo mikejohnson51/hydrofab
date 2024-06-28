@@ -39,6 +39,7 @@ prepare_network = function(network_list) {
   network_list$flowpaths = add_hydroseq(flowpaths = network_list$flowpaths)
   # Add area and length measures to the network list
   network_list = add_measures(network_list$flowpaths, network_list$catchments)
+  
   network_list$flowpaths = mutate(network_list$flowpaths, areasqkm = ifelse(is.na(areasqkm), 0, areasqkm))
  #network_list$flowpaths$order = get_streamorder(st_drop_geometry(mutate(select(network_list$flowpaths, ID = id, toID = toid), divergence = 0)))
   network_list$flowpaths$tot_drainage_area = calculate_total_drainage_area(select(network_list$flowpaths, ID = id, toID = toid, area = areasqkm))
@@ -125,15 +126,15 @@ add_hydroseq = function(flowpaths) {
 #' @importFrom dplyr select left_join
 #' @importFrom sf st_drop_geometry
 
-add_measures = function(flowpaths, cat) {
+add_measures = function(flowpaths, divides) {
   flowpaths$lengthkm  = add_lengthkm(flowpaths)
-  cat$areasqkm = add_areasqkm(cat)
+  divides$areasqkm = add_areasqkm(divides)
   flowpaths$areasqkm = NULL
   flowpaths = left_join(flowpaths,
-                        select(st_drop_geometry(cat), id, areasqkm),
+                        select(st_drop_geometry(divides), id, areasqkm),
                         by = "id")
   list(flowpaths  = rename_geometry(flowpaths, "geometry"),
-       catchments = rename_geometry(cat, "geometry"))
+       catchments = rename_geometry(divides, "geometry"))
 }
 
 #' Compute length in kilometers

@@ -3,7 +3,7 @@
 #' @importFrom rvest read_html html_nodes html_attr
 #' @importFrom httr RETRY write_disk progress
 #' @importFrom sf write_sf read_sf st_read st_write st_as_sf
-#' @importFrom sf st_layers st_crs st_touches st_transform st_area st_make_valid st_intersection st_collection_extract st_cast st_intersects st_length st_filter st_union st_is_empty st_drop_geometry
+#' @importFrom sf st_layers st_crs st_touches st_transform st_area st_make_valid st_intersection st_collection_extract st_cast st_intersects st_length st_filter st_union st_is_empty st_drop_geometry st_is_valid
 #' @importFrom rmapshaper ms_explode ms_dissolve ms_simplify check_sys_mapshaper
 #' @importFrom rlang := sym
 #' @importFrom RSQLite SQLite

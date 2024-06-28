@@ -73,11 +73,10 @@ aggregate_to_distribution = function(gpkg = NULL,
   network_list <- read_hydrofabric(gpkg,
                                    catchments = divide,
                                    flowpaths = flowpath,
-                                   crs = 5070) 
-
-  network_list            <- add_network_type(prepare_network(network_list), verbose = FALSE)
+                                   crs = 5070) |> 
+    prepare_network() |> 
+    add_network_type(verbose = FALSE)
   
-
   # Add outlets
   if (!is.null(hydrolocations)) {
     
@@ -86,8 +85,9 @@ aggregate_to_distribution = function(gpkg = NULL,
     outflows = hydrolocations %>%
       st_drop_geometry() %>% 
       select(poi_id, id) %>% 
+      filter(!is.na(poi_id)) |> 
       group_by(id) %>% 
-      mutate(poi_id = paste(poi_id, collapse = ",")) %>% 
+      mutate(poi_id = paste(na.omit(poi_id), collapse = ",")) %>% 
       slice(1) %>% 
       ungroup()
 
@@ -117,27 +117,24 @@ aggregate_to_distribution = function(gpkg = NULL,
     network_list$flowpaths$member_comid = NA
   }
   
-  network_list2 = aggregate_along_mainstems(
-    network_list,
+  network_list = network_list |> 
+    aggregate_along_mainstems(
     ideal_size_sqkm,
     min_area_sqkm,
     min_length_km,
     verbose = verbose,
     cache_file = cache_file
-  )
-
-  network_list3  = collapse_headwaters2(
-    network_list2,
+  ) |> collapse_headwaters2(
     min_area_sqkm,
     min_length_km,
     verbose = verbose,
     cache_file = cache_file)
 
-  network_list3$catchments = clean_geometry(network_list3$catchments, ID = "id")
+  network_list$catchments = clean_geometry(network_list$catchments, ID = "id", keep = NULL)
 
 if(!is.null(hydrolocations)){
   
-  network_list3$hydrolocations =  network_list3$flowpaths %>% 
+  network_list$hydrolocations =  network_list$flowpaths %>% 
     st_drop_geometry() %>%
     select(id, poi_id) %>% 
     filter(!is.na(poi_id)) %>% 
@@ -147,26 +144,30 @@ if(!is.null(hydrolocations)){
 
 } 
   
-  network_list3$flowpaths = hydroloom::add_streamorder(network_list3$flowpaths) 
+  network_list$flowpaths = hydroloom::add_streamorder(network_list$flowpaths) 
   
-  network_list3$flowpaths = 
-    select(network_list3$flowpaths, id, toid, mainstem = levelpathid, order = stream_order, member_comid, any_of('poi_id'), hydroseq, lengthkm, 
+  network_list$flowpaths = 
+    select(network_list$flowpaths, 
+           id, toid, 
+           mainstem = levelpathid, 
+           order = stream_order, 
+           member_comid, poi_id, hydroseq, lengthkm, 
            areasqkm, tot_drainage_areasqkm = tot_drainage_area, has_divide) %>% 
-    mutate(divide_id = ifelse(id %in% network_list3$catchments$id, id, NA))
+    mutate(divide_id = ifelse(id %in% network_list$catchments$id, id, NA))
   
-  topo = st_drop_geometry(network_list3$flowpaths) %>% 
+  topo = st_drop_geometry(network_list$flowpaths) %>% 
     select(divide_id, toid)
   
-  network_list3$divides = select(network_list3$catchments, id,  areasqkm) %>% 
+  network_list$divides = select(network_list$catchments, id,  areasqkm) %>% 
     mutate(divide_id = id, has_flowline = TRUE, ds_id = NA, type = "network") %>% 
     left_join(topo, by = "divide_id")
   
-  network_list3$catchments = NULL
+  network_list$catchments = NULL
 
-  network_list3$network  = st_drop_geometry(network_list3$flowpaths) %>%
+  network_list$network  = st_drop_geometry(network_list$flowpaths) %>%
    select(
      id,
-     toid          = toid,
+     toid,
      member  = member_comid,
      divide_id,
      any_of('poi_id'),
@@ -182,16 +183,16 @@ if(!is.null(hydrolocations)){
           member = NULL,
           hf_source = "NHDPlusV2"
    ) %>%
-   left_join(st_drop_geometry(select(network_list3$divides, divide_id, type, ds_id)), by = "divide_id")
+   left_join(st_drop_geometry(select(network_list$divides, divide_id, type, ds_id)), by = "divide_id")
 
   if(!is.null(vpu)){
-    network_list3$network$vpu = vpu
+    network_list$network$vpu = vpu
   } else {
-    network_list3$network$vpu = NA
+    network_list$network$vpu = NA
   }
 
  
- if(!all(st_geometry_type(network_list3$divides) == "POLYGON")){
+ if(!all(st_geometry_type(network_list$divides) == "POLYGON")){
    warning("MULTIPOLYGONS FOUND VPU: ", vpu)
  }
   
@@ -199,7 +200,7 @@ if(!is.null(hydrolocations)){
   if (!is.null(outfile)) {
   
     outfile = write_hydrofabric(
-      network_list3,
+      network_list,
       outfile,
       verbose = verbose, 
       enforce_dm = FALSE)
@@ -207,7 +208,7 @@ if(!is.null(hydrolocations)){
     return(outfile)
     
   } else {
-    network_list3
+    network_list
   }
   
 }

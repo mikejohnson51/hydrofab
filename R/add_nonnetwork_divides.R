@@ -43,8 +43,8 @@ add_nonnetwork_divides = function(gpkg = NULL,
   u_fl = unique(net$hf_id)
   
   # Reference ND catchments
-  non_network_divides = filter(reference_divides, !featureid %in% u_fl) %>%
-    select(id = featureid) %>%
+  non_network_divides = filter(reference_divides, !divide_id %in% u_fl) %>%
+    select(id = divide_id) %>%
     st_transform(st_crs(out_nl$catchments)) %>%
     mutate(areasqkm = add_areasqkm(.),
            type     = ifelse(id < 0, "internal", "coastal")) %>%

@@ -334,11 +334,6 @@ par_split_cat <- function(fid, to_split_ids, fline_ref, catchment, fdr, fac,
     message(paste0(Sys.time(), " par_split_cat() on pid: ", 
                    Sys.getpid(), " catchment: ", fid))
     
-    # nolint start
-    #requireNamespace("hyRefactor", quietly = TRUE)
-    #requireNamespace("terra", quietly = TRUE)
-    # nolint end
-    
     if(!inherits(fdr, "SpatRaster")){
       fdr = terra::rast(fdr)
     }
