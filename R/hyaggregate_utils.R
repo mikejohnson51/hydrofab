@@ -11,6 +11,9 @@
 
 prepare_network = function(network_list) {
   
+  network_list$flowpaths  = rename_geometry(network_list$flowpaths, "geom")
+  network_list$catchments = rename_geometry(network_list$catchments, "geom")
+  
   names(network_list$flowpaths)  = tolower(names(network_list$flowpaths))
   names(network_list$catchments) = tolower(names(network_list$catchments))
 

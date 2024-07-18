@@ -1,13 +1,30 @@
-#' @importFrom dplyr right_join filter select rename mutate bind_rows group_by ungroup slice_max bind_rows n left_join rename slice_min add_count tbl collect everything distinct contains slice_max case_when bind_cols
-#' @importFrom nhdplusTools get_vaa rename_geometry get_node get_flowline_index
+#' @importFrom arrow open_dataset
+#' 
+#' @importFrom climateR dap
+#' 
+#' @importFrom dplyr across add_count bind_cols bind_rows collect case_when contains 
+#' @importFrom dplyr distinct everything filter group_by left_join mutate n rename 
+#' @importFrom dplyr right_join select slice_max slice_min summarize tbl ungroup `%>%`
+#' 
+#' @importFrom nhdplusTools get_vaa rename_geometry get_node get_flowline_index get_streamorder
+#' 
 #' @importFrom rvest read_html html_nodes html_attr
+#' 
 #' @importFrom httr RETRY write_disk progress
-#' @importFrom sf write_sf read_sf st_read st_write st_as_sf
-#' @importFrom sf st_layers st_crs st_touches st_transform st_area st_make_valid st_intersection st_collection_extract st_cast st_intersects st_length st_filter st_union st_is_empty st_drop_geometry st_is_valid
+#' 
+#' @importFrom sf read_sf st_area st_as_sf st_cast st_crs st_collection_extract
+#' @importFrom sf st_drop_geometry st_filter st_layers st_length st_make_valid 
+#' @importFrom sf st_is_empty  st_is_valid st_intersection st_intersects st_precision  
+#' @importFrom sf st_touches st_transform st_union write_sf
+#' 
 #' @importFrom rmapshaper ms_explode ms_dissolve ms_simplify check_sys_mapshaper
+#' 
 #' @importFrom rlang := sym
-#' @importFrom RSQLite SQLite
-#' @importFrom DBI dbListTables dbDisconnect dbConnect
+#' 
+#' @importFrom stats weighted.mean
+#' 
+#' @importFrom glue glue
+
 
 #nolint start
 # NHDPlus Attributes
@@ -147,11 +164,5 @@ get_ds_joined_fromcomid <- function(flines) {
   flines[["ds_joined_fromCOMID"]][match(flines$toCOMID, flines$COMID)]
 }
 
-drop_geometry <- function(x) {
-  if("sf" %in% class(x)) {
-    sf::st_drop_geometry(x)
-  } else {
-    x
-  }
-}
+
 

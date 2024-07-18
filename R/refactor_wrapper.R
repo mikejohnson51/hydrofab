@@ -16,10 +16,6 @@
 #' @param outfile path to geopackage to write refactored_flowlines, and if facfdr != NULL, refactored catchments.
 #' @return data to the specified gpkg
 #' @export
-#' @importFrom dplyr filter select rename
-#' @importFrom sf read_sf st_transform st_drop_geometry write_sf st_crs st_precision
-#' @importFrom nhdplusTools get_streamorder get_vaa
-
 
 refactor  = function (gpkg = NULL,
                       flowpaths = NULL,

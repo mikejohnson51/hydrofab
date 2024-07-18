@@ -91,11 +91,10 @@ flowpaths_to_linestrings = function(flowpaths){
 
 
 #' Clean Catchment Geometry
-#' @description Fixes geometry issues present in catchments that originate in the
-#' CatchmentSP layers, or from the reconcile_catchments hydrofab preocess.
+#' @description Fixes geometry issues present in catchments derived from DEMs.
 #' These include, but are not limited to disjoint polygon fragments, artifacts
-#' from the 30m DEM used to generate the catchments, and non-valid geometry topolgies.
-#' A goal of this functions is also to provide means to reduce the data column
+#' from the DEM used to generate the catchments, and non-valid geometry topologies.
+#' A secondary goal of this functions is to provide a way to reduce the data column
 #' of the catchments by offering a topology preserving simplification
 #' through \code{\link[rmapshaper]{ms_simplify}}.
 #' Generally a "keep" parameter of .9 seems appropriate for the resolution of
@@ -109,6 +108,8 @@ flowpaths_to_linestrings = function(flowpaths){
 #' If NULL, then no simplification will be executed.
 #' @param crs integer or object compatible with sf::st_crs coordinate reference.
 #' Should be a projection that supports area-calculations.
+#' @param force should the mapshaper/mapshaper-xl binaries be used directly for simplification?
+#' @param gb The amount of heap memory to be allocated when force = TRUE
 #' @param sys logical should the mapshaper system library be used. If NULL 
 #' the system library will be used if available.
 #' @return sf object
@@ -121,6 +122,8 @@ clean_geometry <- function(catchments,
                            keep = NULL,
                            crs = 5070,
                            grid = .0009,
+                           gb = 8,
+                           force = FALSE,
                            sys = NULL) {
   
   # keep an original count of # rows in catchments
@@ -137,7 +140,7 @@ clean_geometry <- function(catchments,
   # set crs variable to crs of catchments
   if(!is.null(crs)){  crs = st_crs(catchments)  }
   
-  catchments = lwgeom::st_snap_to_grid(st_transform(catchments, 5070), size = grid)
+  catchments = lwgeom::st_snap_to_grid(st_transform(catchments, crs), size = grid)
   
   # cast MPs to POLYGONS and add featureid count column
   polygons = suppressWarnings({
@@ -165,7 +168,9 @@ clean_geometry <- function(catchments,
     
     if(!is.null(flowlines)){
       
-      fl = filter(flowlines, .data[[fl_ID]] %in% extra_parts[[ID]])
+      u = unique(extra_parts[[ID]])
+      
+      fl = dplyr::filter(flowlines, .data[[fl_ID]] %in% u)
       
       imap = st_intersects(extra_parts, st_transform(st_zm(fl), st_crs(extra_parts)))
   
@@ -273,28 +278,50 @@ clean_geometry <- function(catchments,
     } else {
       in_cat = fast_validity_check(main_parts)
     }
+    
+    
 
-    if(!is.null(keep)){ 
-      in_cat = simplify_process(in_cat, keep, sys)
+    if(!is.null(keep)){  
+      in_cat = tryCatch({
+        simplify_process(in_cat, keep, sys, force = force, gb = gb) 
+      }, error = function(e){
+        if(force){
+          message("Even when using the system mapshaper, an error has been found.")
+        } else {
+          message("Try using `force=TRUE` to envoke the system mapshaper.")
+        }
+      })
     } 
   
-    
-    return(
-     mutate(in_cat, areasqkm = add_areasqkm(in_cat)) %>%
-        st_transform(crs) %>%
-        select("{ID}" := ID, areasqkm)  %>%
-        left_join(st_drop_geometry(select(catchments, -any_of('areasqkm'))), by = ID)
-    )
+    x = select(catchments, -any_of(c('areasqkm')))  %>%
+        st_drop_geometry()  %>%
+        mutate(ID = as.numeric(ID))
+      
+    x2 = mutate(in_cat, areasqkm = add_areasqkm(in_cat)) |> 
+        st_transform(crs) |>
+        mutate(ID = as.numeric(ID)) |>
+        select("{ID}" := ID, areasqkm) |>
+        left_join(x, by = ID)
+   
+     return(x2)
     
   } else {
     
     if(!is.null(keep)){ 
-      polygons = simplify_process(polygons, keep, sys) %>% 
-            fast_validity_check()
+      polygons = tryCatch({
+        simplify_process(polygons, keep, sys, force = force, gb = gb) 
+      }, error = function(e){
+        if(force){
+          message("Even when using the system mapshaper, an error has been found.")
+        } else {
+          message("Try using `force=TRUE` to envoke the system mapshaper.")
+        }
+      })
+       
     } 
     
      return(
-       select(polygons, -n, -tmpID)
+       select(polygons, -any_of(c("n", 'tmpID')))
      )
   }
 }
@@ -311,67 +338,41 @@ fast_validity_check <- function(x){
   
 }
 
-simplify_process = function(catchments, keep, sys){
+#' @importFrom yyjsonr write_geojson_file read_geojson_file
+
+simplify_process = function(catchments, keep, sys, gb = 8, force = TRUE){
   
-  # simplify catchments
-  catchments =  ms_simplify(catchments, 
-                            keep = keep,
-                            keep_shapes = TRUE, 
-                            sys = sys)
+  if(force){
+    tmp  = tempfile(fileext = ".geojson")
+    tmp2 = tempfile(fileext = ".geojson")
+    crs  = st_crs(catchments)
+    yyjsonr::write_geojson_file(st_transform(catchments, 4326), tmp)
+    
+    if(gb <= 8){
+      system(glue("mapshaper {tmp} -simplify {keep} keep-shapes -o {tmp2}")) 
+    } else {
+      system(glue("mapshaper-xl {gb}gb {tmp} -simplify {keep} keep-shapes -o {tmp2}")) 
+    }
+
+    cats = suppressWarnings({
+      yyjsonr::read_geojson_file(tmp2) |>
+        st_transform(crs) 
+    })
+    
+    unlink(tmp)
+    unlink(tmp2)
+    
+  } else {
+    catchments =  ms_simplify(catchments, keep = keep, keep_shapes = TRUE, sys = sys)
+  }
   
-  tt = fast_validity_check(catchments)
+  tt = fast_validity_check(cats)
   
   if(nrow(tt) != sum(st_is_valid(tt))){
     stop("Invalid simplication")
   } else {
     tt
   }
-  # # mark valid/invalid geoms
-  # bool = st_is_valid(catchments)
-  # 
-  # # make invalid geoms valid
-  # invalids = st_make_valid(filter(catchments, !bool))
-  # 
-  # # if not all polygons get returned, try different simplification keep value
-  # if(nrow(filter(invalids, st_geometry_type(invalids) != "POLYGON")) > 0){
-  #   
-  #   warning("Invalid geometries found. Trying new keep of:",  keep + ((1-keep) / 2) , call. = FALSE)
-  #   
-  #   # try simplification again
-  #   catchments = ms_simplify(catchments, keep =  keep + ((1-keep) / 2), keep_shapes = TRUE, sys = sys)
-  #   
-  #   # mark valid/invalid geoms
-  #   bool = st_is_valid(catchments)
-  #   
-  #   # make invalid geoms valid
-  #   invalids = st_make_valid(filter(catchments, !bool))
-  #   
-  #   # if catchments still containing non POLYGON geometries, return original data
-  #   if(nrow(filter(invalids, st_geometry_type(invalids) != "POLYGON")) > 0){ 
-  #     
-  #     warning("Invalid geometries found. Original catchments returned." , call. = FALSE) 
-  #     
-  #     return(catchments)
-  #     
-  #   } else {
-  #     
-  #     # combine corrected invalids with valids and recalc area
-  #     return(
-  #       mutate(
-  #         bind_rows(invalids, filter(catchments, bool)), 
-  #         areasqkm = add_areasqkm(.)
-  #       ) 
-  #     )
-  #   }
-  #   
-  # } else {
-  #   
-  #   # combine corrected invalids with valids and recalc area
-  #   return(
-  #     bind_rows(invalids, filter(catchments, bool)) %>% 
-  #       mutate( areasqkm = add_areasqkm(.)) 
-  #   )
-  # }
 }
 
 

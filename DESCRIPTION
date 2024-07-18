@@ -15,13 +15,12 @@ BugReports: https://github.com/mikejohnson51/hydrofab/issues
 Depends: 
     R (>= 3.5.0)
 Imports: 
+    arrow, 
     climateR,
     data.table,
-    DBI,
     dplyr,
     glue,
     httr,
-    hydroloom,
     igraph,
     logger,
     lwgeom,
@@ -31,14 +30,14 @@ Imports:
     pbapply,
     rlang,
     rmapshaper,
-    RSQLite,
     rvest,
     sf,
     terra,
     tibble,
     tidyr,
     units,
-    utils
+    utils,
+    yyjsonr
 Suggests: 
     testthat
 Remotes: 
