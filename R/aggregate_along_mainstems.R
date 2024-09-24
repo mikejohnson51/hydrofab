@@ -68,8 +68,7 @@ aggregate_along_mainstems = function(network_list,
         hl_un,
         ideal_size_sqkm,
         min_area_sqkm,
-        min_length_km
-      )
+        min_length_km)
     ) %>%
     ungroup()   %>%
     group_by(levelpathid, ind) %>%
@@ -78,6 +77,13 @@ aggregate_along_mainstems = function(network_list,
     select(set, id, toid, levelpathid,
            hydroseq, member_comid,
            poi_id, n)
+  
+  index_table |>
+    group_by(id) |>
+    mutate(n = n()) |>
+    filter(n > 1)
+  
+
   
   v = aggregate_sets(network_list, index_table)
   
@@ -349,71 +355,94 @@ aggregate_sets = function(network_list, index_table) {
   
   ####
   
-  single_flowpaths = filter(index_table, n == 1) %>%
-    inner_join(network_list$flowpaths, by = "id") %>%
-    st_as_sf() %>%
-    select(set) %>%
-    rename_geometry("geometry")
-  
-  flowpaths_out  = filter(index_table, n > 1) %>%
+  single_flowpaths = tryCatch({
+    filter(index_table, n == 1) %>%
+      inner_join(network_list$flowpaths, by = "id") %>%
+      st_as_sf() %>%
+      select(set) %>%
+      rename_geometry("geometry")
+  }, error = function(e){
+    NULL
+  }) 
+
+  flowpaths_out  = tryCatch({
+    filter(index_table, n > 1) %>%
     inner_join(network_list$flowpaths, by = "id") %>%
     st_as_sf() %>%
     select(set) %>%
     union_linestrings('set') %>%
-    rename_geometry("geometry") %>%
+    rename_geometry("geometry")
+  }, error = function(e){
+    NULL
+  })
+  
+  flowpaths_out = flowpaths_out |> 
     bind_rows(single_flowpaths) %>%
     left_join(set_topo_fin, by = "set") %>%
     rename(id = set, toid = toset)
   
   ####
+  single_catchments = tryCatch({
+    filter(index_table, n == 1) %>%
+      inner_join(network_list$catchments, by = "id") %>%
+      st_as_sf() %>%
+      select(set) %>%
+      rename_geometry("geometry")
+  }, error = function(e){
+    NULL
+  }) 
   
-  single_catchments = filter(index_table, n == 1) %>%
-    inner_join(network_list$catchments, by = "id") %>%
-    st_as_sf() %>%
-    select(set) %>%
-    rename_geometry("geometry")
+  catchments_out  = tryCatch({
+    filter(index_table, n != 1) %>%
+      inner_join(network_list$catchments, by = "id") %>%
+      st_as_sf() %>%
+      select(set) %>%
+      union_polygons('set') %>%
+      mutate(areasqkm = add_areasqkm(.)) 
+  }, error = function(e){
+    NULL
+  })
   
-  catchments_out  = filter(index_table, n != 1) %>%
-    inner_join(network_list$catchments, by = "id") %>%
-    st_as_sf() %>%
-    select(set) %>%
-    union_polygons('set') %>%
-    mutate(areasqkm = add_areasqkm(.)) %>% 
+  catchments_out = catchments_out %>% 
     bind_rows(single_catchments) %>%
     left_join(set_topo_fin, by = "set") %>%
     select(id = set, toid = toset) 
   
-  mps = suppressWarnings({
-    catchments_out %>% 
-      st_cast("MULTIPOLYGON") %>% 
-      st_cast("POLYGON") %>% 
-      fast_validity_check() %>% 
-      add_count(id) 
-  })
-  
-  if(nrow(mps) > nrow(catchments_out)){
-    fixers = filter(mps, n > 1) %>% 
-      mutate(areasqkm = add_areasqkm(.),
-             tmpID = 1:n()) %>% 
-      group_by(id) 
-    
-    keep = slice_max(fixers, areasqkm) %>% 
-      ungroup() 
-    
-    to_merge = filter(fixers, !tmpID %in% keep$tmpID) %>% 
-      ungroup()
-    
-    good_to_go = filter(mps, n == 1) %>% 
-      bind_rows(select(keep, id, toid)) %>% 
-      fast_validity_check()
-    
-    catchments_out = suppressWarnings({
-      terra::combineGeoms(vect(good_to_go), vect(to_merge)) %>% 
-      st_as_sf() %>% 
-      st_cast("POLYGON")
+  ####
+
+  if(!is.null(catchments_out)){
+    mps = suppressWarnings({
+      catchments_out %>% 
+        st_cast("MULTIPOLYGON") %>% 
+        st_cast("POLYGON") %>% 
+        fast_validity_check() %>% 
+        add_count(id) 
     })
-  } 
- 
+    
+    if(nrow(mps) > nrow(catchments_out)){
+      fixers = filter(mps, n > 1) %>% 
+        mutate(areasqkm = add_areasqkm(.),
+               tmpID = 1:n()) %>% 
+        group_by(id) 
+      
+      keep = slice_max(fixers, areasqkm) %>% 
+        ungroup() 
+      
+      to_merge = filter(fixers, !tmpID %in% keep$tmpID) %>% 
+        ungroup()
+      
+      good_to_go = filter(mps, n == 1) %>% 
+        bind_rows(select(keep, id, toid)) %>% 
+        fast_validity_check()
+      
+      catchments_out = suppressWarnings({
+        terra::combineGeoms(vect(good_to_go), vect(to_merge)) %>% 
+          st_as_sf() %>% 
+          st_cast("POLYGON")
+      })
+    } 
+  }
+  
   prepare_network(network_list = list(flowpaths = flowpaths_out, catchments = catchments_out))
 }
 

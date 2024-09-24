@@ -162,7 +162,7 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
                                       network_layer             = "network",
                                       overwrite                 = FALSE,
                                       term_add                  = 1e9,
-                                      modifications = NULL,
+                                      modifications             = NULL,
                                       verbose                   = TRUE) {
 
 
@@ -182,10 +182,13 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
     meta$outfiles = outfiles
   }
   
-  modifications = modifications %>% 
-    select(from, to) %>% 
-    mutate(connection = 1:n()) %>% 
-    pivot_longer(-connection, names_to = "type", values_to = 'hf_id')
+  if(!is.null(modifications)){
+    modifications = modifications %>% 
+      select(from, to) %>% 
+      mutate(connection = 1:n()) %>% 
+      pivot_longer(-connection, names_to = "type", values_to = 'hf_id')
+  }
+ 
   
   ll = lapply(
     1:nrow(meta),
@@ -203,15 +206,22 @@ assign_global_identifiers <- function(gpkgs                     = NULL,
     hyaggregate_log("FATAL", glue("Some terminal not found."), verbose)
   }
   
-  if(nrow(filter(ll, !is.na(hf_id))) != nrow(modifications)){
-      hyaggregate_log("FATAL", glue("Some modification connections not found."), verbose)
+  if(!is.null(modifications)){
+    if(nrow(filter(ll, !is.na(hf_id))) != nrow(modifications)){
+        hyaggregate_log("FATAL", glue("Some modification connections not found."), verbose)
+    }
+    
+    conn = filter(ll, !is.na(connection)) %>% 
+      arrange(connection) %>% 
+      select(newID, connection, type) %>% 
+      pivot_wider(id_cols = connection, names_from = type, values_from = newID) %>% 
+      select(connection, from, to)
+    
+  } else {
+    conn = NULL
   }
   
-  conn = filter(ll, !is.na(connection)) %>% 
-    arrange(connection) %>% 
-    select(newID, connection, type) %>% 
-    pivot_wider(id_cols = connection, names_from = type, values_from = newID) %>% 
-    select(connection, from, to)
+ 
   
   for(i in 1:nrow(meta)){
     lyrs   =  st_layers(meta$path[i])$name

@@ -177,7 +177,7 @@ reconcile_catchment_divides <- function(catchment,
                                         simplify_tolerance_m = 40, 
                                         vector_crs = 5070,
                                         fix_catchments = TRUE,
-                                        keep = .9) {
+                                        keep = NULL) {
   
   in_crs    <- st_crs(catchment)
   catchment <- rename_geometry(catchment, "geom")
@@ -187,12 +187,12 @@ reconcile_catchment_divides <- function(catchment,
   if(!is.null(fdr) & !is.null(fac)){
     
     fdr_temp <- fdr
+    
     if(!inherits(fdr_temp, "SpatRaster")){
       fdr_temp <- terra::rast(fdr_temp)
     }
     
     catchment <-  st_transform(catchment, terra::crs(fdr_temp)) 
-    #st_precision(catchment) <- terra::res(fdr_temp)[1]
     fline_ref <-  st_transform(fline_ref,  terra::crs(fdr_temp))
     fline_rec <-  st_transform(fline_rec,  terra::crs(fdr_temp))
   }
@@ -200,30 +200,30 @@ reconcile_catchment_divides <- function(catchment,
   reconciled <- st_drop_geometry(fline_rec) %>%
     dplyr::select(ID, member_COMID)
   
-  rm(fline_rec)
+  #rm(fline_rec)
   
   # Not all catchments have flowlines. Remove the flowlines without.  
   comid <- fline_ref$COMID # Just being explicit here.
   featureid <- catchment$FEATUREID # type conversion below is annoying.
   # as.integer removes the .1, .2, semantic part but the response retains 
   # the semantic component. If you don't know what this means, stop hacking.
-  comid_with_catchment <- comid[as.integer(comid) %in% featureid]
+  comid_with_catchment <- comid[as.numeric(comid) %in% featureid]
   
   reconciled <- distinct(reconciled) %>% # had dups from prior steps.
     tidyr::separate_rows(member_COMID, sep = ",") %>% # Make long form
-    dplyr::filter(member_COMID %in% comid_with_catchment) %>% # 
+    #dplyr::filter(member_COMID %in% comid_with_catchment) %>% # 
     dplyr::group_by(ID) %>%
     dplyr::summarise(member_COMID = paste(member_COMID, collapse = ",")) %>%
     dplyr::ungroup()
   
-  fline_ref <- fline_ref[as.integer(fline_ref$COMID) %in% catchment$FEATUREID, ]
+  fline_ref <- fline_ref[floor(as.numeric((fline_ref$COMID))) %in% catchment$FEATUREID, ]
   
   to_split_bool <- as.numeric(fline_ref$COMID) !=
-    as.integer(fline_ref$COMID)
+    floor(as.numeric((fline_ref$COMID)))
   
   to_split_ids <- fline_ref$COMID[which(to_split_bool)]
   
-  to_split_featureids <- unique(as.integer(to_split_ids))
+  to_split_featureids <- unique(floor(as.numeric((to_split_ids))))
   
   cl <- NULL
   
@@ -245,7 +245,7 @@ reconcile_catchment_divides <- function(catchment,
                                     catchment = catchment,
                                     fdr = fdr, 
                                     fac = fac,
-                                    min_area_m = min_area_m, 
+                                    min_area_m = min_area_m , 
                                     snap_distance_m = snap_distance_m,
                                     simplify_tolerance_m = simplify_tolerance_m, 
                                     vector_crs = vector_crs,
@@ -296,30 +296,36 @@ reconcile_catchment_divides <- function(catchment,
     )))
   }
   
-  out <- st_sf(right_join(dplyr::select(split_cats, member_COMID = FEATUREID), 
-                          reconciled,
-                          by = "member_COMID"))
-  
-  missing <- is.na(st_dimension(out$geom))
-  
-  if (any(missing)) {
+  if(nrow(split_cats) > 0){
     
-    out_mp <- filter(out, !missing) %>%
-      st_cast("MULTIPOLYGON")
+    out <- st_sf(right_join(dplyr::select(split_cats, member_COMID = FEATUREID), 
+                            reconciled,
+                            by = "member_COMID"))
     
-    out <- select(catchment, member_COMID = FEATUREID) %>%
-      filter(member_COMID %in% unique(as.integer(out$member_COMID[missing]))) %>%
-      mutate(member_COMID = paste0(member_COMID, ".1")) %>%
-      mutate(ID = out$ID[match(member_COMID, out$member_COMID)]) %>%
-      select(ID, member_COMID) %>% 
-      nhdplusTools::rename_geometry(attr(out_mp, "sf_column")) %>% 
-      bind_rows(out_mp)
-  } 
+    missing <- is.na(st_dimension(out$geom))
+    
+    if (any(missing)) {
+      
+      out_mp <- filter(out, !missing) %>%
+        st_cast("MULTIPOLYGON")
+      
+      out <- select(catchment, member_COMID = FEATUREID) %>%
+        filter(member_COMID %in% unique(floor(as.numeric(out$member_COMID[missing])))) %>%
+        mutate(member_COMID = paste0(member_COMID, ".1")) %>%
+        mutate(ID = out$ID[match(member_COMID, out$member_COMID)]) %>%
+        select(ID, member_COMID) %>% 
+        nhdplusTools::rename_geometry(attr(out_mp, "sf_column")) %>% 
+        bind_rows(out_mp)
+    } 
+  }
+  
   
   if(fix_catchments){
-    # cat("Fixing Catchment Geometries...\n")
-    clean_geometry(catchments = out, "ID", keep) %>% 
-      sf::st_transform(in_crs)
+    cat("Fixing Catchment Geometries...\n")
+    clean_geometry(catchments = out,
+                   ID = "ID", 
+                   crs = in_crs,
+                   keep = keep)
   } else {
     sf::st_transform(out, in_crs)
   }

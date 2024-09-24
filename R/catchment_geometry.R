@@ -159,8 +159,10 @@ clean_geometry <- function(catchments,
     extra_parts = filter(polygons, n != 1) 
     
     # dissolve, and explode if necessary
-    try(
-      extra_parts <- ms_explode(ms_dissolve(extra_parts, ID, copy_fields = names(extra_parts), sys = sys), sys = sys), 
+    extra_parts <- try({
+      extra_parts <- ms_dissolve(extra_parts, ID, copy_fields = names(extra_parts), sys = sys)
+      ms_explode(extra_parts, sys = sys)
+    },
       silent = TRUE
     )
     
@@ -177,10 +179,9 @@ clean_geometry <- function(catchments,
       l = lengths(imap)
     
       df = data.frame(
-        tmpID = rep(extra_parts[['tmpID']], times = l),
-        uid = rep(extra_parts[[ID]], times = l),
-        touch_id = fl[[fl_ID]][unlist(imap)]
-      ) %>% 
+        tmpID    = rep(extra_parts[['tmpID']], times = l),
+        uid      = rep(extra_parts[[ID]], times = l),
+        touch_id = fl[[fl_ID]][unlist(imap)] ) %>% 
         group_by(tmpID) %>% 
         summarize(prime = any(uid == touch_id))
       
@@ -192,8 +193,7 @@ clean_geometry <- function(catchments,
     }
     
     # recalculate area
-    extra_parts <- mutate(extra_parts, 
-                          areasqkm = add_areasqkm(extra_parts)) %>% 
+    extra_parts <- mutate(extra_parts, areasqkm = add_areasqkm(extra_parts)) %>% 
       arrange(desc(prime), desc(areasqkm)) %>% 
       mutate(newID = row_number())
 
@@ -208,7 +208,9 @@ clean_geometry <- function(catchments,
       extra_parts %>% 
       filter(!newID %in% main_parts$newID)
     
-    if(!sum(nrow(main_parts)) + nrow(filter(polygons, n == 1)) == MASTER_COUNT){ stop() }
+    if(!sum(nrow(main_parts)) + nrow(filter(polygons, n == 1)) == MASTER_COUNT){ 
+      stop() 
+    }
     
     main_parts =  bind_rows(main_parts, filter(polygons, n == 1))
     
@@ -218,8 +220,14 @@ clean_geometry <- function(catchments,
     
     if(nrow(small_parts) > 0){
       # dissolve, and explode if necessary
-      small_parts <- tryCatch(
-        ms_explode(ms_dissolve(small_parts, ID, copy_fields = names(small_parts), sys = sys), sys = sys), 
+      small_parts <- tryCatch({
+        tmp <- ms_dissolve(small_parts, 
+                                   ID, 
+                                   copy_fields = names(small_parts), 
+                                   sys = sys)
+        
+        ms_explode(tmp,  sys = sys)
+      },
         error = function(e){ NULL}, 
         warning = function(w){ NULL }
       )
@@ -279,7 +287,6 @@ clean_geometry <- function(catchments,
       in_cat = fast_validity_check(main_parts)
     }
     
-    
 
     if(!is.null(keep)){  
       in_cat = tryCatch({
@@ -295,12 +302,12 @@ clean_geometry <- function(catchments,
   
     x = select(catchments, -any_of(c('areasqkm')))  %>%
         st_drop_geometry()  %>%
-        mutate(ID = as.numeric(ID))
+        mutate("{ID}" := as.numeric(get(!!ID))) 
       
     x2 = mutate(in_cat, areasqkm = add_areasqkm(in_cat)) |> 
         st_transform(crs) |>
-        mutate(ID = as.numeric(ID)) |>
-        select("{ID}" := ID, areasqkm) |>
+        mutate("{ID}" := as.numeric(get(!!ID))) |>
+        select(ID, areasqkm) |>
         left_join(x, by = ID)
    
      return(x2)
@@ -309,7 +316,11 @@ clean_geometry <- function(catchments,
     
     if(!is.null(keep)){ 
       polygons = tryCatch({
-        simplify_process(polygons, keep, sys, force = force, gb = gb) 
+        simplify_process(polygons, 
+                         keep = keep, 
+                         sys = sys, 
+                         force = force, 
+                         gb = gb) 
       }, error = function(e){
         if(force){
           message("Even when using the system mapshaper, an error has been found.")
@@ -363,7 +374,7 @@ simplify_process = function(catchments, keep, sys, gb = 8, force = TRUE){
     unlink(tmp2)
     
   } else {
-    catchments =  ms_simplify(catchments, keep = keep, keep_shapes = TRUE, sys = sys)
+    cats =  ms_simplify(catchments, keep = keep, keep_shapes = TRUE, sys = sys)
   }
   
   tt = fast_validity_check(cats)

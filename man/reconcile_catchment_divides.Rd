@@ -17,7 +17,7 @@ reconcile_catchment_divides(
   simplify_tolerance_m = 40,
   vector_crs = 5070,
   fix_catchments = TRUE,
-  keep = 0.9
+  keep = NULL
 )
 }
 \arguments{

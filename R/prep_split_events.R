@@ -6,24 +6,23 @@
 #' @return sf POINT object
 #' @export
 
-prep_split_events = function(pois, fline, divides, theshold = 25) {
+prep_split_events = function(pois, fline, divides, threshold = 25) {
 
    if("id" %in% names(fline)){
-     fline = rename(fline, COMID = id)
+     fline$COMID = fline$id
+     fline$id = NULL
      flip_id = TRUE
    } else {
      flip_id = FALSE
    }
   
   if("frommeas" %in% names(fline)){
-    fline = rename(fline, 
-                   FromMeas = frommeas,
-                   ToMeas = tomeas)
+    fline$FromMeas = fline$frommeas
+    fline$ToMeas = fline$tomeas
     flip_meas = TRUE
   } else {
     flip_meas = FALSE
   }
-  
   
   if(inherits(pois, "sf")){
     pts =  st_filter(pois,divides)
@@ -42,7 +41,8 @@ prep_split_events = function(pois, fline, divides, theshold = 25) {
     left_join(select(st_drop_geometry(fline), COMID, FromMeas, ToMeas), by = "COMID")
   
   split_sites <- reference_poi |>
-    filter((100 * (REACH_meas - FromMeas) / (ToMeas - FromMeas)) > theshold)
+    mutate(m = (100 * (REACH_meas - FromMeas) / (ToMeas - FromMeas))) |> 
+    filter(m < threshold)
   
   if(flip_id){
     split_sites = rename(split_sites, id = COMID)

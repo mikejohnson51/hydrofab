@@ -52,11 +52,10 @@ build_headwater_collapse = function(network_list,
 
 
 collapse_headwaters2 = function(network_list,
-                               min_area_sqkm  = 3,
-                               min_length_km  = 1,
-                               verbose = TRUE,
-                               cache_file = NULL) {
-  
+                                min_area_sqkm  = 3,
+                                min_length_km  = 1,
+                                verbose = TRUE,
+                                cache_file = NULL) {
   
   hyaggregate_log("INFO", "\n--- Collapse Network Inward ---\n", verbose)
   

@@ -12,6 +12,8 @@ clean_geometry(
   keep = NULL,
   crs = 5070,
   grid = 9e-04,
+  gb = 8,
+  force = FALSE,
   sys = NULL
 )
 }
@@ -31,6 +33,10 @@ If NULL, then no simplification will be executed.}
 \item{crs}{integer or object compatible with sf::st_crs coordinate reference.
 Should be a projection that supports area-calculations.}
 
+\item{gb}{The amount of heap memory to be allocated when force = TRUE}
+
+\item{force}{should the mapshaper/mapshaper-xl binaries be used directly for simplification?}
+
 \item{sys}{logical should the mapshaper system library be used. If NULL 
 the system library will be used if available.}
 }
@@ -38,11 +44,10 @@ the system library will be used if available.}
 sf object
 }
 \description{
-Fixes geometry issues present in catchments that originate in the
-CatchmentSP layers, or from the reconcile_catchments hydrofab preocess.
+Fixes geometry issues present in catchments derived from DEMs.
 These include, but are not limited to disjoint polygon fragments, artifacts
-from the 30m DEM used to generate the catchments, and non-valid geometry topolgies.
-A goal of this functions is also to provide means to reduce the data column
+from the DEM used to generate the catchments, and non-valid geometry topologies.
+A secondary goal of this functions is to provide a way to reduce the data column
 of the catchments by offering a topology preserving simplification
 through \code{\link[rmapshaper]{ms_simplify}}.
 Generally a "keep" parameter of .9 seems appropriate for the resolution of

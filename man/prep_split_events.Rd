@@ -4,16 +4,16 @@
 \alias{prep_split_events}
 \title{Prep Split Events}
 \usage{
-prep_split_events(pois, fline, divides, theshold = 25)
+prep_split_events(pois, fline, divides, threshold = 25)
 }
 \arguments{
 \item{pois}{a set of POIs with a poi_id, X and  (in 5070)}
 
 \item{divides}{a set of divides geometries (EPSG:5070)}
 
-\item{theshold}{a percentage (0-100) a POI must be upstream before splitting}
-
 \item{flines}{a set of flowlines geometries (EPSG:5070)}
+
+\item{theshold}{a percentage (0-100) a POI must be upstream before splitting}
 }
 \value{
 sf POINT object

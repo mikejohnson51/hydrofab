@@ -47,8 +47,8 @@ split_flowlines <- function(flines, max_length = NULL,
                        select(sf::st_set_geometry(flines, NULL), COMID, toCOMID, LevelPathI, Hydroseq, TotDASqKM), 
                        by = "COMID")
     
-    split$part <- unlist(lapply(strsplit(split$split_fID, "\\."),
-                                function(x) x[2]))
+    split$part <- as.numeric(unlist(lapply(strsplit(split$split_fID, "\\."),
+                                function(x) x[2])))
     
     split <- group_by(split, COMID)
     
@@ -62,14 +62,11 @@ split_flowlines <- function(flines, max_length = NULL,
                                                    lead(part), sep = "."))))
     
     split <- mutate(split, COMID = paste(COMID, part, sep = "."),
-                    LENGTHKM = sf::st_length(sf::st_geometry(split)) / 1000)
+                    LENGTHKM = add_lengthkm(split))
     
     split <- sf::st_as_sf(select(split, -part, -split_fID))
     
-    attr(split$LENGTHKM, "units") <- NULL
-    split[["LENGTHKM"]] <- as.numeric(split[["LENGTHKM"]])
-    
-    remove_comid <- unique(as.integer(split[["COMID"]]))
+    remove_comid <- unique(round(as.numeric(split[["COMID"]])))
     
     not_split <- dplyr::filter(select(flines, COMID, toCOMID, 
                                       LENGTHKM, LevelPathI, 

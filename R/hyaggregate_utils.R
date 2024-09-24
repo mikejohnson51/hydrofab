@@ -39,13 +39,23 @@ prepare_network = function(network_list) {
   }
 
   # Add a hydrosequence to the flowpaths
-  network_list$flowpaths = add_hydroseq(flowpaths = network_list$flowpaths)
+  
+  network_list$flowpaths = network_list$flowpaths |> 
+    select(-any_of(c('topo_sort', 'hydroseq')))
+    
+  network_list$flowpaths = hydroloom::add_topo_sort(network_list$flowpaths) |> 
+    rename(hydroseq = topo_sort)
   # Add area and length measures to the network list
   network_list = add_measures(network_list$flowpaths, network_list$catchments)
   
   network_list$flowpaths = mutate(network_list$flowpaths, areasqkm = ifelse(is.na(areasqkm), 0, areasqkm))
  #network_list$flowpaths$order = get_streamorder(st_drop_geometry(mutate(select(network_list$flowpaths, ID = id, toID = toid), divergence = 0)))
-  network_list$flowpaths$tot_drainage_area = calculate_total_drainage_area(select(network_list$flowpaths, ID = id, toID = toid, area = areasqkm))
+ 
+  
+  network_list$flowpaths$tot_drainage_area = accumulate_downstream(network_list$flowpaths, "areasqkm")
+    
+    calculate_total_drainage_area(rename(network_list$flowpaths, 
+                                                                           area = areasqkm))
   
   check_network_validity(network_list)
 }

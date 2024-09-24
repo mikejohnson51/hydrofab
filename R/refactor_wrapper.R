@@ -25,6 +25,10 @@ refactor  = function (gpkg = NULL,
                       split_flines_meters = 10000,
                       collapse_flines_meters = 1000,
                       collapse_flines_main_meters = 1000,
+                      threshold = 25,
+                      min_area_m = 800, 
+                      snap_distance_m = 100,
+                      simplify_tolerance_m = 40,
                       cores = 1,
                       fac = NULL,
                       fdr = NULL,
@@ -33,11 +37,17 @@ refactor  = function (gpkg = NULL,
                       outfile = NULL) {
   
   network_list = read_hydrofabric(gpkg, catchments, flowpaths)
+  network_list$catchments = rename_geometry(network_list$catchments, 'geometry')
+  network_list$flow = rename_geometry(network_list$flowpaths, 'geometry')
+  names(network_list$catchments) =  tolower(names(network_list$catchments))
+  names(network_list$flowpaths)  =  tolower(names(network_list$flowpaths))
   
   fl_lookup  <- c(id = "comid", toid = "tocomid", levelpathi = "mainstemlp")
   div_lookup <- c(featureid = "divide_id", toid = "tocomid", levelpathi = "mainstemlp")
   
-  network_list$flowpaths = rename(network_list$flowpaths, any_of(fl_lookup))
+  geom = st_geometry(network_list$flowpaths)
+  network_list$flowpaths = dplyr::rename(as.data.frame(network_list$flowpaths), any_of(fl_lookup))
+  st_geometry( network_list$flowpaths ) = geom
   
   tf <- tempfile(pattern = "refactored", fileext = ".gpkg")
   tr <- tempfile(pattern = "reconciled", fileext = ".gpkg")
@@ -47,7 +57,11 @@ refactor  = function (gpkg = NULL,
   avoid   = avoid[avoid %in% network_list$flowpaths$id]
   
   if(!is.null(pois)){
-    events = prep_split_events(pois, network_list$flowpaths, network_list$catchments, 25) %>%
+    
+    events = prep_split_events(pois, 
+                               fline = network_list$flowpaths, 
+                               divides = network_list$catchments, 
+                               threshold = threshold) %>%
       mutate(event_identifier = as.character(row_number()))
     
     outlets <- pois %>%
@@ -161,6 +175,7 @@ refactor  = function (gpkg = NULL,
     outlets_ref_COMID <-
       data.table::rbindlist(list(outlets_ref, event_outlets), fill = TRUE) %>%
       st_as_sf()
+    
   } else {
     if (!is.null(outlets)) {
       outlets_ref_COMID <- outlets %>%
@@ -206,10 +221,27 @@ refactor  = function (gpkg = NULL,
     
     div_lookup <- c(FEATUREID = "divide_id", FEATUREID = "featureid")
     
-    network_list$catchments = rename(network_list$catchments, any_of(div_lookup))
+    geom = st_geometry(network_list$catchments)
+    network_list$catchments = rename(as.data.frame(network_list$catchments), any_of(div_lookup))
+    st_geometry( network_list$catchments ) = geom
+  
+    r = rast(fac)
     
-    fac_open = climateR::dap(URL = fac, AOI = network_list$catchments)
-    fdr_open = climateR::dap(URL = fdr, AOI = network_list$catchments)
+    fac_open = crop(r,
+         project(vect(network_list$catchments), crs(r)), 
+         snap = "out")
+    
+    r = rast(fdr)
+    
+    fdr_open = crop(r,
+                    project(vect(network_list$catchments), crs(r)), 
+                    snap = "out")
+  
+    if(!is.null(keep)){
+      fix_catchments = TRUE
+    } else {
+      fix_catchments = FALSE
+    }
     
     divides <-
       reconcile_catchment_divides(
@@ -219,9 +251,12 @@ refactor  = function (gpkg = NULL,
         fdr = fdr_open,
         fac = fac_open,
         para = cores,
+        min_area_m = min_area_m, 
+        snap_distance_m = snap_distance_m,
+        simplify_tolerance_m = simplify_tolerance_m,
         cache = NULL,
         keep = keep,
-        fix_catchments = FALSE
+        fix_catchments = fix_catchments
       ) %>%
       rename_geometry("geometry")
   } else {

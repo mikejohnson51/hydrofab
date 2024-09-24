@@ -200,24 +200,29 @@ write_hydrofabric = function(network_list,
                   dm = names(hf_dm$flowlines), 
                   outfile, 
                   "flowpaths") 
+   
    write_dm_model(data = network_list$divides,   
                   dm = names(hf_dm$divides), 
                   outfile, 
                   "divides") 
    
-   write_dm_model(data = network_list$hydrolocations, 
-                  dm = names(hf_dm$hydrolocations), 
+   write_dm_model(data = network_list$pois, 
+                  dm = names(hf_dm$pois), 
                   outfile, 
-                  "hydrolocations") 
-   write_dm_model(data = network_list$hydrolocations_lookup, dm = names(hf_dm$hydrolocation_lookup), outfile, "hydrolocations_lookup") 
+                  "pois") 
+   
+   # write_dm_model(data = network_list$pois, 
+   #                dm = names(hf_dm$hydrolocation_lookup), 
+   #                outfile, 
+   #                "hydrolocations_lookup") 
    
    write_dm_model(data = network_list$network, 
                   dm = names(hf_dm$network), 
                   outfile, "network") 
    
-   write_dm_model(data = network_list$network_lookup, 
-                  dm = names(hf_dm$network_lookup), 
-                  outfile, "network_lookup") 
+   # write_dm_model(data = network_list$network_lookup, 
+   #                dm = names(hf_dm$network_lookup), 
+   #                outfile, "network_lookup") 
    
    if("WB" %in% names(network_list)){
     write_dm_model(data = network_list$WB, dm = names(hf_dm$WB), outfile, "WB")
