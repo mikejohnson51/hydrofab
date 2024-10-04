@@ -154,7 +154,8 @@ read_hydrofabric = function(gpkg = NULL,
 
 write_hydrofabric = function(network_list,
                              outfile,
-                             verbose = TRUE, enforce_dm = TRUE){
+                             verbose = TRUE, 
+                             enforce_dm = TRUE){
   
   hyaggregate_log("SUCCESS", glue("Writing {length(network_list)} layers to {outfile}"), verbose)
 

@@ -423,7 +423,7 @@ realign_topology = function(network_list,
 #' @export
 
 apply_nexus_topology = function(gpkg,
-                                vpu = NULL,
+                                vpu = NA,
                                 nexus_prefix = "nex-",
                                 terminal_nexus_prefix = "tnx-",
                                 coastal_nexus_prefix = "cnx-",
@@ -454,9 +454,12 @@ apply_nexus_topology = function(gpkg,
     term_add = term_filter
   }
   
-  if(!is.null(vpu)) { ngen_flows$topo$vpu = as.character(vpu) }
+  ngen_flows$topo$vpuid = as.character(vpu)
+  
+  ngen_flows$nexus$vpuid = as.character(vpu)
   
   ngen_flows$flowpaths = ngen_flows$flowpaths %>%
+    mutate(vpuid =  as.character(vpu)) |> 
     select(id, toid,
            mainstem, order, hydroseq,
            lengthkm, areasqkm, tot_drainage_areasqkm,
@@ -465,6 +468,7 @@ apply_nexus_topology = function(gpkg,
            contains("vpu"))
   
   ngen_flows$divides = ngen_flows$divides %>%
+    mutate(vpuid =  as.character(vpu)) |>
     select(divide_id, toid, type, ds_id, areasqkm, contains("vpu")) %>%
     left_join(st_drop_geometry(select(ngen_flows$flowpaths, id, divide_id, lengthkm, tot_drainage_areasqkm )), by = "divide_id") %>%
     mutate(areasqkm = add_areasqkm(.),
@@ -493,12 +497,12 @@ apply_nexus_topology = function(gpkg,
                        internal_nexus_prefix = internal_nexus_prefix) %>%
     full_join(st_drop_geometry(select(ngen_flows$flowpaths,
                                       has_divide,
-                                      id, divide_id,
+                                      id, 
+                                      divide_id,
                                       lengthkm,
                                       tot_drainage_areasqkm,
                                       mainstem,
-                                      has_divide,
-                                      contains("vpu"))),
+                                      has_divide)),
               by = "id",
               multiple = "all") %>%
     full_join(st_drop_geometry(select(ngen_flows$divides, divide_id, areasqkm, n2 = type)), by = "divide_id") %>%
@@ -528,16 +532,16 @@ apply_nexus_topology = function(gpkg,
       filter(complete.cases(.)) %>%
       left_join(select(st_drop_geometry(ngen_flows$divides), divide_id, toid), by = 'divide_id') %>%
       left_join(select(tmp, -id), by = 'divide_id') %>%
-      mutate(vpu = as.character(vpu),
+      mutate(vpuid = as.character(vpu),
              poi_id = as.integer(poi_id))
       
     
     ngen_flows$network  = filter(network, !type %in% c(c('coastal', "internal"))) %>%
-      left_join(select(tmp,id, hf_source, hf_id, hf_id_part, hydroseq), by = 'id', relationship = "many-to-many") %>%
+      left_join(select(tmp, id, hf_source, hf_id, hf_id_part, hydroseq), by = 'id', relationship = "many-to-many") %>%
       bind_rows(sinks) %>%
-      select(id, toid, divide_id, ds_id, mainstem, poi_id, hydroseq, poi_id, #hl_uri,
+      select(id, toid, divide_id, ds_id, mainstem, poi_id, hydroseq,  #hl_uri,
              hf_source, hf_id, lengthkm, areasqkm, tot_drainage_areasqkm,
-             type, vpu)
+             type, vpuid)
   }
   
   # if(layer_exists(gpkg, "hydrolocations")){
