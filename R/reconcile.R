@@ -331,9 +331,15 @@ reconcile_catchment_divides <- function(catchment,
   }
 }
 
-par_split_cat <- function(fid, to_split_ids, fline_ref, catchment, fdr, fac,
-                          min_area_m, snap_distance_m,
-                          simplify_tolerance_m, vector_crs) {
+par_split_cat <- function(fid, to_split_ids, 
+                          fline_ref, 
+                          catchment, 
+                          fdr, 
+                          fac,
+                          min_area_m, 
+                          snap_distance_m,
+                          simplify_tolerance_m, 
+                          vector_crs) {
   out <- NULL
   try({
     
@@ -370,9 +376,16 @@ par_split_cat <- function(fid, to_split_ids, fline_ref, catchment, fdr, fac,
   return(out)
 }
 
-par_split_cat <- function(fid, to_split_ids, fline_ref, catchment, fdr, fac,
-                          min_area_m, snap_distance_m,
-                          simplify_tolerance_m, vector_crs) {
+par_split_cat <- function(fid, 
+                          to_split_ids, 
+                          fline_ref, 
+                          catchment, 
+                          fdr, 
+                          fac,
+                          min_area_m, 
+                          snap_distance_m,
+                          simplify_tolerance_m, 
+                          vector_crs) {
   out <- NULL
   try({
     

@@ -205,7 +205,9 @@ split_catchment_divide <- function(catchment, fline, fdr, fac, lr = FALSE,
     data.frame() %>%
     group_by(L1) %>%
     filter(dplyr::row_number() == n()) %>%
-    ungroup()
+    ungroup() 
+  
+  fline = st_set_crs(fline, 5070)
 
   suppressWarnings(fdr_matrix <- prep_cat_fdr_fac(catchment, fdr, fac))
   
@@ -228,7 +230,10 @@ split_catchment_divide <- function(catchment, fline, fdr, fac, lr = FALSE,
     
     
     if (length(in_out) > 0 && in_out == 1) {
-      suppressWarnings(row_col <- get_row_col(fdr, start = cbind(outlets$X[cat], outlets$Y[cat]), fac_matrix))
+      suppressWarnings(row_col <- get_row_col(fdr, 
+                                              start = cbind(outlets$X[cat], 
+                                                            outlets$Y[cat]), 
+                                              fac_matrix))
       
       tryCatch({
         us_cells <- collect_upstream(row_col, fdr_matrix)

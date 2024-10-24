@@ -45,8 +45,10 @@ refactor  = function (gpkg = NULL,
   fl_lookup  <- c(id = "comid", toid = "tocomid", levelpathi = "mainstemlp")
   div_lookup <- c(featureid = "divide_id", toid = "tocomid", levelpathi = "mainstemlp")
   
-  geom = st_geometry(network_list$flowpaths)
+  geom <- st_geometry(network_list$flowpaths)
+  
   network_list$flowpaths = dplyr::rename(as.data.frame(network_list$flowpaths), any_of(fl_lookup))
+  
   st_geometry( network_list$flowpaths ) = geom
   
   tf <- tempfile(pattern = "refactored", fileext = ".gpkg")
@@ -64,13 +66,23 @@ refactor  = function (gpkg = NULL,
                                threshold = threshold) %>%
       mutate(event_identifier = as.character(row_number()))
     
+    if("id" %in% names(network_list$flowpaths)){
+      match_id = 'id'
+    } else {
+      match_id = 'comid'
+    }
+    
     outlets <- pois %>%
-      inner_join(select(st_drop_geometry(network_list$flowpaths), totdasqkm, id, dnhydroseq), 
-                 by = c("hf_id" = "id"))
+      inner_join(select(st_drop_geometry(network_list$flowpaths), 
+                        totdasqkm, match_id, 
+                        dnhydroseq), 
+                 by = c("hf_id" = match_id))
     
     # Need to avoid modification to flowlines immediately downstream of POIs
     #      This can cause some hydrologically-incorrect catchment aggregation
-    POI_downstream <- filter(network_list$flowpaths, hydroseq %in% outlets$dnhydroseq, areasqkm > 0)
+    POI_downstream <- filter(network_list$flowpaths, 
+                             hydroseq %in% outlets$dnhydroseq, 
+                             areasqkm > 0)
     
     ex <- unique(c(outlets$hf_id, avoid, POI_downstream$id))
   } else { 
@@ -148,6 +160,10 @@ refactor  = function (gpkg = NULL,
     refactored_events <- refactored %>%
       filter(!is.na(event_REACHCODE), !is.na(event_identifier))
 
+    if(!"COMID" %in% names(events)){
+      events = rename(events, COMID = id)
+    }
+    
     event_outlets <- events %>%
       mutate(event_identifier = as.character(1:nrow(events))) %>%
       inner_join(st_drop_geometry(refactored_events), by = "event_identifier") %>%
@@ -222,7 +238,9 @@ refactor  = function (gpkg = NULL,
     div_lookup <- c(FEATUREID = "divide_id", FEATUREID = "featureid")
     
     geom = st_geometry(network_list$catchments)
+    
     network_list$catchments = rename(as.data.frame(network_list$catchments), any_of(div_lookup))
+    
     st_geometry( network_list$catchments ) = geom
   
     r = rast(fac)
@@ -256,6 +274,7 @@ refactor  = function (gpkg = NULL,
         simplify_tolerance_m = simplify_tolerance_m,
         cache = NULL,
         keep = keep,
+        vector_crs = 5070,
         fix_catchments = fix_catchments
       ) %>%
       rename_geometry("geometry")

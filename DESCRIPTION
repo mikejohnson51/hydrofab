@@ -39,7 +39,8 @@ Imports:
     utils,
     yyjsonr
 Suggests: 
-    testthat
+    testthat,
+    knitr
 Remotes: 
     mikejohnson51/climateR
 License: CC0
@@ -47,3 +48,4 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.1
 VignetteBuilder: knitr
+
