@@ -206,8 +206,6 @@ split_catchment_divide <- function(catchment, fline, fdr, fac, lr = FALSE,
     group_by(L1) %>%
     filter(dplyr::row_number() == n()) %>%
     ungroup() 
-  
-  fline = st_set_crs(fline, 5070)
 
   suppressWarnings(fdr_matrix <- prep_cat_fdr_fac(catchment, fdr, fac))
   
