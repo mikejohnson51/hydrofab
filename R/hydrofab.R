@@ -1,7 +1,3 @@
-#' @importFrom arrow open_dataset
-#' 
-#' @importFrom climateR dap
-#' 
 #' @importFrom dplyr across add_count bind_cols bind_rows collect case_when contains 
 #' @importFrom dplyr distinct everything filter group_by left_join mutate n rename 
 #' @importFrom dplyr right_join select slice_max slice_min summarize tbl ungroup `%>%`

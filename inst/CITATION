@@ -6,11 +6,11 @@ bibentry(bibtype = "Manual",
            as.person("David Blodgett")
          ),
          title = "hydrofab: Hydrologic Network Refactoring Tools Based on HY_Features",
-         publisher = "U.S. Geological Survey",
-         address="Reston, VA",
-         version = "0.5.0",
-         institution = "U.S. Geological Survey",
-         year = 2022,
+         publisher = "NOAA",
+         address="",
+         version = "0.5.3",
+         institution = "U.S. NOAA",
+         year = 2024,
          url = "https://github.com/NOAA-OWP/hydrofab",
          textVersion = "Johnson, J.M., Blodgett, D., 2022, hydrofab: Hydrologic Network Refactoring Tools Based on HY_Features, https://github.com/NOAA-OWP/hydrofab"
 )

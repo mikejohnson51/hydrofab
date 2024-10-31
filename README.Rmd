@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 
 <!-- badges: start -->
 [![R CMD Check](https://github.com/mikejohnson51/hydrofab/actions/workflows/R-CMD-check.yml/badge.svg)](https://github.com/mikejohnson51/hydrofab/actions/workflows/R-CMD-check.yml)
-[![Dependencies](https://img.shields.io/badge/dependencies-21/80-red?style=flat)](#)
+[![Dependencies](https://img.shields.io/badge/dependencies-18/71-red?style=flat)](#)
 <!-- badges: end -->
 
 The goal of `hydrofab` is to provide consistent hydrologic and hydraulic network manipulation tool chains to achieve model application ready datasets from a consistent reference fabric. Some of these are being built at [ngen.hydrofab](https://github.com/mikejohnson51/ngen.hydrofab) and [gfv2.0](https://code.usgs.gov/wma/nhgf/gfv2.0)
