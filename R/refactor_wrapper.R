@@ -74,7 +74,7 @@ refactor  = function (gpkg = NULL,
     
     outlets <- pois %>%
       inner_join(select(st_drop_geometry(network_list$flowpaths), 
-                        all_of(totdasqkm, match_id, dnhydroseq)), 
+                        totdasqkm, match_id, dnhydroseq), 
                  by = c("hf_id" = match_id))
     
     # Need to avoid modification to flowlines immediately downstream of POIs
